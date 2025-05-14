@@ -21,6 +21,9 @@ export class User {
   @Column({ nullable: true })
   phoneNumber: string;
 
+  @Column({ nullable: true })
+  fileId: string;
+
   @ManyToOne(() => Role, { eager: true })
   @JoinColumn({ name: 'roleId' })
   role: Role;
@@ -37,11 +40,14 @@ export class User {
   @Column({ default: false })
   isVerified: boolean;
 
-  @Column({ nullable: true, select: false })
-  otpSecret: string;
+  @Column({ default: false })
+  isAdult: boolean;
+
+  @Column({ default: false })
+  hasAcceptedTerms: boolean;
 
   @Column({ nullable: true })
-  otpExpiry: Date;
+  lastLoggedIn: Date;
 
   @Column({ nullable: true, select: false })
   resetToken: string;

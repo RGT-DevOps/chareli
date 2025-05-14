@@ -178,11 +178,7 @@ const options: swaggerJsdoc.Options = {
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
+    // Individual routes that require authentication will specify their own security requirements
   },
   apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
 };

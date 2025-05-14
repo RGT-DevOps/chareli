@@ -232,7 +232,7 @@ export const createUser = async (
     await userRepository.save(user);
 
     // Don't return sensitive information
-    const { password: _, otpSecret: __, ...userWithoutSensitiveInfo } = user;
+    const { password: _, ...userWithoutSensitiveInfo } = user;
 
     res.status(201).json({
       success: true,
@@ -373,7 +373,7 @@ export const updateUser = async (
     await userRepository.save(user);
 
     // Don't return sensitive information
-    const { password: _, otpSecret: __, ...userWithoutSensitiveInfo } = user;
+    const { password: _, ...userWithoutSensitiveInfo } = user;
 
     res.status(200).json({
       success: true,
