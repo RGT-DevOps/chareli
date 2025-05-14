@@ -16,7 +16,10 @@ export const createUserSchema = yup.object({
     .matches(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
     .required('Password is required'),
   phoneNumber: yup.string().required('Phone number is required'),
-  roleId: yup.string().uuid('Invalid role ID').required('Role ID is required')
+  roleId: yup.string().uuid('Invalid role ID').required('Role ID is required'),
+  fileId: yup.string().uuid('Invalid file ID'),
+  isAdult: yup.boolean().default(false),
+  hasAcceptedTerms: yup.boolean().default(false)
 });
 
 /**
@@ -34,7 +37,11 @@ export const updateUserSchema = yup.object({
     .matches(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   phoneNumber: yup.string(),
   roleId: yup.string().uuid('Invalid role ID'),
-  isActive: yup.boolean()
+  isActive: yup.boolean(),
+  fileId: yup.string().uuid('Invalid file ID'),
+  isAdult: yup.boolean(),
+  hasAcceptedTerms: yup.boolean(),
+  lastLoggedIn: yup.date()
 }).test(
   'at-least-one-field',
   'At least one field must be provided',
@@ -58,5 +65,7 @@ export const userQuerySchema = yup.object({
   limit: yup.number().integer('Limit must be an integer').min(1, 'Limit must be at least 1').max(100, 'Limit must be at most 100'),
   role: yup.string().oneOf(Object.values(RoleType), 'Invalid role'),
   search: yup.string(),
-  isActive: yup.boolean()
+  isActive: yup.boolean(),
+  isAdult: yup.boolean(),
+  hasAcceptedTerms: yup.boolean()
 });

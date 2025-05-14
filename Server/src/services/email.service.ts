@@ -5,6 +5,7 @@ export interface EmailServiceInterface {
   sendInvitationEmail(email: string, invitationLink: string, role: string): Promise<boolean>;
   sendWelcomeEmail(email: string, name: string): Promise<boolean>;
   sendPasswordResetEmail(email: string, resetLink: string): Promise<boolean>;
+  sendOtpEmail(email: string, otp: string): Promise<boolean>;
 }
 
 // In-memory storage for development mode
@@ -51,6 +52,22 @@ export class EmailService implements EmailServiceInterface {
       <p>You requested to reset your password. Click the link below to set a new password:</p>
       <a href="${resetLink}">${resetLink}</a>
       <p>If you didn't request this, you can safely ignore this email.</p>
+    `;
+    
+    return this.sendEmail(email, subject, body);
+  }
+
+  /**
+   * Send an OTP verification email
+   */
+  async sendOtpEmail(email: string, otp: string): Promise<boolean> {
+    const subject = 'Your Verification Code';
+    const body = `
+      <h1>Your Verification Code</h1>
+      <p>Your verification code is:</p>
+      <h2 style="font-size: 24px; letter-spacing: 5px; text-align: center; padding: 10px; background-color: #f5f5f5; border-radius: 5px;">${otp}</h2>
+      <p>This code will expire in ${config.otp.expiryMinutes} minutes.</p>
+      <p>If you didn't request this code, please ignore this email.</p>
     `;
     
     return this.sendEmail(email, subject, body);

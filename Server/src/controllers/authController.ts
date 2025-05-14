@@ -5,6 +5,7 @@ import { RoleType } from '../entities/Role';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Invitation } from '../entities/Invitation';
+import { OtpType } from '../entities/Otp';
 
 const userRepository = AppDataSource.getRepository(User);
 const invitationRepository = AppDataSource.getRepository(Invitation);
@@ -28,12 +29,15 @@ const invitationRepository = AppDataSource.getRepository(Invitation);
  *               - email
  *               - password
  *               - phoneNumber
+ *               - hasAcceptedTerms
  *           example:
  *             firstName: "John"
  *             lastName: "Doe"
  *             email: "john.doe@example.com"
  *             password: "StrongPassword123!"
  *             phoneNumber: "+1234567890"
+ *             isAdult: true
+ *             hasAcceptedTerms: true
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -48,11 +52,11 @@ export const registerPlayer = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phoneNumber } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, isAdult, hasAcceptedTerms } = req.body;
 
     // Validate required fields
-    if (!firstName || !lastName || !email || !password || !phoneNumber) {
-      return next(ApiError.badRequest('All fields are required'));
+    if (!firstName || !lastName || !email || !password || !phoneNumber || hasAcceptedTerms !== true) {
+      return next(ApiError.badRequest('All fields are required and you must accept the terms and conditions'));
     }
 
     // Register the user
@@ -61,11 +65,13 @@ export const registerPlayer = async (
       lastName,
       email,
       password,
-      phoneNumber
+      phoneNumber,
+      isAdult || false,
+      hasAcceptedTerms
     );
 
     // Send OTP
-    await authService.sendOtp(user);
+    await authService.sendOtp(user, OtpType.SMS);
 
     res.status(201).json({
       success: true,
@@ -106,11 +112,14 @@ export const registerPlayer = async (
  *               - lastName
  *               - password
  *               - phoneNumber
+ *               - hasAcceptedTerms
  *           example:
  *             firstName: "Jane"
  *             lastName: "Smith"
  *             password: "SecurePassword456!"
  *             phoneNumber: "+1987654321"
+ *             isAdult: true
+ *             hasAcceptedTerms: true
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -128,11 +137,11 @@ export const registerFromInvitation = async (
 ): Promise<void> => {
   try {
     const { token } = req.params;
-    const { firstName, lastName, password, phoneNumber } = req.body;
+    const { firstName, lastName, password, phoneNumber, isAdult, hasAcceptedTerms } = req.body;
 
     // Validate required fields
-    if (!firstName || !lastName || !password || !phoneNumber) {
-      return next(ApiError.badRequest('All fields are required'));
+    if (!firstName || !lastName || !password || !phoneNumber || hasAcceptedTerms !== true) {
+      return next(ApiError.badRequest('All fields are required and you must accept the terms and conditions'));
     }
 
     // Register the user
@@ -141,11 +150,13 @@ export const registerFromInvitation = async (
       firstName,
       lastName,
       password,
-      phoneNumber
+      phoneNumber,
+      isAdult || false,
+      hasAcceptedTerms
     );
 
     // Send OTP
-    await authService.sendOtp(user);
+    await authService.sendOtp(user, OtpType.SMS);
 
     res.status(201).json({
       success: true,
@@ -177,9 +188,11 @@ export const registerFromInvitation = async (
  *             required:
  *               - email
  *               - password
+ *               - otpType
  *           example:
  *             email: "john.doe@example.com"
  *             password: "StrongPassword123!"
+ *             otpType: "SMS"
  *     responses:
  *       200:
  *         description: Login successful, OTP sent
@@ -196,7 +209,7 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, otpType = OtpType.SMS } = req.body;
 
     // Validate required fields
     if (!email || !password) {
@@ -206,12 +219,16 @@ export const login = async (
     // Login the user
     const user = await authService.login(email, password);
 
+    // Update last login time
+    user.lastLoggedIn = new Date();
+    await userRepository.save(user);
+
     // Send OTP
-    await authService.sendOtp(user);
+    await authService.sendOtp(user, otpType);
 
     res.status(200).json({
       success: true,
-      message: 'Login successful. Please verify with OTP sent to your phone.',
+      message: `Login successful. Please verify with OTP sent to your ${otpType === OtpType.EMAIL ? 'email' : otpType === OtpType.SMS ? 'phone' : 'email and phone'}.`,
       data: {
         userId: user.id,
         email: user.email,
@@ -238,11 +255,9 @@ export const login = async (
  *             type: object
  *             required:
  *               - userId
- *               - phoneNumber
  *               - otp
  *           example:
  *             userId: "cff600fe-639b-4c1f-880b-58d23af4a2c7"
- *             phoneNumber: "+1234567890"
  *             otp: "123456"
  *     responses:
  *       200:
@@ -260,15 +275,15 @@ export const verifyOtp = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId, phoneNumber, otp } = req.body;
+    const { userId, otp } = req.body;
 
     // Validate required fields
-    if (!userId || !phoneNumber || !otp) {
-      return next(ApiError.badRequest('All fields are required'));
+    if (!userId || !otp) {
+      return next(ApiError.badRequest('User ID and OTP are required'));
     }
 
     // Verify OTP and generate tokens
-    const tokens = await authService.verifyOtp(userId, phoneNumber, otp);
+    const tokens = await authService.verifyOtp(userId, otp);
 
     res.status(200).json({
       success: true,
@@ -618,7 +633,7 @@ export const getCurrentUser = async (
     }
 
     // Don't return sensitive information
-    const { password, otpSecret, ...userWithoutSensitiveInfo } = user;
+    const { password, ...userWithoutSensitiveInfo } = user;
 
     res.status(200).json({
       success: true,

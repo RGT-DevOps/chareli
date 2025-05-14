@@ -2,6 +2,7 @@ import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Role, RoleType } from '../entities/Role';
 import { Invitation } from '../entities/Invitation';
+import { Otp, OtpType } from '../entities/Otp';
 import config from '../config/config';
 import logger from '../utils/logger';
 import { otpService } from './otp.service';
@@ -36,7 +37,9 @@ export class AuthService {
     lastName: string,
     email: string,
     password: string,
-    phoneNumber: string
+    phoneNumber: string,
+    isAdult: boolean = false,
+    hasAcceptedTerms: boolean = false
   ): Promise<User> {
     // Check if user already exists
     const existingUser = await userRepository.findOne({ where: { email } });
@@ -66,7 +69,9 @@ export class AuthService {
       role: playerRole,
       roleId: playerRole.id,
       isVerified: false,
-      isActive: true
+      isActive: true,
+      isAdult,
+      hasAcceptedTerms
     });
 
     await userRepository.save(user);
@@ -82,7 +87,9 @@ export class AuthService {
     firstName: string,
     lastName: string,
     password: string,
-    phoneNumber: string
+    phoneNumber: string,
+    isAdult: boolean = false,
+    hasAcceptedTerms: boolean = false
   ): Promise<User> {
     // Find the invitation
     const invitation = await invitationRepository.findOne({
@@ -124,7 +131,9 @@ export class AuthService {
       role: invitation.role,
       roleId: invitation.roleId,
       isVerified: false,
-      isActive: true
+      isActive: true,
+      isAdult,
+      hasAcceptedTerms
     });
 
     await userRepository.save(user);
@@ -166,26 +175,34 @@ export class AuthService {
   }
 
   /**
-   * Send OTP to user's phone number
+   * Send OTP to user via SMS, email, or both
    */
-  async sendOtp(user: User): Promise<boolean> {
-    if (!user.phoneNumber) {
-      throw new Error('User does not have a phone number');
+  async sendOtp(user: User, type: OtpType = OtpType.SMS): Promise<boolean> {
+    if (type === OtpType.SMS || type === OtpType.BOTH) {
+      if (!user.phoneNumber) {
+        throw new Error('User does not have a phone number');
+      }
+    }
+
+    if (type === OtpType.EMAIL || type === OtpType.BOTH) {
+      if (!user.email) {
+        throw new Error('User does not have an email address');
+      }
     }
 
     // Generate OTP
-    const otp = await otpService.generateOtp(user.phoneNumber);
+    const otp = await otpService.generateOtp(user.id, type);
 
     // Send OTP
-    return otpService.sendOtp(user.phoneNumber, otp);
+    return otpService.sendOtp(user.id, otp, type);
   }
 
   /**
    * Verify OTP and generate JWT tokens
    */
-  async verifyOtp(userId: string, phoneNumber: string, otp: string): Promise<AuthTokens> {
+  async verifyOtp(userId: string, otp: string): Promise<AuthTokens> {
     // Verify OTP
-    const isValid = await otpService.verifyOtp(phoneNumber, otp);
+    const isValid = await otpService.verifyOtp(userId, otp);
     if (!isValid) {
       throw new Error('Invalid or expired OTP');
     }
@@ -447,7 +464,9 @@ export class AuthService {
         role: superadminRole,
         roleId: superadminRole.id,
         isVerified: true,
-        isActive: true
+        isActive: true,
+        isAdult: true,
+        hasAcceptedTerms: true
       });
 
       await userRepository.save(superadmin);
