@@ -4,6 +4,9 @@ import { Button } from '../../components/ui/button';
 import sun from '../../assets/sun.svg';
 import moon from '../../assets/moon.svg';
 import { SignUpModal } from '../modals/SignUpModal';
+import { LoginModal } from '../modals/LoginModal';
+import { OTPPlatformModal } from '../modals/OTPPlatformModal';
+import { OTPVerificationModal } from '../modals/OTPVerificationModal';
 
 
 const Navbar: React.FC = () => {
@@ -14,6 +17,7 @@ const Navbar: React.FC = () => {
 
   const navigate = useNavigate();
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
@@ -49,7 +53,9 @@ const Navbar: React.FC = () => {
           alt={isDarkMode ? 'light mode' : 'dark mode'}
           className="w-6 h-6 cursor-pointer"
         />
-        <Button className="bg-transparent border border-[#111826] dark:border-gray-500 text-[#111826] dark:text-gray-300 text-lg cursor-pointer hover:text-white">
+        <Button
+          onClick={() => setIsLoginModalOpen(true)}
+          className="bg-transparent border border-[#111826] dark:border-gray-500 text-[#111826] dark:text-gray-300 text-lg cursor-pointer hover:text-white">
           Log in
         </Button>
         <Button
@@ -58,6 +64,7 @@ const Navbar: React.FC = () => {
           Sign up
         </Button>
         <SignUpModal open={isSignUpModalOpen} onOpenChange={setIsSignUpModalOpen} />
+        <LoginModal open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
       </div>
     </header>
   );
