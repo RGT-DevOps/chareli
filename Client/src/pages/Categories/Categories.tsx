@@ -1,4 +1,4 @@
-// import React from 'react';
+import { useState } from 'react';
 
 import ImgA1 from '../../assets/gamesImg/a1.svg';
 import ImgA2 from '../../assets/gamesImg/a2.svg';
@@ -7,6 +7,7 @@ import ImgA4 from '../../assets/gamesImg/a4.svg';
 import ImgA5 from '../../assets/gamesImg/a5.svg';
 import ImgA6 from '../../assets/gamesImg/a6.svg';
 import { Card } from '../../components/ui/card';
+
 const categories = [
   "Racing", "Fighting", "Adventure", "Arcade", "Sports", "Action", "Puzzle", "Board", "Party", "Card", "Shooting"
 ];
@@ -15,7 +16,59 @@ const secondary = [
   "Recently Added", "Popular", "Recommended for you"
 ];
 
+// games data with category and tags
+const games = [
+  {
+    name: "Fortnite",
+    img: ImgA1,
+    category: "Action",
+    tags: ["Recently Added", "Popular"]
+  },
+  {
+    name: "G.O.T Minions",
+    img: ImgA2,
+    category: "Adventure",
+    tags: ["Popular"]
+  },
+  {
+    name: "H.E.R S.U.R.V.I.V.A.L",
+    img: ImgA3,
+    category: "Shooting",
+    tags: ["Recommended for you"]
+  },
+  {
+    name: "D.E.A.T.H",
+    img: ImgA4,
+    category: "Arcade",
+    tags: ["Recommended for you"]
+  },
+  {
+    name: "SCAR: The Green Nin",
+    img: ImgA5,
+    category: "Fighting",
+    tags: ["Recently Added"]
+  },
+  {
+    name: "Shooters Range",
+    img: ImgA6,
+    category: "Shooting",
+    tags: ["Recently Added"]
+  }
+];
+
 export default function Categories() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
+
+  // Filtering logic
+  const filteredGames = games.filter(game => {
+    const categoryMatch = selectedCategory ? game.category === selectedCategory : true;
+    const secondaryMatch = selectedSecondary
+      ? game.tags.includes(selectedSecondary)
+      : true;
+    return categoryMatch && secondaryMatch;
+  });
+
   return (
     <div className="flex min-h-[calc(100vh-80px)] bg-white dark:bg-[#0f1221]">
       {/* Sidebar */}
@@ -23,13 +76,27 @@ export default function Categories() {
         <nav>
           <ul className="flex flex-col gap-1">
             <li>
-              <button className="w-full flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-[#D946EF] shadow transition">
+              <button
+                className={`w-full flex items-center gap-2 px-4 py-2 text-2xl rounded-lg font-bold transition
+                  ${!selectedCategory && !selectedSecondary
+                    ? 'bg-[#D946EF] text-white shadow'
+                    : 'bg-transparent text-[#64748A] hover:bg-[#F3E8FF] hover:text-[#D946EF]'}
+                `}
+                onClick={() => { setSelectedCategory(null); setSelectedSecondary(null); }}
+              >
                 All
               </button>
             </li>
             {categories.map(cat => (
               <li key={cat}>
-                <button className="w-full text-left text-2xl px-4 py-2 rounded-lg font-semibold text-[#64748A] hover:bg-[#F3E8FF] hover:text-[#D946EF] transition">
+                <button
+                  className={`w-full text-left text-2xl px-4 py-2 rounded-lg font-semibold transition
+                    ${selectedCategory === cat
+                      ? 'bg-[#D946EF] text-white shadow'
+                      : 'text-[#64748A] hover:bg-[#F3E8FF] hover:text-[#D946EF]'}
+                  `}
+                  onClick={() => { setSelectedCategory(cat); setSelectedSecondary(null); }}
+                >
                   {cat}
                 </button>
               </li>
@@ -41,7 +108,10 @@ export default function Categories() {
           <ul className="flex flex-col gap-1">
             {secondary.map(sec => (
               <li key={sec}>
-                <button className="w-full text-left text-2xl px-4 py-2 rounded-lg font-semibold text-[#64748A] hover:bg-[#F3E8FF] hover:text-[#D946EF] transition">
+                <button
+                  className={`w-full text-left text-2xl px-4 py-2 rounded-lg font-semibold text-[#64748A] hover:bg-[#F3E8FF] hover:text-[#D946EF] transition ${selectedSecondary === sec ? 'bg-[#D946EF] text-white' : ''}`}
+                  onClick={() => { setSelectedSecondary(sec); setSelectedCategory(null); }}
+                >
                   {sec}
                 </button>
               </li>
@@ -49,63 +119,34 @@ export default function Categories() {
           </ul>
         </nav>
       </aside>
-      {/* Main Content Placeholder */}
+      {/* Main Content */}
       <div className="flex-1 p-8">
-        {/* <div className="text-2xl font-bold text-[#D946EF]">Categories Content</div> */}
         <div>
-        <div className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
-                    <div className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
-                    <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221] hover:rounded-full">
-                        <div className="relative gradient-shadow-hover transition-all duration-300">
-                            {/* Recently Added Tag */}
-                            <span className="absolute top-3 right-3 bg-[#94A3B7] text-xs font-semibold tracking-wide text-white px-3 py-1 rounded-lg shadow-md z-10">
-                                Recently Added
-                            </span>
-                            <img src={ImgA1} alt="Runner Maze" className="w-full h-auto block rounded-xl" />
-                            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">Fortnite</span>
-                        </div>
-                    </Card>
-
-                    <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221]">
-                        <div className="relative gradient-shadow-hover transition-all duration-300">
-                            <img src={ImgA2} alt="Runner Maze" className="w-full h-auto block rounded-xl" />
-                            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">G.O.T Minions</span>
-                        </div>
-                    </Card>
-                        
-                    <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221]">
-                        <div className="relative gradient-shadow-hover transition-all duration-300">
-                            <img src={ImgA3} alt="Runner Maze" className="w-full h-auto block rounded-xl" />
-                            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">H.E.R S.U.R.V.I.V.A.L</span>
-                        </div>
-                    </Card>
-
-                    <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221]">
-                        <div className="relative gradient-shadow-hover transition-all duration-300">
-                            <img src={ImgA4} alt="Runner Maze" className="w-full h-auto block rounded-xl" />
-                            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">D..E.A.T.H</span>
-                        </div>
-                    </Card>
-
-                    <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221]">
-                        <div className="relative gradient-shadow-hover transition-all duration-300">
-                            {/* Recently Added Tag */}
-                            <span className="absolute top-3 right-3 bg-[#94A3B7] text-xs font-semibold tracking-wide text-white px-3 py-1 rounded-lg shadow-md z-10">
-                                Recently Added
-                            </span>
-                            <img src={ImgA5} alt="Runner Maze" className="w-full h-auto block rounded-xl" />
-                            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">SCAR: The Green Nin</span>
-                        </div>
-                    </Card>
-
-                    <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221]">
-                        <div className="relative gradient-shadow-hover transition-all duration-300">
-                            <img src={ImgA6} alt="Runner Maze" className="w-full h-auto block rounded-xl" />
-                            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">Shooters Range</span>
-                        </div>
-                    </Card>
-                    </div>
-            </div>
+          <div className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
+            {filteredGames.map((game) => (
+              <Card
+                key={game.name}
+                className="border-hidden shadow-none p-0 dark:bg-[#0f1221] hover:rounded-full max-w-xs"
+              >
+                <div className="relative gradient-shadow-hover transition-all duration-300">
+                  {/* Tag if Recently Added */}
+                  {game.tags.includes("Recently Added") && (
+                    <span className="absolute top-3 right-3 bg-[#94A3B7] text-xs font-semibold tracking-wide text-white px-3 py-1 rounded-lg shadow-md z-10">
+                      Recently Added
+                    </span>
+                  )}
+                  <img
+                    src={game.img}
+                    alt={game.name}
+                    className="w-full h-auto block rounded-xl object-cover"
+                  />
+                  <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-bold text-2xl drop-shadow-md">
+                    {game.name}
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </div>
