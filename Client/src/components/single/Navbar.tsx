@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
         CHARELI
       </div>
 
-      <div className="flex gap-8 text-lg font-bold text-[#111826] dark:text-[#94A3B7] items-center">
+      <div className="flex gap-8 text-lg font-bold text-[#111826] dark:text-[#94A3B7] items-center justify-center">
         <Link to="/about" className="hover:bg-[#D946EF] hover:text-white px-4 py-2 rounded-md">About Us</Link>
         <Link to="/categories" className="hover:bg-[#D946EF] hover:text-white px-4 py-2 rounded-md">Categories</Link>
       </div>
