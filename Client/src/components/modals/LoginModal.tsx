@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FormikHelpers } from "formik";
 import * as Yup from "yup";
+import { useAuth } from "../../context/AuthContext";
+// import { useRequestOtp } from "../../backend/auth.service";
+import { toast } from "sonner";
+import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import {
   Dialog,
   DialogDescription,
@@ -15,6 +19,7 @@ import { Label } from "../../components/ui/label";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AiOutlineMail } from "react-icons/ai";
 import { OTPPlatformModal } from "./OTPPlatformModal";
+import { OTPVerificationModal } from "./OTPVerificationModal";
 
 interface LoginDialogProps {
   open: boolean;
@@ -22,7 +27,6 @@ interface LoginDialogProps {
   openSignUpModal: () => void;
 }
 
-// Validation schema
 const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email address")
@@ -32,7 +36,7 @@ const validationSchema = Yup.object({
     .required("Password is required"),
 });
 
-// Initial values
+
 const initialValues = {
   email: "",
   password: "",
@@ -45,19 +49,60 @@ export function LoginModal({
 }: LoginDialogProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isOTPPlatformModalOpen, setIsOTPPlatformModalOpen] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userPhone, setUserPhone] = useState("");
+  const [hasBothContactMethods, setHasBothContactMethods] = useState(false);
+  const [isOTPVerificationModalOpen, setIsOTPVerificationModalOpen] = useState(false);
+  const [selectedOtpType, setSelectedOtpType] = useState<'EMAIL' | 'SMS'>('EMAIL');
+  const [loginError, setLoginError] = useState("");
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const { login } = useAuth();
+  // const requestOtp = useRequestOtp();
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  const handleLogin = (values: typeof initialValues, actions: FormikHelpers<typeof initialValues>) => {
-    console.log("Login form values:", values);
-    setIsOTPPlatformModalOpen(true);
-    onOpenChange(false);
-    actions.setSubmitting(false);
+  const handleLogin = async (values: typeof initialValues, actions: FormikHelpers<typeof initialValues>) => {
+    try {
+      setLoginError("");
+      const response = await login(values.email, values.password);
+      const { userId, hasEmail, hasPhone, phoneNumber, email: userEmail } = response;
+      
+      setUserId(userId);
+      setUserEmail(userEmail || values.email);
+      setUserPhone(phoneNumber || '');
+      setHasBothContactMethods(hasEmail && hasPhone);
+      
+      // Determine the OTP type based on available contact methods
+      if (!hasEmail && hasPhone) {
+        setSelectedOtpType('SMS');
+      } else {
+        setSelectedOtpType('EMAIL');
+      }
+      
+      if (hasEmail && hasPhone) {
+        setIsOTPPlatformModalOpen(true);
+      } else {
+        setIsOTPVerificationModalOpen(true);
+      }
+  
+      onOpenChange(false);
+    } catch (error: any) {
+
+      if (error.response?.data?.message) {
+        setLoginError(error.response.data.message);
+        toast.error(error.response.data.message);
+      } else {
+        setLoginError("Invalid email or password. Please try again.");
+        toast.error("Invalid email or password. Please try again.");
+      }
+    } finally {
+      actions.setSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <CustomDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221]">
-        {/* Custom Close Button */}
         <button
           className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#C026D3] flex items-center justify-center shadow-lg hover:bg-[#a21caf] transition-colors"
           onClick={() => onOpenChange(false)}
@@ -141,6 +186,23 @@ export function LoginModal({
                       className="text-red-500 text-xs mt-1 font-pincuk"
                     />
                   </div>
+                  {loginError && (
+                    <div className="text-red-500 text-xs font-pincuk text-center">
+                      {loginError}
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <span
+                      className="text-xs text-[#C026D3] cursor-pointer font-pincuk"
+                      onClick={() => {
+                        onOpenChange(false);
+                        setIsForgotPasswordModalOpen(true);
+                      }}
+                      data-forgot-password-trigger
+                    >
+                      Forgot Password?
+                    </span>
+                  </div>
                   <Button
                     type="submit"
                     disabled={isSubmitting}
@@ -154,7 +216,7 @@ export function LoginModal({
           </DialogDescription>
         </DialogHeader>
         <p className="text-sm text-center text-black dark:text-white font-pincuk">
-          Don't have an account?{" "}
+          Don't have an account?
           <span
             className="underline text-[#C026D3] cursor-pointer"
             onClick={openSignUpModal}
@@ -163,9 +225,30 @@ export function LoginModal({
           </span>
         </p>
       </CustomDialogContent>
+      {/* Show OTPPlatformModal if user has both email and phone */}
       <OTPPlatformModal
         open={isOTPPlatformModalOpen}
         onOpenChange={setIsOTPPlatformModalOpen}
+        userId={userId}
+        email={userEmail}
+        phone={userPhone}
+      />
+      
+      <OTPVerificationModal
+        open={isOTPVerificationModalOpen}
+        onOpenChange={setIsOTPVerificationModalOpen}
+        userId={userId}
+        contactMethod={selectedOtpType === 'EMAIL' ? userEmail : userPhone}
+        otpType={selectedOtpType}
+      />
+      
+      <ForgotPasswordModal
+        open={isForgotPasswordModalOpen}
+        onOpenChange={setIsForgotPasswordModalOpen}
+        openLoginModal={() => {
+          setIsForgotPasswordModalOpen(false);
+          onOpenChange(true);
+        }}
       />
     </Dialog>
   );

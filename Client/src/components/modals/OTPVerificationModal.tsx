@@ -1,21 +1,90 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogHeader,
     AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
+import { Button } from "../../components/ui/button";
 import OTPInput from "react-otp-input";
+import { useAuth } from '../../context/AuthContext';
+import { useRequestOtp } from '../../backend/auth.service';
+import { toast } from 'sonner';
 
 interface OTPVerificationDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    userId: string;
+    contactMethod?: string; // Email or phone number that received the OTP
+    otpType?: 'EMAIL' | 'SMS'; // Type of OTP sent
+    onVerificationSuccess?: () => void; // Callback for when verification is successful
 }
 
-export function OTPVerificationModal({ open, onOpenChange }: OTPVerificationDialogProps) {
-    const [otp, setOtp] = useState("235");
+export function OTPVerificationModal({ 
+    open, 
+    onOpenChange, 
+    userId, 
+    contactMethod = "your email or phone", 
+    otpType = "EMAIL",
+    onVerificationSuccess
+}: OTPVerificationDialogProps) {
+    const [otp, setOtp] = useState("");
+    const [error, setError] = useState("");
+    const [isVerifying, setIsVerifying] = useState(false);
+    const { verifyOtp } = useAuth();
+    const requestOtp = useRequestOtp();
+    const navigate = useNavigate();
+    
+    const handleVerify = async () => {
+        if (otp.length !== 6) {
+            setError("Please enter a valid 6-digit OTP");
+            toast.error("Please enter a valid 6-digit OTP");
+            return;
+        }
+        
+        try {
+            setError("");
+            setIsVerifying(true);
+            const user = await verifyOtp(userId, otp);
+            
+            // Close the modal
+            onOpenChange(false);
+            
+            // Call the success callback if provided
+            if (onVerificationSuccess) {
+                onVerificationSuccess();
+            }
+            
+            // Show success message
+            toast.success("OTP verified successfully!");
+            
+            if (user.isAdmin) {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
+        } catch (error) {
+            setError("Invalid OTP. Please try again.");
+            toast.error("Invalid OTP. Please try again.");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+    
+    const handleResendOtp = async () => {
+        try {
+            setError("");
+            await requestOtp.mutateAsync({ userId, otpType });
+            // Show success message
+            setError("OTP resent successfully!");
+            toast.success("OTP resent successfully!");
+        } catch (error) {
+            setError("Failed to resend OTP. Please try again.");
+            toast.error("Failed to resend OTP. Please try again.");
+        }
+    };
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -25,7 +94,7 @@ export function OTPVerificationModal({ open, onOpenChange }: OTPVerificationDial
                         OTP Verification
                     </AlertDialogTitle>
                     <AlertDialogDescription className="dark:text-white text-black font-pincuk text-xs mt-1">
-                        Enter the verification code we just sent via claireme***@gmail.com
+                        Enter the verification code we just sent via {contactMethod}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="flex justify-center my-4">
@@ -46,12 +115,27 @@ export function OTPVerificationModal({ open, onOpenChange }: OTPVerificationDial
                         placeholder=""
                     />
                 </div>
-                <AlertDialogAction className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo">
-                    Verify
-                </AlertDialogAction>
+                {error && (
+                    <div className={`text-sm text-center font-pincuk mt-2 ${error.includes("resent") ? "text-green-500" : "text-red-500"}`}>
+                        {error}
+                    </div>
+                )}
+                <Button 
+                    onClick={handleVerify} 
+                    disabled={isVerifying || otp.length !== 6}
+                    className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo"
+                >
+                    {isVerifying ? "Verifying..." : "Verify"}
+                </Button>
                 <p className="text-sm text-center text-black dark:text-white font-pincuk mt-2">
                     Didn't receive a code?{' '}
-                    <a href="#" className="underline text-[#C026D3]">Resend</a>
+                    <button 
+                        onClick={handleResendOtp} 
+                        disabled={requestOtp.isPending}
+                        className="underline text-[#C026D3] cursor-pointer"
+                    >
+                        {requestOtp.isPending ? "Sending..." : "Resend"}
+                    </button>
                 </p>
             </AlertDialogContent>
         </AlertDialog>
