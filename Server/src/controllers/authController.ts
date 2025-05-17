@@ -220,7 +220,7 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { email, password, otpType = OtpType.SMS } = req.body;
+    const { email, password, otpType } = req.body;
 
     if (!email || !password) {
       return next(ApiError.badRequest('Email and password are required'));
@@ -228,18 +228,46 @@ export const login = async (
 
     const user = await authService.login(email, password);
 
-    // Send OTP
-    await authService.sendOtp(user, otpType);
-
-    res.status(200).json({
-      success: true,
-      message: `Login successful. Please verify with OTP sent to your ${otpType === OtpType.EMAIL ? 'email' : otpType === OtpType.SMS ? 'phone' : 'email and phone'}.`,
-      data: {
-        userId: user.id,
-        email: user.email,
-        phoneNumber: user.phoneNumber
+    const hasEmail = !!user.email;
+    const hasPhone = !!user.phoneNumber;
+    
+    let selectedOtpType: OtpType;
+    
+    if (hasEmail && hasPhone) {
+      selectedOtpType = otpType || OtpType.SMS;
+    } else if (hasEmail) {
+      selectedOtpType = OtpType.EMAIL;
+    } else if (hasPhone) {
+      selectedOtpType = OtpType.SMS;
+    } else {
+      return next(ApiError.badRequest('User has no contact methods for OTP delivery'));
+    }
+    
+    try {
+      await authService.sendOtp(user, selectedOtpType);
+      
+      res.status(200).json({
+        success: true,
+        message: `Login successful. Please verify with OTP sent to your ${selectedOtpType === OtpType.EMAIL ? 'email' : selectedOtpType === OtpType.SMS ? 'phone' : 'email and phone'}.`,
+        data: {
+          userId: user.id,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          hasEmail,
+          hasPhone,
+          otpType: selectedOtpType
+        }
+      });
+    } catch (error) {
+      // If there's an error sending the OTP, it might be because the user doesn't have the required contact method
+      if (error instanceof Error && error.message.includes('does not have a phone number')) {
+        return next(ApiError.badRequest('User does not have a phone number for SMS OTP'));
+      } else if (error instanceof Error && error.message.includes('does not have an email address')) {
+        return next(ApiError.badRequest('User does not have an email address for EMAIL OTP'));
+      } else {
+        throw error;
       }
-    });
+    }
   } catch (error) {
     next(error instanceof Error ? ApiError.unauthorized(error.message) : error);
   }

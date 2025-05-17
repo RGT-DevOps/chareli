@@ -5,6 +5,8 @@ import About from '../pages/About/About';
 import MainLayout from '../layout/MainLayout';
 import GamePlay from '../pages/GamePlay/GamePlay';
 import Categories from '../pages/Categories/Categories';
+import { ResetPasswordPage } from '../pages/ResetPassword/ResetPasswordPage';
+import { ProtectedRoute } from './ProtectedRoute';
 
 // admin routes
 import AdminLayout from '../layout/AdminLayout';
@@ -32,14 +34,18 @@ export const AppRoutes = () => {
           <Route path="*" element={<ErrorPage />} />
         </Route>
 
+        {/* Auth Routes */}
+        <Route path="reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="register-invitation/:token" element={<ErrorPage />} /> {/* TODO: Create RegisterInvitationPage */}
+
         {/* admin */}
-      <Route path='admin/'>
+      <Route path='admin/' element={<ProtectedRoute requireAdmin={true} />}>
         <Route element={<AdminLayout />}>
 
           <Route index element={<AdminHome />} />
           <Route path="about" element={<AdminAbout />} />
           <Route path="categories" element={<GameCategories />} />
-          <Route path="management" element={<UserManagement />} />
+          <Route path="users" element={<UserManagement />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="configuration" element={<Configuration />} />
 
