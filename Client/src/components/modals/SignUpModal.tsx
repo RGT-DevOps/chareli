@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FormikHelpers, FieldProps } from "formik";
 import * as Yup from "yup";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import "../../styles/phone-input.css";
 import {
   Dialog,
   DialogDescription,
@@ -10,8 +13,6 @@ import {
 } from "../../components/ui/dialog";
 import { CustomDialogContent } from "../ui/custom-dialog-content";
 import { Button } from "../../components/ui/button";
-import { CountryDropdown } from "../../components/ui/country-dropdown";
-import type { Country } from "../../components/ui/country-dropdown";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Checkbox } from "../../components/ui/checkbox";
@@ -55,6 +56,9 @@ interface SignUpDialogProps {
   openLoginModal: () => void;
 }
 
+// Format phone number
+const formatPhoneNumber = (value?: string) => (value ? `+${value}` : value);
+
 export function SignUpModal({
   open,
   onOpenChange,
@@ -62,9 +66,6 @@ export function SignUpModal({
 }: SignUpDialogProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(
-    undefined
-  );
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () =>
@@ -186,25 +187,46 @@ export function SignUpModal({
                     >
                       Phone Number
                     </Label>
-                    <div className="flex gap-2">
-                      <div className="w-[90px]">
-                        <CountryDropdown
-                          slim
-                          value={selectedCountry}
-                          onChange={(country) => setSelectedCountry(country)}
-                          className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] h-[48px] border-0 font-pincuk text-[11px] font-normal"
-                        />
-                      </div>
-                      <div className="flex-1 relative">
-                        <Field
-                          as={Input}
-                          id="phoneNumber"
-                          name="phoneNumber"
-                          placeholder="Enter Phone Number"
-                          className="mt-1 bg-[#E2E8F0] border-0 pl-4 font-pincuk text-[11px] font-normal h-[48px]"
-                        />
-                      </div>
-                    </div>
+                    <Field name="phoneNumber">
+                      {({ field, form }: FieldProps) => (
+                        <div className="w-full mt-1">
+                          <PhoneInput
+                            country="us"
+                            value={field.value}
+                            onChange={(value) => form.setFieldValue('phoneNumber', formatPhoneNumber(value))}
+                            inputStyle={{ 
+                              width: "100%", 
+                              height: "48px", 
+                              backgroundColor: "#E2E8F0", 
+                              border: "0", 
+                              borderRadius: "0.375rem", 
+                              fontFamily: "pincuk", 
+                              fontSize: "11px" 
+                            }}
+                            containerClass="dark:bg-[#191c2b]"
+                            buttonStyle={{ 
+                              backgroundColor: "#E2E8F0", 
+                              border: "0", 
+                              borderRadius: "0.375rem 0 0 0.375rem" 
+                            }}
+                            dropdownStyle={{ 
+                              backgroundColor: "#fff", 
+                              color: "#000" 
+                            }}
+                            searchStyle={{ 
+                              backgroundColor: "#fff", 
+                              color: "#000" 
+                            }}
+                            enableAreaCodeStretch
+                            autoFormat
+                            enableSearch
+                            disableSearchIcon
+                            autocompleteSearch
+                            countryCodeEditable={false}
+                          />
+                        </div>
+                      )}
+                    </Field>
                     <ErrorMessage
                       name="phoneNumber"
                       component="div"
