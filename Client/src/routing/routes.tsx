@@ -17,6 +17,12 @@ import Analytics from '../pages/Admin/Analytics/Analytics';
 import Configuration from '../pages/Admin/Configuration/Configuration';
 import ViewGame from '../pages/Admin/ViewGame';
 import GameCategories from '../pages/Admin/Category/GameCategories';
+import UserManagementView from '../pages/Admin/UserMgtView';
+import TeamManagement from '../pages/Admin/Team/TeamManagement';
+import Settings from '../pages/Admin/Settings';
+import ViewProfile from '../pages/Admin/ViewProfile';
+
+// import RequireAdminAuth from './RequireAdminAuth';
 
 export const AppRoutes = () => {
   return (
@@ -33,27 +39,30 @@ export const AppRoutes = () => {
 
           <Route path="*" element={<ErrorPage />} />
         </Route>
+      </Route>
 
         {/* admin */}
-      <Route path='admin/'>
-        <Route element={<AdminLayout />}>
+        {/* <Route path="admin/" element={<RequireAdminAuth />}> */}
+        <Route path="admin/" element={<AdminLayout />}>
+          {/* <Route element={<AdminLayout />}> */}
+            <Route index element={<AdminHome />} />
+            {/* <Route path="about" element={<AdminAbout />} />*/}
+            <Route path="game-management" element={<GameManagement />} />
+            <Route path="categories" element={<GameCategories />} />
+            <Route path="management" element={<UserManagement />} />
+            <Route path="management/:userId" element={<UserManagementView />} />
+            <Route path="team" element={<TeamManagement />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="config" element={<Configuration />} />
+            <Route path="view-game" element={<ViewGame />} />
 
-          <Route index element={<AdminHome />} />
-          {/* <Route path="about" element={<AdminAbout />} />*/}
-          <Route path="game-management" element={<GameManagement />} />
-          <Route path="categories" element={<GameCategories />} />
-          <Route path="management" element={<UserManagement />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="config" element={<Configuration />} />
-
-          <Route path="view-game" element={<ViewGame />} />
-
-
-          <Route path="*" element={<ErrorPage />} />
+            {/* settings */}
+            <Route path="settings" element={<Settings />} />
+            <Route path="view-profile" element={<ViewProfile />} />
+          {/* </Route> */}
         </Route>
-      </Route>
 
-      </Route>
+            <Route path="*" element={<ErrorPage />} />
 
     </Routes>
   );

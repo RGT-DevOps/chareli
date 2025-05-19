@@ -21,7 +21,7 @@ export function OTPVerificationModal({ open, onOpenChange }: OTPVerificationDial
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221]">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-2xl font-bold dark:text-white text-black font-boogaloo">
+                    <AlertDialogTitle className="text-2xl font-bold dark:text-white text-black font-pong">
                         OTP Verification
                     </AlertDialogTitle>
                     <AlertDialogDescription className="dark:text-white text-black font-pincuk text-xs mt-1">
@@ -46,7 +46,7 @@ export function OTPVerificationModal({ open, onOpenChange }: OTPVerificationDial
                         placeholder=""
                     />
                 </div>
-                <AlertDialogAction className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo">
+                <AlertDialogAction className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-pong">
                     Verify
                 </AlertDialogAction>
                 <p className="text-sm text-center text-black dark:text-white font-pincuk mt-2">

@@ -97,7 +97,7 @@ const Navbar: React.FC = () => {
               )}
             </div>
           )}
-          <IoMdSettings className='w-6 h-6' />
+          <IoMdSettings className='w-6 h-6 cursor-pointer' onClick={() => navigate('/admin/settings')} />
         </div>
         <div className="space-x-4 flex items-center">
           <img
