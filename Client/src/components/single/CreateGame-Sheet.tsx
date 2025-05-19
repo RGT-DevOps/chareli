@@ -19,7 +19,7 @@ export function CreateGameSheet({ children }: {children:React.ReactNode}) {
       <SheetTrigger asChild>
         {children}
       </SheetTrigger>
-      <SheetContent className="font-boogaloo dark:bg-[#0F1621] max-w-xl w-full">
+      <SheetContent className="font-boogaloo dark:bg-[#0F1621] max-w-xl w-full overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-2xl font-bold tracking-wider mt-6 mb-2">Create New Game</SheetTitle>
           <div className="border border-b-gray-200 mb-2"></div>
@@ -83,7 +83,7 @@ export function CreateGameSheet({ children }: {children:React.ReactNode}) {
             <Button type="button" className="w-24 h-12 text-[#334154] bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-accent">Cancel</Button>
           </SheetClose>
           <SheetClose asChild>
-            <Button type="submit" className="w-24 h-12 bg-[#D946EF] dark:text-white hover:text-[#D946EF] hover:bg-[#F3E8FF]">Create</Button>
+            <Button type="submit" className="w-24 h-12 bg-[#D946EF] dark:text-white hover:text-[#D946EF] hover:bg-[#F3E8FF] mb-4">Create</Button>
           </SheetClose>
         </div>
       </SheetContent>
