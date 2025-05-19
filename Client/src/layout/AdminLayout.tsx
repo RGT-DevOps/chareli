@@ -11,6 +11,7 @@ import { MdOutlineCategory } from "react-icons/md";
 import { FaRegUser } from "react-icons/fa6";
 import { FaChartLine } from "react-icons/fa";
 import { SlEqualizer } from "react-icons/sl";
+import { RiTeamLine } from "react-icons/ri";
 
 
 
@@ -33,6 +34,10 @@ const menuItems = [
   { title: "User Management", 
     icon: <FaRegUser size={20} />, 
     path: "/admin/management" 
+},
+  { title: "Team Management", 
+    icon: <RiTeamLine size={20} />, 
+    path: "/admin/team" 
 },
   {
     title: "Analytics",

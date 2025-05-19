@@ -34,13 +34,13 @@ export function LoginModal({ open, onOpenChange, openSignUpModal }: LoginDialogP
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221]">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-2xl font-bold text-[#E328AF] text-center font-boogaloo">
+                    <AlertDialogTitle className="text-2xl font-bold text-[#E328AF] text-center font-pong tracking-wider">
                         Login
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-center">
                         <div className="space-y-4">
                             <div className="relative">
-                                <Label htmlFor="email" className="font-boogaloo text-base text-black dark:text-white">Email</Label>
+                                <Label htmlFor="email" className="font-pong text-base text-black dark:text-white">Email</Label>
                                 <div className="relative">
                                     <AiOutlineMail size={15} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                                     <Input
@@ -51,7 +51,7 @@ export function LoginModal({ open, onOpenChange, openSignUpModal }: LoginDialogP
                                 </div>
                             </div>
                             <div className="relative">
-                                <Label htmlFor="password" className="font-boogaloo text-base text-black dark:text-white">Password</Label>
+                                <Label htmlFor="password" className="font-pong text-base text-black dark:text-white">Password</Label>
                                 <div className="relative">
                                     <button
                                         type="button"
@@ -72,7 +72,7 @@ export function LoginModal({ open, onOpenChange, openSignUpModal }: LoginDialogP
                         </div>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogAction onClick={handleLogin} className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo">
+                <AlertDialogAction onClick={handleLogin} className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-pong">
                     Login
                 </AlertDialogAction>
                 <p className="text-sm text-center text-black dark:text-white font-pincuk">

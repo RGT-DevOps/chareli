@@ -35,14 +35,14 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221]">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-2xl font-bold text-[#E328AF] text-center font-boogaloo">
+                    <AlertDialogTitle className="text-2xl font-bold text-[#E328AF] text-center font-pong">
                         Sign Up
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-center">
                         <div className="space-y-1">
                             <div className="flex space-x-4">
                                 <div className="flex-1 relative">
-                                    <Label htmlFor="firstName" className="font-boogaloo text-base text-black dark:text-white">First Name</Label>
+                                    <Label htmlFor="firstName" className="font-pong text-base text-black dark:text-white">First Name</Label>
                                     <div className="relative">
                                         <TbUser size={15} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                                         <Input
@@ -53,7 +53,7 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
                                     </div>
                                 </div>
                                 <div className="flex-1 relative">
-                                    <Label htmlFor="lastName" className="font-boogaloo text-base text-black dark:text-white">Last Name</Label>
+                                    <Label htmlFor="lastName" className="font-pong text-base text-black dark:text-white">Last Name</Label>
                                     <div className="relative">
                                         <TbUser size={15} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                                         <Input
@@ -65,7 +65,7 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
                                 </div>
                             </div>
                             <div className="relative">
-                                <Label htmlFor="email" className="font-boogaloo text-base text-black dark:text-white">E-Mail</Label>
+                                <Label htmlFor="email" className="font-pong text-base text-black dark:text-white">E-Mail</Label>
                                 <div className="relative">
                                     <AiOutlineMail size={15} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
                                     <Input
@@ -76,7 +76,7 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
                                 </div>
                             </div>
                             <div className="relative">
-                                <Label htmlFor="phoneNumber" className="font-boogaloo text-base text-black dark:text-white">Phone Number</Label>
+                                <Label htmlFor="phoneNumber" className="font-pong text-base text-black dark:text-white">Phone Number</Label>
                                 <div className="flex gap-2">
                                     <div className="w-[90px]">
                                         <CountryDropdown
@@ -98,7 +98,7 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
                                 </div>
                             </div>
                             <div className="relative">
-                                <Label htmlFor="password" className="font-boogaloo text-base text-black dark:text-white">Password</Label>
+                                <Label htmlFor="password" className="font-pong text-base text-black dark:text-white">Password</Label>
                                 <div className="relative">
                                     <button
                                         type="button"
@@ -117,7 +117,7 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
                                 </div>
                             </div>
                             <div className="relative">
-                                <Label htmlFor="confirmPassword" className="font-boogaloo text-base text-black dark:text-white">Confirm Password</Label>
+                                <Label htmlFor="confirmPassword" className="font-pong text-base text-black dark:text-white">Confirm Password</Label>
                                 <div className="relative">
                                     <button
                                         type="button"
@@ -138,21 +138,21 @@ export function SignUpModal({ open, onOpenChange, openLoginModal }: SignUpDialog
                             <div className="my-5 flex flex-col gap-3">
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="ageConfirm" />
-                                    <Label htmlFor="ageConfirm" className="font-boogaloo text-black dark:text-white">Confirm age 18+</Label>
+                                    <Label htmlFor="ageConfirm" className="font-pong text-black dark:text-white">Confirm age 18+</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="terms" />
-                                    <Label htmlFor="terms" className="font-boogaloo text-black dark:text-white">Accept Terms of Use</Label>
+                                    <Label htmlFor="terms" className="font-pong text-black dark:text-white">Accept Terms of Use</Label>
                                 </div>
                             </div>
                         </div>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 {/* <AlertDialogFooter className="flex-col space-y-2"> */}
-                <AlertDialogAction className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo">
+                <AlertDialogAction className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-pong">
                     Sign Up
                 </AlertDialogAction>
-                <p className="text-sm text-center text-black dark:text-white font-boogaloo">
+                <p className="text-sm text-center text-black dark:text-white font-pong">
                     Already have an account?{' '}
                     <span className="underline text-[#C026D3] cursor-pointer" onClick={openLoginModal}>Login</span>
                 </p>

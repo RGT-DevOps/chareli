@@ -31,7 +31,7 @@ export function OTPPlatformModal({ open, onOpenChange }: OTPPlatformDialogProps)
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221] rounded-lg p-6">
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-2xl font-bold dark:text-white text-black font-boogaloo">
+                    <AlertDialogTitle className="text-2xl font-bold dark:text-white text-black font-pong">
                         OTP Verification
                     </AlertDialogTitle>
                     <AlertDialogDescription className=" dark:text-white text-black font-pincuk text-xs mt-1">
@@ -48,7 +48,7 @@ export function OTPPlatformModal({ open, onOpenChange }: OTPPlatformDialogProps)
                             />
                             <Label
                                 htmlFor="email"
-                                className="font-boogaloo text-base dark:text-white text-black text-center"
+                                className="font-pong text-base dark:text-white text-black text-center"
                             >
                                 Claire***@gmail.com
                             </Label>
@@ -61,7 +61,7 @@ export function OTPPlatformModal({ open, onOpenChange }: OTPPlatformDialogProps)
                             />
                             <Label
                                 htmlFor="phone"
-                                className="font-boogaloo text-base dark:text-white text-black text-center"
+                                className="font-pong text-base dark:text-white text-black text-center"
                             >
                                 +479008****98
                             </Label>
@@ -69,7 +69,7 @@ export function OTPPlatformModal({ open, onOpenChange }: OTPPlatformDialogProps)
                     </RadioGroup>
                 </div>
 
-                <Button onClick={handleSendOTP} className="w-full mt-6 bg-[#E328AF] hover:bg-[#C026D3] text-white font-boogaloo py-3 rounded-md text-lg">
+                <Button onClick={handleSendOTP} className="w-full mt-6 bg-[#E328AF] hover:bg-[#C026D3] text-white font-pong py-3 rounded-md text-lg">
                     Next
                 </Button>
 

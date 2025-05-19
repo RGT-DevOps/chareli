@@ -5,8 +5,6 @@ import { IoHourglassOutline } from "react-icons/io5";
 import { PopUpSheet } from "../../../components/single/PopUp-Sheet";
 
 
-// import sessionIcon from '../../../assets/session-icon.svg'
-// import users from '../../../assets/users.svg'
 import click from '../../../assets/click.svg'
 import { HiOutlineUsers } from "react-icons/hi2";
 import { TbCalendarClock } from "react-icons/tb";
@@ -16,6 +14,7 @@ import { Button } from "../../../components/ui/button";
 import  PieChart from "../../../components/charts/piechart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
 import React, { useState } from "react";
+import { AcceptInvitationModal } from "../../../components/modals/AdminModals/AcceptInvitationModal";
 // import LineChart from "../../../components/charts/LineChart";
 
 const cardData = [
@@ -94,6 +93,9 @@ const cardData = [
 ];
 
 export default function Home() {
+
+  const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
+
   // Mock data for 20 games
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const allGames = Array.from({ length: 20 }, (_, _idx) => ({
@@ -117,6 +119,10 @@ export default function Home() {
 
   const gamesToShow = getGamesForPage(currentPage);
   return (
+    <div>
+      <div className="px-6 pb-3">
+        <Button className="bg-[#D946EF] text-white" onClick={() => setIsAcceptInviteOpen(true)}>Invite</Button>
+      </div>
     <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-6">
       {cardData.map((card, idx) => (
         <div
@@ -125,7 +131,7 @@ export default function Home() {
         >
           <div className="tracking-widest">
 
-        {/* left */}
+        {/* top */}
             <div className="flex justify-between mb-6">
             <div className="">
             <span className="font-semibold text-lg text-[#64748A] dark:text-white">{card.title}</span>
@@ -135,8 +141,8 @@ export default function Home() {
             <span className="text-3xl text-[#64748A] dark:text-white">{card.icon}</span>
             </div>
 
-        {/* right */}
-            <div className="flex justify-between items-center">
+        {/* bottom */}
+            <div className="flex md:flex-1 justify-between items-center pr-2">
             <span
               className={`${
                 card.changeType === "up" ? "text-white bg-[#D946EF] pl-2 pr-2 pt-1 pb-1 rounded-lg dark:bg-[#64748A]" : "text-white bg-[#D946EF] dark:bg-[#64748A] pl-2 pr-2 pt-1 pb-1 rounded-lg"
@@ -347,9 +353,9 @@ export default function Home() {
           </div>
         </Card>
       </div>
-
-      
-
     </div>
+
+    <AcceptInvitationModal open={isAcceptInviteOpen} onOpenChange={setIsAcceptInviteOpen} isExistingUser={true} />
+  </div>
   );
 }

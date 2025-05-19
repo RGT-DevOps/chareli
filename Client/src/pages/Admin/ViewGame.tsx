@@ -71,7 +71,7 @@ Whether you're going solo in campaign mode or teaming up in multiplayer deathmat
             </Button>
             <Button
               className="flex items-center justify-center gap-2 w-full bg-[#D946EF] text-white tracking-wider hover:bg-[#c026d3]"
-              onClick={() => setShowDisableModal(true)} // OPEN DISABLE MODAL
+              onClick={() => setShowDisableModal(true)}
             >
               {game.status === "Active" ? "Disable" : "Enable"} <IoEyeOutline />
             </Button>
@@ -95,13 +95,14 @@ Whether you're going solo in campaign mode or teaming up in multiplayer deathmat
             </div>
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h4 className="font-bold mb-1 text-[#475568] dark:text-white">Game Code</h4>
+              <a href={game.code} className="text-[#475568] text-sm underline dark:text-white tracking-wider font-pincuk" target="_blank" rel="noopener noreferrer">{game.code}</a>
             </div>
           </div>
           <div>
             <p className="text-[#18192b] text-xl border-b dark:text-white">Game Metrics</p>
           </div>
-              <a href={game.code} className="text-[#475568] text-sm underline dark:text-white tracking-wider font-pincuk" target="_blank" rel="noopener noreferrer">{game.code}</a>
           <div className="flex flex-col md:flex-row gap-4">
+            
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
               <div className="bg-[#F0ABFC] rounded-full px-3 py-3 items-center">
               <FiClock className='w-8 h-8  text-white dark:text-[#OF1621]' />
@@ -129,6 +130,7 @@ Whether you're going solo in campaign mode or teaming up in multiplayer deathmat
               <span className="text-sm text-[#475568] font-sans dark:text-white">{game.metrics.sessions}</span>
              </div>
             </div>
+
           </div>
         </div>
       </div>

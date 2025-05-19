@@ -7,7 +7,7 @@ function Home() {
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(true);
 
   return (
-    <div className='font-boogaloo'>
+    <div className='font-pong'>
       <PopularSection />
       <AllGamesSection />
       <WelcomeModal
