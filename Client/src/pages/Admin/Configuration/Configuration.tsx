@@ -59,7 +59,7 @@ export default function Configuration() {
               />
               <Label htmlFor="first-name" className="ml-2 text-lg">First Name</Label>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center"> 
               <Checkbox
                 checked={lastName}
                 onCheckedChange={(checked) => setLastName(Boolean(checked))}

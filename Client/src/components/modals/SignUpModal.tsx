@@ -25,6 +25,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { TbUser } from "react-icons/tb";
 import { AiOutlineMail } from "react-icons/ai";
 
+
 // Validation schema
 const validationSchema = Yup.object({
   firstName: Yup.string().required("First name is required"),
