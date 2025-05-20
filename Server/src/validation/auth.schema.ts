@@ -44,8 +44,8 @@ export const registerFromInvitationSchema = yup.object({
     .matches(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
     .required('Password is required'),
   phoneNumber: yup.string().required('Phone number is required'),
-  isAdult: yup.boolean().default(false),
-  hasAcceptedTerms: yup.boolean().required('You must accept the terms and conditions')
+  // isAdult: yup.boolean().default(false),
+  // hasAcceptedTerms: yup.boolean().required('You must accept the terms and conditions')
 });
 
 /**
