@@ -427,8 +427,10 @@ export const resetPasswordFromInvitation = async (
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Update the user's password
+    // Update the user's password and role
     user.password = hashedPassword;
+    user.role = invitation.role;
+    user.roleId = invitation.roleId;
     await userRepository.save(user);
 
     // Mark invitation as accepted
