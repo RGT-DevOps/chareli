@@ -390,18 +390,10 @@ export const createGame = async (
         'thumbnails'
       );
 
-      // Upload all game files to S3
-      logger.info('Uploading game files to S3...');
-      for (const extractedFile of processedZip.files) {
-        // Use the full path including game ID
-        const filePath = `${gameFolderId}/${extractedFile.relativePath.replace(/\\/g, '/')}`;
-        await s3Service.uploadFile(
-          extractedFile.buffer,
-          filePath,
-          extractedFile.isIndex ? 'text/html' : 'application/octet-stream',
-          'games'
-        );
-      }
+      // Upload game folder to S3
+      logger.info('Uploading game folder to S3...');
+      const s3GamePath = `games/${gameFolderId}`;
+      await s3Service.uploadDirectory(processedZip.extractedPath, s3GamePath);
 
       // Create file records in the database using transaction
       logger.info('Creating file records in the database...');
@@ -411,9 +403,13 @@ export const createGame = async (
         type: 'thumbnail'
       });
 
+      if (!processedZip.indexPath) {
+        throw new ApiError(400, 'No index.html found in the zip file');
+      }
+
       const gameFileRecord = fileRepository.create({
-        s3Key: `games/${gameFolderId}/${processedZip.indexPath}`,
-        s3Url: `${s3Service.getBaseUrl()}/games/${gameFolderId}/${processedZip.indexPath}`,
+        s3Key: `${s3GamePath}/${processedZip.indexPath.replace(/\\/g, '/')}`,
+        s3Url: `${s3Service.getBaseUrl()}/${s3GamePath}/`,
         type: 'game_file'
       });
 
@@ -591,24 +587,20 @@ export const updateGame = async (
       // Generate unique game folder name
       const gameFolderId = uuidv4();
 
-      // Upload all game files to S3
-      logger.info('Uploading game files to S3...');
-      for (const extractedFile of processedZip.files) {
-        // Use the full path including game ID
-        const filePath = `${gameFolderId}/${extractedFile.relativePath.replace(/\\/g, '/')}`;
-        await s3Service.uploadFile(
-          extractedFile.buffer,
-          filePath,
-          extractedFile.isIndex ? 'text/html' : 'application/octet-stream',
-          'games'
-        );
-      }
+      // Upload game folder to S3
+      logger.info('Uploading game folder to S3...');
+      const s3GamePath = `games/${gameFolderId}`;
+      await s3Service.uploadDirectory(processedZip.extractedPath, s3GamePath);
 
       // Create file record for the index.html
       logger.info('Creating new game file record...');
+      if (!processedZip.indexPath) {
+        throw new ApiError(400, 'No index.html found in the zip file');
+      }
+
       const gameFileRecord = fileRepository.create({
-        s3Key: `games/${gameFolderId}/${processedZip.indexPath}`,
-        s3Url: `${s3Service.getBaseUrl()}/games/${gameFolderId}/${processedZip.indexPath}`,
+        s3Key: `${s3GamePath}/${processedZip.indexPath.replace(/\\/g, '/')}`,
+        s3Url: `${s3Service.getBaseUrl()}/${s3GamePath}/`,
         type: 'game_file'
       });
       

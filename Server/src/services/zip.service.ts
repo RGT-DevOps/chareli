@@ -5,128 +5,95 @@ import AdmZip from 'adm-zip';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger';
 
-export interface ExtractedFile {
-  relativePath: string;
-  buffer: Buffer;
-  isIndex: boolean;
-}
-
 export interface ProcessedZip {
-  files: ExtractedFile[];
+  extractedPath: string;
   indexPath?: string;
   error?: string;
 }
 
 export class ZipService {
-  private readonly tempDir: string;
-
-  constructor() {
-    this.tempDir = path.join(os.tmpdir(), 'game-uploads');
-  }
-
   /**
    * Process a zip file containing game files
    * @param zipBuffer The zip file as a buffer
-   * @returns ProcessedZip object containing extracted files and index path
+   * @returns ProcessedZip object containing extracted folder path and index path
    */
   async processGameZip(zipBuffer: Buffer): Promise<ProcessedZip> {
-    const tempPath = await this.saveTempFile(zipBuffer);
+    // Create a unique temp directory for this upload
+    const tempDir = path.join(os.tmpdir(), 'game-uploads', uuidv4());
     
     try {
-      // Extract and validate zip contents
-      const zip = new AdmZip(tempPath);
-      const zipEntries = zip.getEntries();
+      // Extract zip maintaining folder structure
+      const zip = new AdmZip(zipBuffer);
+      await fs.mkdir(tempDir, { recursive: true });
+      zip.extractAllTo(tempDir, true);
       
-      const files: ExtractedFile[] = [];
-      let indexPath: string | undefined;
-      
-      // First, collect all directories to ensure they exist
-      const directories = new Set<string>();
-      for (const entry of zipEntries) {
-        if (entry.isDirectory) {
-          directories.add(entry.entryName);
-        } else {
-          // Add parent directories of files too
-          const dir = path.dirname(entry.entryName);
-          if (dir !== '.') {
-            directories.add(dir + '/');
-          }
-        }
-      }
-
-      // Then process files, maintaining folder structure
-      for (const entry of zipEntries) {
-        if (entry.isDirectory) {
-          continue;
-        }
-        
-        // Normalize path to use forward slashes
-        const relativePath = entry.entryName.replace(/\\/g, '/');
-        const isIndex = relativePath.toLowerCase().endsWith('index.html');
-        
-        // Store file info with full path structure
-        files.push({
-          relativePath,
-          buffer: entry.getData(),
-          isIndex
-        });
-        
-        // Track index.html location
-        if (isIndex) {
-          indexPath = relativePath;
-        }
-      }
-      
-      // Validate zip contents
+      // Find index.html recursively
+      const indexPath = await this.findIndexHtml(tempDir);
       if (!indexPath) {
         throw new Error('No index.html file found in the zip');
       }
       
-      // Cleanup temp file
-      await this.cleanup(tempPath);
-      
       return {
-        files,
-        indexPath
+        extractedPath: tempDir,
+        indexPath: path.relative(tempDir, indexPath)
       };
     } catch (error: any) {
       // Cleanup on error
-      await this.cleanup(tempPath);
+      await this.cleanup(tempDir);
       
       const errorMessage = error.message || 'Unknown error processing zip file';
       logger.error('Error processing zip file:', errorMessage);
       return {
-        files: [],
-        error: error.message
+        extractedPath: '',
+        error: errorMessage
       };
     }
   }
-  
+
   /**
-   * Save buffer to temporary file
-   * @param buffer File buffer to save
-   * @returns Path to temporary file
+   * Find index.html file recursively in directory
+   * @param dir Directory to search in
+   * @returns Full path to index.html if found, undefined otherwise
    */
-  private async saveTempFile(buffer: Buffer): Promise<string> {
-    // Ensure temp directory exists
-    await fs.mkdir(this.tempDir, { recursive: true });
+  private async findIndexHtml(dir: string): Promise<string | undefined> {
+    const files = await fs.readdir(dir, { withFileTypes: true });
     
-    const tempPath = path.join(this.tempDir, `${uuidv4()}.zip`);
-    await fs.writeFile(tempPath, buffer);
+    for (const file of files) {
+      const fullPath = path.join(dir, file.name);
+      
+      if (file.isDirectory()) {
+        const found = await this.findIndexHtml(fullPath);
+        if (found) return found;
+      } else if (file.name.toLowerCase() === 'index.html') {
+        return fullPath;
+      }
+    }
     
-    return tempPath;
+    return undefined;
   }
+  
   
   /**
    * Clean up temporary file
    * @param filePath Path to file to delete
    */
-  private async cleanup(filePath: string): Promise<void> {
+  private async cleanup(dirPath: string): Promise<void> {
     try {
-      await fs.unlink(filePath);
+      const files = await fs.readdir(dirPath, { withFileTypes: true });
+      
+      for (const file of files) {
+        const fullPath = path.join(dirPath, file.name);
+        if (file.isDirectory()) {
+          await this.cleanup(fullPath);
+        } else {
+          await fs.unlink(fullPath);
+        }
+      }
+      
+      await fs.rmdir(dirPath);
     } catch (error: any) {
-      const errorMessage = error.message || 'Unknown error cleaning up temp file';
-      logger.warn('Error cleaning up temp file:', errorMessage);
+      const errorMessage = error.message || 'Unknown error cleaning up temp directory';
+      logger.warn('Error cleaning up temp directory:', errorMessage);
     }
   }
 }
