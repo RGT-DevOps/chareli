@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { useCreateUser } from "../../backend/user.service";
+import { useTrackSignupClick } from "../../backend/signup.analytics.service";
 import { toast } from "sonner";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FormikHelpers, FieldProps } from "formik";
@@ -75,9 +76,13 @@ export function SignUpModal({
     setShowConfirmPassword(!showConfirmPassword);
 
   const createUser = useCreateUser();
+  const { mutate: trackSignup } = useTrackSignupClick();
 
   const handleSignUp = async (values: typeof initialValues, actions: FormikHelpers<typeof initialValues>) => {
     try {
+      // Track the final signup button click
+      trackSignup({ type: 'signup-modal' });
+
       await createUser.mutateAsync({
         firstName: values.firstName,
         lastName: values.lastName,

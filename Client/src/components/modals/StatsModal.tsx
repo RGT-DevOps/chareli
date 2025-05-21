@@ -4,12 +4,56 @@ import { FiClock } from "react-icons/fi";
 import { LuGamepad2 } from "react-icons/lu";
 import statImg from '../../assets/stat-img.svg';
 
+const formatRelativeTime = (date: Date) => {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return "Just now";
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  } else {
+    const days = Math.floor(diffInSeconds / 86400);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
+};
+
 interface StatsModalProps {
   open: boolean;
   onClose: () => void;
 }
 
 export function StatsModal({ open, onClose }: StatsModalProps) {
+  // Mock data
+  const mockStats = {
+    totalMinutes: 120,
+    totalPlays: 45,
+    gamesPlayed: [
+      {
+        gameId: '1',
+        title: 'War Shooting',
+        thumbnailUrl: null,
+        totalMinutes: 60,
+        lastPlayed: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
+      },
+      {
+        gameId: '2',
+        title: 'Temple Run',
+        thumbnailUrl: null,
+        totalMinutes: 45,
+        lastPlayed: new Date(Date.now() - 1000 * 60 * 60) // 1 hour ago
+      }
+    ]
+  };
+
+  const totalMinutes = mockStats.totalMinutes;
+  const totalPlays = mockStats.totalPlays;
+  const gamesPlayed = mockStats.gamesPlayed;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <CustomDialogContent className="bg-white dark:bg-[#18192b] rounded-2xl shadow-lg p-8 max-w-[90vw] w-[800px] border-none">
@@ -36,7 +80,9 @@ export function StatsModal({ open, onClose }: StatsModalProps) {
               </div>
               <div className="ml-4">
                 <div className="dark:text-white text-[#0F1621] font-bold text-lg">Minutes Played</div>
-                <div className="dark:text-white text-[#0F1621] text-xl">1,300 minutes</div>
+                <div className="dark:text-white text-[#0F1621] text-xl">
+                {`${totalMinutes} minutes`}
+                </div>
               </div>
             </div>
             <div className="flex items-center bg-[#F1F5F9] dark:bg-[#121C2D] rounded-xl p-6 w-full">
@@ -46,7 +92,9 @@ export function StatsModal({ open, onClose }: StatsModalProps) {
               <div className="flex flex-col ml-6">
               <span className="dark:text-white text-[#0F1621] font-bold text-lg tracking-widest mb-2">Total Plays</span>
               <div className=''>
-              <span className="dark:text-white text-[#0F1621] text-xl font-thin mt-1 font-sans">500</span>
+              <span className="dark:text-white text-[#0F1621] text-xl font-thin mt-1 font-sans">
+                {totalPlays}
+              </span>
               </div>
               </div>
             </div>
@@ -62,34 +110,31 @@ export function StatsModal({ open, onClose }: StatsModalProps) {
               <div className="text-xl font-bold dark:text-white text-[#0F1621]">Last Played</div>
             </div>
             
-            <div className="divide-y divide-[#35364d]">
-              <div className="py-4 grid grid-cols-3 gap-4 items-center">
-                <div className="flex items-center">
-                  <img src={statImg} alt="Game" className="w-12 h-12 rounded-lg mr-3" />
-                  <span className="font-bold">War Shooting</span>
-                </div>
-                <div className="dark:text-[#bdbdbd] text-[#334154]">289 minutes</div>
-                <div className="dark:text-[#bdbdbd] text-[#334154]">1 minute ago</div>
+            {gamesPlayed.length === 0 ? (
+              <div className="text-center py-8 dark:text-[#bdbdbd] text-[#334154]">No games played yet</div>
+            ) : (
+              <div className="divide-y divide-[#35364d]">
+                {gamesPlayed.map((game) => (
+                  <div key={game.gameId} className="py-4 grid grid-cols-3 gap-4 items-center">
+                    <div className="flex items-center">
+                      <img 
+                        src={game.thumbnailUrl || statImg} 
+                        alt={game.title || "Unknown Game"} 
+                        className="w-12 h-12 rounded-lg mr-3" 
+                        onError={(e) => {
+                          e.currentTarget.src = statImg;
+                        }}
+                      />
+                      <span className="font-bold">{game.title || "None"}</span>
+                    </div>
+                    <div className="dark:text-[#bdbdbd] text-[#334154]">{game.totalMinutes || 0} minutes</div>
+                    <div className="dark:text-[#bdbdbd] text-[#334154]">
+                      {game.lastPlayed ? formatRelativeTime(new Date(game.lastPlayed)) : "Never played"}
+                    </div>
+                  </div>
+                ))}
               </div>
-              
-              <div className="py-4 grid grid-cols-3 gap-4 items-center">
-                <div className="flex items-center">
-                  <img src={statImg} alt="Game" className="w-12 h-12 rounded-lg mr-3" />
-                  <span className="font-bold">War Shooting</span>
-                </div>
-                <div className="dark:text-[#bdbdbd] text-[#334154]">290 minutes</div>
-                <div className="dark:text-[#bdbdbd] text-[#334154]">5 minutes ago</div>
-              </div>
-              
-              <div className="py-4 grid grid-cols-3 gap-4 items-center">
-                <div className="flex items-center">
-                  <img src={statImg} alt="Game" className="w-12 h-12 rounded-lg mr-3" />
-                  <span className="font-bold">War Shooting</span>
-                </div>
-                <div className="dark:text-[#bdbdbd] text-[#334154]">300 minutes</div>
-                <div className="dark:text-[#bdbdbd] text-[#334154]">20 minutes ago</div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </CustomDialogContent>
