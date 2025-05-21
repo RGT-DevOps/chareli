@@ -223,36 +223,19 @@ export const createFile = async (
       }
 
       const gameId = uuidv4(); // Generate unique ID for this game
-      const uploadedFiles = [];
+      
+      // Upload entire game folder to S3
+      const s3GamePath = `games/${gameId}`;
+      await s3Service.uploadDirectory(processedZip.extractedPath, s3GamePath);
 
-      // Upload each file from the zip
-      for (const extractedFile of processedZip.files) {
-        const isIndex = extractedFile.isIndex;
-        const filePath = path.join(gameId, extractedFile.relativePath);
-        
-        // Upload to S3
-        const uploadResult = await s3Service.uploadFile(
-          extractedFile.buffer,
-          extractedFile.relativePath,
-          'text/html', // For HTML files
-          'games'
-        );
+      // Create file record for the index.html
+      fileRecord = fileRepository.create({
+        s3Key: `${s3GamePath}/${processedZip.indexPath}`,
+        s3Url: `${s3Service.getBaseUrl()}/${s3GamePath}/`,
+        type: 'game_file'
+      });
 
-        // Create file record for each file
-        const fileRecord = fileRepository.create({
-          s3Key: uploadResult.key,
-          s3Url: uploadResult.url,
-          type: 'game_content'
-        });
-
-        uploadedFiles.push(fileRecord);
-      }
-
-      // Save all file records
-      await fileRepository.save(uploadedFiles);
-
-      // Return the index.html file record
-      fileRecord = uploadedFiles[0];
+      await fileRepository.save(fileRecord);
     } else {
       // Handle normal file upload (e.g., thumbnail)
       logger.info(`Uploading file to S3: ${file.originalname}`);
