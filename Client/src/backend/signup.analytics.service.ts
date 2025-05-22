@@ -50,8 +50,11 @@ export const useSignupAnalyticsData = (days?: number) => {
         ? `${BackendRoute.SIGNUP_ANALYTICS_DATA}?days=${days}`
         : BackendRoute.SIGNUP_ANALYTICS_DATA;
       const response = await backendService.get(url);
-      return response.data.data;
+      
+      const analyticsData = response.data;
+      return analyticsData;
     },
     refetchOnWindowFocus: false,
+    retry: 3
   });
 };

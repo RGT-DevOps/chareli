@@ -119,10 +119,19 @@ export const useDeleteAnalytics = () => {
 // Admin Dashboard Types
 interface DashboardAnalytics {
   totalUsers: number;
+  totalRegisteredUsers: number;
   activeUsers: number;
+  inactiveUsers: number;
   totalGames: number;
-  totalPlaytime: number;
-  averageScore: number;
+  totalSessions: number;
+  totalTimePlayed: number;
+  mostPopularGame: {
+    id: string;
+    title: string;
+    thumbnailUrl: string | null;
+    sessionCount: number;
+  } | null;
+  avgSessionDuration: number;
 }
 
 interface UserAnalytics {
