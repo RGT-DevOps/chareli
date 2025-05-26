@@ -108,7 +108,7 @@ interface DashboardAnalytics {
   avgSessionDuration: number;
 }
 
-interface UserAnalytics {
+export interface UserAnalytics {
   id: string;
   firstName: string;
   lastName: string;

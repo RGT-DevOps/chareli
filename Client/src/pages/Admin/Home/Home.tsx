@@ -1,4 +1,3 @@
-import { PopUpSheet } from "../../../components/single/PopUp-Sheet";
 import click from '../../../assets/click.svg'
 
 import { Card } from "../../../components/ui/card";
@@ -7,6 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { PopUpSheet } from "../../../components/single/PopUp-Sheet";
 import { AcceptInvitationModal } from "../../../components/modals/AdminModals/AcceptInvitationModal";
 import StatsCard from "./StatsCard";
+import PieChart from '../../../components/charts/piechart';
+import { useState, useMemo } from 'react';
+import { useGamesAnalytics, useUsersAnalytics, type GameAnalytics, type UserAnalytics } from '../../../backend/analytics.service';
+import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
+import { formatTime } from '../../../utils/main';
 
 export default function Home() {
 
@@ -135,7 +139,7 @@ export default function Home() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <img
-            src={game.thumbnailFile?.url || gameImg}
+            src={game.thumbnailFile?.url}
                             alt={game.title}
                             className="w-12 h-12 rounded-lg object-cover"
                           />
