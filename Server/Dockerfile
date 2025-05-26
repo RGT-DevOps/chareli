@@ -1,4 +1,4 @@
-# Use Node.js 18 as the base image (LTS version)
+# Use Node.js 22 as the base image (LTS version)
 FROM node:22-alpine AS builder
 
 # Set working directory
@@ -14,7 +14,7 @@ COPY package-lock.json* ./
 
 # Install dependencies
 # Use npm install instead of npm ci since package-lock.json might not exist
-RUN npm install
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -40,8 +40,11 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/ormconfig.json ./
 
-# Add a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
+# Copy healthcheck script
+COPY healthcheck.sh /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/healthcheck.sh && \
+  addgroup -S appgroup && adduser -S appuser -G appgroup && chown -R appuser:appgroup /app
+
 USER appuser
 
 # Create directories for logs and migrations with proper permissions
@@ -49,10 +52,6 @@ RUN mkdir -p logs /app/dist/migrations && chown -R appuser:appgroup logs /app/di
 
 # Expose the port the app runs on
 EXPOSE 5000
-
-# Copy healthcheck script
-COPY healthcheck.sh /usr/local/bin/healthcheck.sh
-RUN chmod +x /usr/local/bin/healthcheck.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
