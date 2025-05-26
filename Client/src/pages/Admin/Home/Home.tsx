@@ -88,7 +88,7 @@ export default function Home() {
         </div>
 
         {/* insights */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
             <div className="justify-between items-center flex p-3">
               <p className="text-3xl">Click insights</p>
@@ -111,7 +111,7 @@ export default function Home() {
         </div>
 
         {/* most played */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
 
             <div className="flex justify-between p-4 text-3xl">
@@ -181,7 +181,7 @@ export default function Home() {
       </div> */}
 
         {/* recent */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
             <div className="flex justify-between p-4 text-3xl">
               <p className="text-3xl dark:text-[#D946EF]">Recent User Activity</p>
