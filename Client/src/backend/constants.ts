@@ -36,7 +36,7 @@ export const BackendRoute = {
   ADMIN_USERS_ANALYTICS: '/api/admin/users-analytics',
   ADMIN_USER_ANALYTICS: '/api/admin/users/:id/analytics',
   ADMIN_GAMES_ANALYTICS: '/api/admin/games-analytics',
-  ADMIN_GAME_ANALYTICS: '/api/admin/games/:id/analytics',
+  ADMIN_GAME_ANALYTICS: '/api/admin/games/:id/analytics', 
   ADMIN_USER_ACTIVITY: '/api/admin/user-activity-log',
   ADMIN_GAMES_ANALYTICS_POPULARITY: '/api/admin/games-popularity',
   ADMIN_CHECK_INACTIVE: '/api/admin/check-inactive-users',
