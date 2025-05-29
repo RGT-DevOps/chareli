@@ -25,9 +25,7 @@ export default function GamePlay() {
 
     console.log(isSignUpModalOpen)
 
-    console.log("game file", game?.gameFile)
-    console.log("thumbnail file", game?.thumbnailFile)
-
+    console.log("game file", game)
 
     const [expanded, setExpanded] = useState(false);
     const [isGameLoading, setIsGameLoading] = useState(true);

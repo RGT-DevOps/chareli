@@ -9,6 +9,7 @@ import { authService } from '../services/auth.service';
 import { OtpType } from '../entities/Otp';
 import { Not, IsNull } from 'typeorm';
 import { s3Service } from '../services/s3.service';
+import { getCountryFromIP } from './signupAnalyticsController';
 
 const userRepository = AppDataSource.getRepository(User);
 const roleRepository = AppDataSource.getRepository(Role);
@@ -275,6 +276,15 @@ export const createUser = async (
       return next(ApiError.badRequest('All fields are required'));
     }
 
+    // Get IP address
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddress = Array.isArray(forwarded)
+      ? forwarded[0]
+      : (forwarded || req.socket.remoteAddress || req.ip || '');
+
+    // Get country from IP
+    const country = await getCountryFromIP(ipAddress);
+
     // Check if user with email already exists
     const existingUser = await userRepository.findOne({
       where: { email },
@@ -308,7 +318,8 @@ export const createUser = async (
       isVerified: false,
       isActive: true,
       isAdult: isAdult || false,
-      hasAcceptedTerms
+      hasAcceptedTerms,
+      country: country || undefined
     });
 
     await userRepository.save(user);
