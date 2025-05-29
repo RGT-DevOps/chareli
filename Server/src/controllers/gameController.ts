@@ -313,9 +313,23 @@ export const getGameById = async (
           id: Not(id), // Exclude the current game
           status: GameStatus.ACTIVE
         },
-        relations: ['thumbnailFile'],
+        relations: ['thumbnailFile', 'gameFile'],
         take: 5, // Limit to 5 similar games
         order: { createdAt: 'DESC' } // Get the newest games first
+      });
+
+      // Transform similar games' file and thumbnail URLs to direct S3 URLs
+      similarGames.forEach(similarGame => {
+        if (similarGame.gameFile) {
+          const s3Key = similarGame.gameFile.s3Key;
+          const baseUrl = s3Service.getBaseUrl();
+          similarGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+        }
+        if (similarGame.thumbnailFile) {
+          const s3Key = similarGame.thumbnailFile.s3Key;
+          const baseUrl = s3Service.getBaseUrl();
+          similarGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+        }
       });
     }
       
