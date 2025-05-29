@@ -149,7 +149,7 @@ export default function GamePlay() {
                         )}
                         <iframe
                             id="gameIframe"
-                            src={`${game.gameFile.url}/index.html`}
+                            src={`${game.gameFile.url}`}
                             className={`w-full ${expanded ? 'h-screen' : 'h-[80vh]'} rounded-2xl`}
                             style={{ display: 'block', background: 'transparent' }}
                             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
