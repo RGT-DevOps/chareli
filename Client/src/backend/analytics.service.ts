@@ -114,6 +114,7 @@ export interface UserAnalytics {
   lastName: string;
   email: string;
   phoneNumber: string;
+  country: string;
   isActive: boolean;
   isVerified: boolean;
   lastLoggedIn: string;
@@ -167,7 +168,7 @@ interface UserActivityLog {
   username: string;
   action: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 /**
