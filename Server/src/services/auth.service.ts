@@ -137,12 +137,11 @@ export class AuthService {
 
   
   async login(identifier: string, password: string): Promise<User> {
-    // Try to find user by email or phone number
+    // Detect if it's email or phone based on format
+    const isEmail = identifier.includes('@');
+    
     const user = await userRepository.findOne({
-      where: [
-        { email: identifier },
-        { phoneNumber: identifier }
-      ],
+      where: isEmail ? { email: identifier } : { phoneNumber: identifier },
       select: ['id', 'email', 'password', 'firstName', 'lastName', 'phoneNumber', 'isActive', 'isVerified', 'roleId'],
       relations: ['role']
     });
@@ -153,7 +152,7 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid credentials');
     }
 
     // If user was inactive due to inactivity, reactivate them

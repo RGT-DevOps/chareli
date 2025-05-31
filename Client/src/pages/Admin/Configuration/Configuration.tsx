@@ -1,82 +1,193 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { Label } from '../../../components/ui/label';
+import { useCreateSystemConfig, useSystemConfigByKey } from '../../../backend/configuration.service';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+
+interface AuthMethodSettings {
+  enabled: boolean;
+  firstName: boolean;
+  lastName: boolean;
+}
+
+interface AuthSettings {
+  email: AuthMethodSettings;
+  sms: AuthMethodSettings;
+  both: {
+    enabled: boolean;
+  };
+}
 
 export default function Configuration() {
-  // State for each option
-  const [emailAuth, setEmailAuth] = useState<boolean>(true);
-  const [firstNameEmail, setFirstNameEmail] = useState<boolean>(true);
-  const [lastNameEmail, setLastNameEmail] = useState<boolean>(true);
-  const [smsAuth, setSmsAuth] = useState<boolean>(false);
-  const [firstNameSMS, setFirstNameSMS] = useState<boolean>(false);
-  const [lastNameSMS, setLastNameSMS] = useState<boolean>(false);
-  const [both, setBoth] = useState<boolean>(false);
-
-  // Handlers for mutually exclusive options
-  const handleEmailAuth = (checked: boolean) => {
-    setEmailAuth(checked);
-    if (checked) {
-      setSmsAuth(false);
-      setBoth(false);
+  const [authSettings, setAuthSettings] = useState<AuthSettings>({
+    email: {
+      enabled: true,
+      firstName: false,
+      lastName: false
+    },
+    sms: {
+      enabled: false,
+      firstName: false,
+      lastName: false
+    },
+    both: {
+      enabled: false
     }
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutateAsync: createConfig } = useCreateSystemConfig();
+  const { data: configData, isLoading: isLoadingConfig } = useSystemConfigByKey('authentication_settings');
+
+  // Load initial configuration
+  useEffect(() => {
+    if (configData?.value?.settings) {
+      setAuthSettings(configData.value.settings);
+    }
+  }, [configData]);
+
+  const handleEmailAuth = (checked: boolean) => {
+    setAuthSettings({
+      email: {
+        enabled: checked,
+        firstName: false,
+        lastName: false
+      },
+      sms: {
+        enabled: false,
+        firstName: false,
+        lastName: false
+      },
+      both: {
+        enabled: false
+      }
+    });
   };
 
   const handleSmsAuth = (checked: boolean) => {
-    setSmsAuth(checked);
-    if (checked) {
-      setEmailAuth(false);
-      setBoth(false);
-    }
+    setAuthSettings({
+      email: {
+        enabled: false,
+        firstName: false,
+        lastName: false
+      },
+      sms: {
+        enabled: checked,
+        firstName: false,
+        lastName: false
+      },
+      both: {
+        enabled: false
+      }
+    });
   };
 
   const handleBoth = (checked: boolean) => {
-    setBoth(checked);
-    if (checked) {
-      setEmailAuth(true);
-      setFirstNameEmail(true);
-      setLastNameEmail(true);
-      setSmsAuth(true);
-      setFirstNameSMS(true);
-      setLastNameSMS(true);
-    } else {
-      setEmailAuth(false);
-      setFirstNameEmail(false);
-      setLastNameEmail(false);
-      setSmsAuth(false);
-      setFirstNameSMS(false);
-      setLastNameSMS(false);
+    setAuthSettings({
+      email: {
+        enabled: false,
+        firstName: false,
+        lastName: false
+      },
+      sms: {
+        enabled: false,
+        firstName: false,
+        lastName: false
+      },
+      both: {
+        enabled: checked
+      }
+    });
+  };
+
+  const handleEmailFirstName = (checked: boolean) => {
+    setAuthSettings(prev => ({
+      ...prev,
+      email: {
+        ...prev.email,
+        firstName: checked
+      }
+    }));
+  };
+
+  const handleEmailLastName = (checked: boolean) => {
+    setAuthSettings(prev => ({
+      ...prev,
+      email: {
+        ...prev.email,
+        lastName: checked
+      }
+    }));
+  };
+
+  const handleSmsFirstName = (checked: boolean) => {
+    setAuthSettings(prev => ({
+      ...prev,
+      sms: {
+        ...prev.sms,
+        firstName: checked
+      }
+    }));
+  };
+
+  const handleSmsLastName = (checked: boolean) => {
+    setAuthSettings(prev => ({
+      ...prev,
+      sms: {
+        ...prev.sms,
+        lastName: checked
+      }
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSubmitting(true);
+    try {
+      await createConfig({
+        key: 'authentication_settings',
+        value: {
+          settings: authSettings
+        }
+      });
+      toast.success('Authentication settings saved successfully!');
+    } catch (error) {
+      toast.error('Failed to save authentication settings');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Save handler
-  const handleSave = () => {
-    alert('Configuration saved!');
-  };
-
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <div className="p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 relative">
+      {isLoadingConfig && (
+        <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+        </div>
+      )}
       <h1 className="text-3xl text-[#D946EF] mb-4">User Sign Up Configuration</h1>
       <div className="space-y-4">
         {/* Email Authentication Section */}
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
           <div className="flex items-center mb-2">
             <Checkbox
-              checked={emailAuth}
+              checked={authSettings.email.enabled}
               onCheckedChange={handleEmailAuth}
               id="email-auth"
               color="#D946EF"
+              disabled={authSettings.both.enabled}
             />
-            <Label htmlFor="email-auth" className="ml-2 text-lg font-medium text-black dark:text-white ">
+            <Label htmlFor="email-auth" className="ml-2 text-lg font-medium text-black dark:text-white">
               Email Authentication
             </Label>
           </div>
           <div className="ml-6 space-y-2">
             <div className="flex items-center">
               <Checkbox
-                checked={firstNameEmail}
-                onCheckedChange={(checked) => setFirstNameEmail(checked as boolean)}
+                checked={authSettings.email.firstName}
+                onCheckedChange={handleEmailFirstName}
                 id="first-name-email"
-                disabled={!emailAuth}
+                disabled={!authSettings.email.enabled || authSettings.both.enabled}
                 color="#D946EF"
               />
               <Label htmlFor="first-name-email" className="ml-2 text-base">
@@ -85,10 +196,10 @@ export default function Configuration() {
             </div>
             <div className="flex items-center">
               <Checkbox
-                checked={lastNameEmail}
-                onCheckedChange={(checked) => setLastNameEmail(checked as boolean)}
+                checked={authSettings.email.lastName}
+                onCheckedChange={handleEmailLastName}
                 id="last-name-email"
-                disabled={!emailAuth}
+                disabled={!authSettings.email.enabled || authSettings.both.enabled}
                 color="#D946EF"
               />
               <Label htmlFor="last-name-email" className="ml-2 text-base">
@@ -102,10 +213,11 @@ export default function Configuration() {
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
           <div className="flex items-center mb-2">
             <Checkbox
-              checked={smsAuth}
+              checked={authSettings.sms.enabled}
               onCheckedChange={handleSmsAuth}
               id="sms-auth"
               color="#D946EF"
+              disabled={authSettings.both.enabled}
             />
             <Label htmlFor="sms-auth" className="ml-2 text-lg font-medium text-black dark:text-white">
               SMS Authentication
@@ -114,10 +226,10 @@ export default function Configuration() {
           <div className="ml-6 space-y-2">
             <div className="flex items-center">
               <Checkbox
-                checked={firstNameSMS}
-                onCheckedChange={(checked) => setFirstNameSMS(checked as boolean)}
+                checked={authSettings.sms.firstName}
+                onCheckedChange={handleSmsFirstName}
                 id="first-name-sms"
-                disabled={!smsAuth}
+                disabled={!authSettings.sms.enabled || authSettings.both.enabled}
                 color="#D946EF"
               />
               <Label htmlFor="first-name-sms" className="ml-2 text-base">
@@ -126,10 +238,10 @@ export default function Configuration() {
             </div>
             <div className="flex items-center">
               <Checkbox
-                checked={lastNameSMS}
-                onCheckedChange={(checked) => setLastNameSMS(checked as boolean)}
+                checked={authSettings.sms.lastName}
+                onCheckedChange={handleSmsLastName}
                 id="last-name-sms"
-                disabled={!smsAuth}
+                disabled={!authSettings.sms.enabled || authSettings.both.enabled}
                 color="#D946EF"
               />
               <Label htmlFor="last-name-sms" className="ml-2 text-base">
@@ -143,7 +255,7 @@ export default function Configuration() {
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
           <div className="flex items-center">
             <Checkbox
-              checked={both}
+              checked={authSettings.both.enabled}
               onCheckedChange={handleBoth}
               id="both"
               color="#D946EF"
@@ -156,10 +268,18 @@ export default function Configuration() {
       </div>
       <div className="flex justify-end mt-4">
         <button
-          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           onClick={handleSave}
+          disabled={isSubmitting || isLoadingConfig}
         >
-          Save Configuration
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Configuration'
+          )}
         </button>
       </div>
     </div>
