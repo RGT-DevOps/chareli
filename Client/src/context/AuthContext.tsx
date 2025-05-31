@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { backendService } from '../backend/api.service';
 import type { User, LoginCredentials } from '../backend/types';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { BackendRoute } from '../backend/constants';
 
 interface LoginResponse {
   userId: string;
@@ -10,6 +12,13 @@ interface LoginResponse {
   hasPhone: boolean;
   email?: string;
   phoneNumber?: string;
+  requiresOtp: boolean;
+  otpType?: 'EMAIL' | 'SMS' | 'BOTH';
+  message: string;
+  tokens?: {
+    accessToken: string;
+    refreshToken: string;
+  };
 }
 
 interface AuthContextType {
@@ -31,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [keepPlayingRedirect, setKeepPlayingRedirect] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -64,18 +74,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
     const response = await backendService.post('/api/auth/login', credentials);
-    const { userId } = response.data;
-    const userEmail = response.data.email || credentials.email; 
-    const phoneNumber = response.data.phoneNumber;
-    const hasEmail = !!userEmail;
-    const hasPhone = !!phoneNumber;
+    const { 
+      userId, 
+      email, 
+      phoneNumber, 
+      requiresOtp, 
+      otpType, 
+      tokens, 
+    } = response.data;
+
+    //forto display mesage from backend
+    const message = (response as any)?.message
+
+    // If tokens are provided (no OTP case), save them and refresh user
+    if (tokens) {
+      localStorage.setItem('token', tokens.accessToken);
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+      await refreshUser();
+      // Invalidate stats to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.USER_STATS] });
+    }
     
     return { 
-      userId, 
-      hasEmail, 
-      hasPhone,
-      email: userEmail,
-      phoneNumber
+      userId,
+      hasEmail: !!email,
+      hasPhone: !!phoneNumber,
+      email,
+      phoneNumber,
+      requiresOtp,
+      otpType,
+      tokens,
+      message
     };
   };
 
@@ -84,7 +113,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { accessToken, refreshToken } = response.data;
     localStorage.setItem('token', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-    return await refreshUser();
+    const userData = await refreshUser();
+    // Invalidate stats to trigger a refetch
+    queryClient.invalidateQueries({ queryKey: [BackendRoute.USER_STATS] });
+    return userData;
   };
 
   const logout = () => {
