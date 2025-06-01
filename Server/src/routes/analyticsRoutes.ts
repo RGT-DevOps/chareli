@@ -4,7 +4,8 @@ import {
   getAllAnalytics,
   getAnalyticsById,
   updateAnalytics,
-  deleteAnalytics
+  deleteAnalytics,
+  updateAnalyticsEndTime
 } from '../controllers/analyticsController';
 import { authenticate, isAdmin } from '../middlewares/authMiddleware';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validationMiddleware';
@@ -34,6 +35,9 @@ router.get('/:id', isAdmin, validateParams(analyticsIdParamSchema), getAnalytics
 router.put('/:id', isAdmin, validateParams(analyticsIdParamSchema), validateBody(updateAnalyticsSchema), updateAnalytics);
 
 // Delete analytics entry - admin only
+// Update analytics end time - accessible by all authenticated users
+router.post('/:id/end', validateParams(analyticsIdParamSchema), updateAnalyticsEndTime);
+
 router.delete('/:id', isAdmin, validateParams(analyticsIdParamSchema), deleteAnalytics);
 
 export default router;

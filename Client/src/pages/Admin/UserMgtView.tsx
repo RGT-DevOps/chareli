@@ -5,6 +5,7 @@ import { LuGamepad2 } from "react-icons/lu";
 import { FiClock } from "react-icons/fi";
 import { TbCalendarClock } from "react-icons/tb";
 import { useUserAnalyticsById } from "../../backend/analytics.service";
+import { formatTime } from "../../utils/main";
 
 const PAGE_SIZE = 5;
 
@@ -95,7 +96,7 @@ const UserManagementView = () => {
                   Minutes Played
                 </span>
                 <span className="text-sm text-[#475568] font-pincuk dark:text-white">
-                  {response.analytics?.totalTimePlayed || 0} minutes
+                  {formatTime(response.analytics?.totalTimePlayed || 0)}
                 </span>
               </div>
             </div>
@@ -178,7 +179,7 @@ const UserManagementView = () => {
                         </div>
                         <span className="text-[#121C2D] text-lg tracking-wider dark:text-white">{game.gameTitle || 'Unknown Game'}</span>
                       </td>
-                      <td className="py-2 text-lg text-[#334154] font-pincuk dark:text-white">{game.totalPlayTime || 0}</td>
+                      <td className="py-2 text-lg text-[#334154] font-pincuk dark:text-white">{formatTime(game.totalPlayTime || 0)}</td>
                     </tr>
                   ))
                 )}

@@ -15,6 +15,7 @@ import { DeleteConfirmationModal } from "../../components/modals/DeleteConfirmat
 import { useState } from "react";
 import { EditSheet } from "../../components/single/Edit-Sheet";
 import { XIcon } from "lucide-react";
+import { formatTime } from "../../utils/main";
 
 export default function ViewGame() {
   const { gameId } = useParams();
@@ -112,7 +113,7 @@ export default function ViewGame() {
               </div>
               <div className="flex flex-col justify-start"> 
               <span className="text-[#475568] text-lg font mb-1 dark:text-white">Minutes Played</span>
-              <span className="text-sm text-[#475568] font-sans dark:text-white">{game?.analytics?.totalPlayTime ?? "-"} minutes</span>
+              <span className="text-sm text-[#475568] font-sans dark:text-white">{formatTime(game?.analytics?.totalPlayTime || 0)}</span>
               </div>
             </div>
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">

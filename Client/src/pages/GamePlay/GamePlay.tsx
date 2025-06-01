@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/ui/card";
 import { LuExpand, LuX } from "react-icons/lu";
 import KeepPlayingModal from "../../components/modals/KeepPlayingModal";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useGameById } from "../../backend/games.service";
 import {
   useCreateAnalytics,
@@ -90,43 +90,70 @@ export default function GamePlay() {
     }
   }, [game, isAuthenticated, createAnalytics]);
 
+  const location = useLocation();
   const { mutate: updateAnalytics } = useUpdateAnalytics();
 
-  // Handle analytics for game end scenarios
-  useEffect(() => {
-    const updateEndTime = async () => {
-      if (analyticsIdRef.current) {
-        try {
-          await updateAnalytics({
-            id: analyticsIdRef.current,
-            endTime: new Date(),
-          });
-        } catch (error) {
-          console.error("Failed to update analytics:", error);
-        }
-      }
-    };
+  // Function to update end time
+  const updateEndTime = async () => {
+    if (!analyticsIdRef.current) return;
+    
+    try {
+      const endTime = new Date();
+      await updateAnalytics({
+        id: analyticsIdRef.current,
+        endTime,
+      });
+      // Clear ID after successful update to prevent duplicate updates
+      analyticsIdRef.current = null;
+    } catch (error) {
+      console.error('Failed to update analytics:', error);
+    }
+  };
 
-    // Handle tab visibility change
+  // Handle route changes
+  useEffect(() => {
+    if (analyticsIdRef.current) {
+      updateEndTime();
+    }
+  }, [location]);
+
+  // Handle tab visibility and cleanup
+  useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && analyticsIdRef.current) {
         updateEndTime();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    const handleBeforeUnload = () => {
+      if (analyticsIdRef.current) {
+        const endTime = new Date();
+        const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+        const url = `${baseURL}/api/analytics/${analyticsIdRef.current}/end`;
+        const data = new Blob([JSON.stringify({ endTime })], {
+          type: 'application/json',
+        });
+        navigator.sendBeacon(url, data);
+        analyticsIdRef.current = null;
+      }
+    };
 
-    // Cleanup function
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
-      updateEndTime();
+      if (analyticsIdRef.current) {
+        updateEndTime();
+      }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
 
       const iframe = document.querySelector<HTMLIFrameElement>("#gameIframe");
       if (iframe) {
         iframe.src = "about:blank";
       }
     };
-  }, [updateAnalytics]);
+  }, []);
 
   // Handle game loading progress
   const handleLoadProgress = (progress: number) => {
@@ -202,7 +229,12 @@ export default function GamePlay() {
                     </button>
                     <button
                       className="text-white hover:text-purple-400 transition-colors"
-                      onClick={() => navigate(-1)}
+                      onClick={() => {
+                        if (analyticsIdRef.current) {
+                          updateEndTime();
+                        }
+                        navigate(-1);
+                      }}
                       title="Close Game"
                     >
                       <LuX className="w-5 h-5" />
@@ -230,9 +262,12 @@ export default function GamePlay() {
                         src={similarGame.thumbnailFile?.s3Key}
                         alt={similarGame.title}
                         className="w-full h-full object-cover border-2 border-purple-400/30 hover:border-[#D946EF] rounded-xl hover:rounded-2xl box-border transition-all duration-200 hover:scale-105 cursor-pointer"
-                        onClick={() =>
-                          navigate(`/gameplay/${similarGame.id}`)
-                        }
+                        onClick={() => {
+                          if (analyticsIdRef.current) {
+                            updateEndTime();
+                          }
+                          navigate(`/gameplay/${similarGame.id}`);
+                        }}
                       />
                     </div>
                   ))}
