@@ -8,12 +8,25 @@ import PieChart from '../../../components/charts/piechart';
 import { useState } from 'react';
 import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
 import { useUsersAnalytics } from '../../../backend/analytics.service';
+import { useSystemConfigByKey } from '../../../backend/configuration.service';
+import KeepPlayingModal from '../../../components/modals/KeepPlayingModal';
 import { MostPlayedGames } from './MostPlayedGames';
 import { RecentUserActivity } from './RecentUserActivity';
 
 export default function Home() {
 
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
+  const [showKeepPlayingModal, setShowKeepPlayingModal] = useState(false);
+  const { data: popupConfig } = useSystemConfigByKey('popup');
+
+  const handleShowPopup = () => {
+    if (popupConfig?.value?.enabled) {
+      const delay = (popupConfig?.value?.delay || 3) * 1000;
+      setTimeout(() => {
+        setShowKeepPlayingModal(true);
+      }, delay);
+    }
+  };
   return (
     <div>
       <div className="px-6 pb-3">
@@ -26,7 +39,7 @@ export default function Home() {
             <div className="justify-between items-center flex p-3">
               <p className="text-3xl dark:text-[#D946EF]">Dynamic Popup System</p>
               <PopUpSheet>
-                <Button className="bg-[#D946EF] hover:text-[#D946EF] hover:bg-[#F3E8FF] dark:text-white">
+                <Button className="bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200">
                   Create New Pop-up
                 </Button>
               </PopUpSheet>
@@ -35,8 +48,13 @@ export default function Home() {
             <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
               <div className="justify-end flex flex-col p-3 space-y-4">
                 <p className="text-lg">User View</p>
-                <p className="text-lg">Pop-Up will appear after 3 seconds</p>
-                <Button className="w-32 bg-[#D946EF] hover:text-[#D946EF] hover:bg-[#F3E8FF] dark:text-white">Show Pop-up Now</Button>
+                <p className="text-lg">Pop-Up will appear after {popupConfig?.value?.delay || 3} seconds</p>
+                <Button 
+                  onClick={handleShowPopup}
+                  className="w-32 bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200"
+                >
+                  Show Pop-up Now
+                </Button>
               </div>
             </Card>
           </Card>
@@ -75,6 +93,11 @@ export default function Home() {
       </div>
 
       <AcceptInvitationModal open={isAcceptInviteOpen} onOpenChange={setIsAcceptInviteOpen} isExistingUser={true} />
+      <KeepPlayingModal 
+        open={showKeepPlayingModal} 
+        openSignUpModal={() => setShowKeepPlayingModal(false)}
+        isGameLoading={false}
+      />
     </div>
   );
 }
