@@ -113,6 +113,8 @@ export const getCurrentUserStats = async (
       .createQueryBuilder('analytics')
       .select('SUM(analytics.duration)', 'totalDuration')
       .where('analytics.userId = :userId', { userId })
+      .andWhere('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
       .getRawOne();
 
     // Get total play count (only count entries with gameId)
@@ -120,7 +122,9 @@ export const getCurrentUserStats = async (
       .count({
         where: {
           userId,
-          gameId: Not(IsNull())
+          gameId: Not(IsNull()),
+          startTime: Not(IsNull()),
+          endTime: Not(IsNull())
         }
       });
 
@@ -135,6 +139,8 @@ export const getCurrentUserStats = async (
       .leftJoin('analytics.game', 'game')
       .leftJoin('game.thumbnailFile', 'thumbnailFile')
       .where('analytics.userId = :userId AND analytics.gameId IS NOT NULL', { userId })
+      .andWhere('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
       .groupBy('analytics.gameId')
       .addGroupBy('game.title')
       .addGroupBy('thumbnailFile.s3Key')
