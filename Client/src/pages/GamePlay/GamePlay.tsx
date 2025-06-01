@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/ui/card";
-import { LuExpand } from "react-icons/lu";
+import { LuExpand, LuX } from "react-icons/lu";
 import KeepPlayingModal from "../../components/modals/KeepPlayingModal";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useGameById } from "../../backend/games.service";
 import {
   useCreateAnalytics,
@@ -90,43 +90,70 @@ export default function GamePlay() {
     }
   }, [game, isAuthenticated, createAnalytics]);
 
+  const location = useLocation();
   const { mutate: updateAnalytics } = useUpdateAnalytics();
 
-  // Handle analytics for game end scenarios
-  useEffect(() => {
-    const updateEndTime = async () => {
-      if (analyticsIdRef.current) {
-        try {
-          await updateAnalytics({
-            id: analyticsIdRef.current,
-            endTime: new Date(),
-          });
-        } catch (error) {
-          console.error("Failed to update analytics:", error);
-        }
-      }
-    };
+  // Function to update end time
+  const updateEndTime = async () => {
+    if (!analyticsIdRef.current) return;
+    
+    try {
+      const endTime = new Date();
+      await updateAnalytics({
+        id: analyticsIdRef.current,
+        endTime,
+      });
+      // Clear ID after successful update to prevent duplicate updates
+      analyticsIdRef.current = null;
+    } catch (error) {
+      console.error('Failed to update analytics:', error);
+    }
+  };
 
-    // Handle tab visibility change
+  // Handle route changes
+  useEffect(() => {
+    if (analyticsIdRef.current) {
+      updateEndTime();
+    }
+  }, [location]);
+
+  // Handle tab visibility and cleanup
+  useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && analyticsIdRef.current) {
         updateEndTime();
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    const handleBeforeUnload = () => {
+      if (analyticsIdRef.current) {
+        const endTime = new Date();
+        const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+        const url = `${baseURL}/api/analytics/${analyticsIdRef.current}/end`;
+        const data = new Blob([JSON.stringify({ endTime })], {
+          type: 'application/json',
+        });
+        navigator.sendBeacon(url, data);
+        analyticsIdRef.current = null;
+      }
+    };
 
-    // Cleanup function
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
-      updateEndTime();
+      if (analyticsIdRef.current) {
+        updateEndTime();
+      }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
 
       const iframe = document.querySelector<HTMLIFrameElement>("#gameIframe");
       if (iframe) {
         iframe.src = "about:blank";
       }
     };
-  }, [updateAnalytics]);
+  }, []);
 
   // Handle game loading progress
   const handleLoadProgress = (progress: number) => {
@@ -147,15 +174,15 @@ export default function GamePlay() {
         </div>
       ) : game?.gameFile?.s3Key ? (
         <>
-          <div
-            className={`relative w-full ${
-              expanded
-                ? "h-screen max-w-full fixed inset-0 z-40 bg-black bg-opacity-90"
-                : "max-w-full pl-6 pr-6"
-            } mx-auto rounded-2xl border-4 border-purple-400`}
-            style={{ background: "#18181b" }}
-          >
-            <div className="relative">
+          <div className={expanded ? "fixed inset-0 z-40 bg-black" : "relative"}>
+            <div
+              className={`relative w-full ${
+                expanded
+                  ? "h-screen"
+                  : "h-[calc(100vh-64px)]"
+              } mx-auto rounded-2xl border-4 border-purple-400`}
+              style={{ background: "#18181b" }}
+            >
               {isGameLoading && (
                 <GameLoadingScreen
                   game={game}
@@ -165,9 +192,7 @@ export default function GamePlay() {
               )}
               <iframe
                 src={`${game.gameFile.s3Key}`}
-                className={`w-full ${
-                  expanded ? "h-screen" : "h-[80vh]"
-                } rounded-2xl`}
+                className={`w-full h-full rounded-2xl`}
                 style={{ display: "block", background: "transparent" }}
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 title={game.title}
@@ -181,62 +206,74 @@ export default function GamePlay() {
                 openSignUpModal={handleOpenSignUpModal}
                 isGameLoading={isGameLoading}
               />
-            </div>
-            <div className="absolute bottom-0 left-0 w-full flex items-center justify-between px-6 py-2 bg-[#2d0036] rounded-b-2xl border-t border-purple-400">
-              <span className="text-white text-sm font-semibold">
-                {game.title}
-              </span>
-              <div className="flex items-center space-x-2">
-                <span role="img" aria-label="smile" className="text-xl">
-                  😍
+              <div className={`absolute bottom-0 left-0 right-0 flex items-center justify-between px-6 py-2 bg-[#2d0036] border-t border-purple-400 ${expanded ? "z-50" : ""}`}>
+                <span className="text-white text-sm font-semibold">
+                  {game.title}
                 </span>
-                <span role="img" aria-label="smile" className="text-xl">
-                  🥲
-                </span>
-                <span
-                  className="text-white text-xs cursor-pointer"
-                  onClick={() => setExpanded((e) => !e)}
-                  title={expanded ? "Exit Fullscreen" : "Expand"}
-                >
-                  <LuExpand className="w-5 h-5" />
-                </span>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <span role="img" aria-label="smile" className="text-xl">
+                      😍
+                    </span>
+                    <span role="img" aria-label="smile" className="text-xl">
+                      🥲
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      className="text-white hover:text-purple-400 transition-colors"
+                      onClick={() => setExpanded((e) => !e)}
+                      title={expanded ? "Exit Fullscreen" : "Expand"}
+                    >
+                      <LuExpand className="w-5 h-5" />
+                    </button>
+                    <button
+                      className="text-white hover:text-purple-400 transition-colors"
+                      onClick={() => {
+                        if (analyticsIdRef.current) {
+                          updateEndTime();
+                        }
+                        navigate(-1);
+                      }}
+                      title="Close Game"
+                    >
+                      <LuX className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Similar Games section */}
           {!expanded && game.similarGames && game.similarGames.length > 0 && (
-            <>
-              <div>
-                <h1 className="p-4 text-4xl font-semibold text-[#0F1621] mt-12">
-                  Similar Games
-                </h1>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-4"></div>
-                <div className="">
-                  <Card className="border-hidden shadow-none p-0 mb-12 dark:bg-[#0f1221] max-w-[1000px] mx-auto">
-                    <div className="flex flex-wrap justify-center gap-6 w-full">
-                      {game.similarGames.map((similarGame: SimilarGame) => (
-                        <div
-                          key={similarGame.id}
-                          className="w-[180px] aspect-square"
-                        >
-                          <img
-                            src={similarGame.thumbnailFile?.s3Key}
-                            alt={similarGame.title}
-                            className="w-full h-full object-cover border-4 border-transparent hover:border-[#D946EF] hover:rounded-4xl box-border transition-transform duration-200 hover:scale-110 cursor-pointer"
-                            onClick={() =>
-                              navigate(`/gameplay/${similarGame.id}`)
-                            }
-                          />
-                        </div>
-                      ))}
+            <div className="bg-[#18181b] mt-4 rounded-2xl border-4 border-purple-400 p-4">
+              <h2 className="text-2xl font-semibold text-white mb-4 px-4">
+                Similar Games
+              </h2>
+              <Card className="border-hidden shadow-none p-4 bg-transparent max-w-[1000px] mx-auto">
+                <div className="flex flex-wrap justify-center gap-6 w-full">
+                  {game.similarGames.map((similarGame: SimilarGame) => (
+                    <div
+                      key={similarGame.id}
+                      className="w-[180px] aspect-square"
+                    >
+                      <img
+                        src={similarGame.thumbnailFile?.s3Key}
+                        alt={similarGame.title}
+                        className="w-full h-full object-cover border-2 border-purple-400/30 hover:border-[#D946EF] rounded-xl hover:rounded-2xl box-border transition-all duration-200 hover:scale-105 cursor-pointer"
+                        onClick={() => {
+                          if (analyticsIdRef.current) {
+                            updateEndTime();
+                          }
+                          navigate(`/gameplay/${similarGame.id}`);
+                        }}
+                      />
                     </div>
-                  </Card>
+                  ))}
                 </div>
-              </div>
-            </>
+              </Card>
+            </div>
           )}
         </>
       ) : (

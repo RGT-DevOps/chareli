@@ -151,18 +151,24 @@ export const getDashboardAnalytics = async (
       analyticsRepository.count({
         where: {
           gameId: Not(IsNull()),
+          startTime: Not(IsNull()),
+          endTime: Not(IsNull()),
           createdAt: Between(twentyFourHoursAgo, now)
         }
       }),
       analyticsRepository.count({
         where: {
           gameId: Not(IsNull()),
+          startTime: Not(IsNull()),
+          endTime: Not(IsNull()),
           createdAt: Between(fortyEightHoursAgo, twentyFourHoursAgo)
         }
       }),
       analyticsRepository.count({
         where: {
           gameId: Not(IsNull()),
+          startTime: Not(IsNull()),
+          endTime: Not(IsNull())
         }
       })
     ]);
@@ -175,15 +181,19 @@ export const getDashboardAnalytics = async (
     const [currentTotalTimePlayedResult, previousTotalTimePlayedResult, actualTimePlayed] = await Promise.all([
       analyticsRepository
         .createQueryBuilder('analytics')
-        .select('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalPlayTime')
+        .select('SUM(analytics.duration)', 'totalPlayTime')
         .where('analytics.gameId IS NOT NULL')
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .andWhere('analytics.createdAt > :twentyFourHoursAgo', { twentyFourHoursAgo })
         .getRawOne(),
 
       analyticsRepository
         .createQueryBuilder('analytics')
-        .select('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalPlayTime')
+        .select('SUM(analytics.duration)', 'totalPlayTime')
         .where('analytics.gameId IS NOT NULL')
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .andWhere('analytics.createdAt BETWEEN :start AND :end', {
           start: fortyEightHoursAgo,
           end: twentyFourHoursAgo
@@ -192,8 +202,10 @@ export const getDashboardAnalytics = async (
 
       analyticsRepository
         .createQueryBuilder('analytics')
-        .select('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalPlayTime')
+        .select('SUM(analytics.duration)', 'totalPlayTime')
         .where('analytics.gameId IS NOT NULL')
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .getRawOne()
     ]);
 
@@ -212,14 +224,16 @@ export const getDashboardAnalytics = async (
       .select('analytics.gameId', 'gameId')
       .addSelect('game.title', 'gameTitle')
       .addSelect('thumbnailFile.s3Key', 'thumbnailKey')
-      .addSelect('COUNT(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.id END)', 'sessionCount')
+      .addSelect('COUNT(*)', 'sessionCount')
       .leftJoin('analytics.game', 'game')
       .leftJoin('game.thumbnailFile', 'thumbnailFile')
       .where('analytics.gameId IS NOT NULL')
+      .andWhere('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
       .groupBy('analytics.gameId')
       .addGroupBy('game.title')
       .addGroupBy('thumbnailFile.s3Key')
-      .orderBy('COUNT(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.id END)', 'DESC')
+      .orderBy('COUNT(*)', 'DESC')
       .limit(1)
       .getRawOne();
 
@@ -230,6 +244,8 @@ export const getDashboardAnalytics = async (
         .createQueryBuilder('analytics')
         .select('COUNT(*)', 'count')
         .where('analytics.gameId = :gameId', { gameId: mostPlayedGameResult.gameId })
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .andWhere('analytics.createdAt > :twentyFourHoursAgo', { twentyFourHoursAgo })
         .getRawOne();
 
@@ -238,6 +254,8 @@ export const getDashboardAnalytics = async (
         .createQueryBuilder('analytics')
         .select('COUNT(*)', 'count')
         .where('analytics.gameId = :gameId', { gameId: mostPlayedGameResult.gameId })
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .andWhere('analytics.createdAt BETWEEN :start AND :end', {
           start: fortyEightHoursAgo,
           end: twentyFourHoursAgo
@@ -616,10 +634,12 @@ export const getGamesWithAnalytics = async (
       gamesAnalytics = await analyticsRepository
         .createQueryBuilder('analytics')
         .select('analytics.gameId', 'gameId')
-        .addSelect('COUNT(DISTINCT CASE WHEN analytics.gameId IS NOT NULL THEN analytics.userId END)', 'uniquePlayers')
-        .addSelect('COUNT(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.id END)', 'totalSessions')
-        .addSelect('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalPlayTime')
+        .addSelect('COUNT(*)', 'uniquePlayers')
+        .addSelect('COUNT(*)', 'totalSessions')
+        .addSelect('SUM(analytics.duration)', 'totalPlayTime')
         .where('analytics.gameId IN (:...gameIds)', { gameIds })
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .groupBy('analytics.gameId')
         .getRawMany();
     }
@@ -751,11 +771,13 @@ export const getGameAnalyticsById = async (
     // Get game's analytics summary
     const analyticsSummary = await analyticsRepository
       .createQueryBuilder('analytics')
-      .select('COUNT(DISTINCT CASE WHEN analytics.gameId IS NOT NULL THEN analytics.userId END)', 'uniquePlayers')
-      .addSelect('COUNT(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.id END)', 'totalSessions')
-      .addSelect('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalPlayTime')
-      .addSelect('AVG(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration END)', 'avgSessionDuration')
+      .select('COUNT(*)', 'uniquePlayers')
+      .addSelect('COUNT(*)', 'totalSessions')
+      .addSelect('SUM(analytics.duration)', 'totalPlayTime')
+      .addSelect('AVG(analytics.duration)', 'avgSessionDuration')
       .where(whereConditions)
+      .andWhere('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
       .getRawOne();
     
     // Get top players for this game
@@ -803,10 +825,9 @@ export const getGameAnalyticsById = async (
       date: day.date,
       sessions: parseInt(day.sessions) || 0,
       players: parseInt(day.players) || 0,
-      playTime: Math.round((day.totalPlayTime || 0) / 60) // Convert to minutes
+      playTime: parseInt((day.totalPlayTime || 0))
     }));
     
-    // Transform game data to include CloudFront URLs
     const transformedGame = {
       ...game,
       thumbnailFile: game.thumbnailFile ? {
@@ -821,7 +842,7 @@ export const getGameAnalyticsById = async (
       analytics: {
         uniquePlayers: parseInt(analyticsSummary?.uniquePlayers) || 0,
         totalSessions: parseInt(analyticsSummary?.totalSessions) || 0,
-        totalPlayTime: Math.round((analyticsSummary?.totalPlayTime || 0) / 60), // Convert to minutes
+        totalPlayTime: parseInt((analyticsSummary?.totalPlayTime || 0)),
         avgSessionDuration: Math.round((analyticsSummary?.avgSessionDuration || 0) / 60), // Convert to minutes
         topPlayers: formattedTopPlayers,
         dailyPlayTime: formattedDailyPlayTime
@@ -903,10 +924,12 @@ export const getUserAnalyticsById = async (
     // Get user's analytics summary
     const analyticsSummary = await analyticsRepository
       .createQueryBuilder('analytics')
-      .select('COUNT(DISTINCT CASE WHEN analytics.gameId IS NOT NULL THEN analytics.gameId END)', 'totalGamesPlayed')
-      .addSelect('COUNT(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.id END)', 'totalSessionCount')
-      .addSelect('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalTimePlayed')
+      .select('COUNT(DISTINCT analytics.gameId)', 'totalGamesPlayed')
+      .addSelect('COUNT(*)', 'totalSessionCount')
+      .addSelect('SUM(analytics.duration)', 'totalTimePlayed')
       .where('analytics.userId = :userId', { userId: id })
+      .andWhere('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
       .getRawOne();
 
     // Get user's game activity details
@@ -934,7 +957,7 @@ export const getUserAnalyticsById = async (
       gameTitle: game.gameTitle,
       thumbnailUrl: game.thumbnailKey ? `${s3Service.getBaseUrl()}/${game.thumbnailKey}` : null,
       sessionCount: parseInt(game.sessionCount) || 0,
-      totalPlayTime: Math.round((game.totalPlayTime || 0) / 60), // Convert to minutes
+      totalPlayTime: parseInt((game.totalPlayTime || 0)), // Convert to minutes
       lastPlayed: game.lastPlayed
     }));
 
@@ -944,7 +967,7 @@ export const getUserAnalyticsById = async (
       analytics: {
         totalGamesPlayed: parseInt(analyticsSummary?.totalGamesPlayed) || 0,
         totalSessionCount: parseInt(analyticsSummary?.totalSessionCount) || 0,
-        totalTimePlayed: Math.round((analyticsSummary?.totalTimePlayed || 0) / 60), // Convert to minutes
+        totalTimePlayed: parseInt((analyticsSummary?.totalTimePlayed || 0)), // Convert to minutes
         gameActivity: formattedGameActivity
       }
     };
@@ -1026,7 +1049,8 @@ export const getGamesPopularityMetrics = async (
         .select('COUNT(*)', 'totalPlays')
         .addSelect('AVG(analytics.duration)', 'averagePlayTime')
         .where('analytics.gameId = :gameId', { gameId: game.id })
-        .andWhere('analytics.gameId IS NOT NULL')
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .getRawOne();
 
       // Get plays in last 24 hours
@@ -1034,7 +1058,8 @@ export const getGamesPopularityMetrics = async (
         .createQueryBuilder('analytics')
         .select('COUNT(*)', 'count')
         .where('analytics.gameId = :gameId', { gameId: game.id })
-        .andWhere('analytics.gameId IS NOT NULL')
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .andWhere('analytics.createdAt > :twentyFourHoursAgo', { twentyFourHoursAgo })
         .getRawOne();
 
@@ -1043,7 +1068,8 @@ export const getGamesPopularityMetrics = async (
         .createQueryBuilder('analytics')
         .select('COUNT(*)', 'count')
         .where('analytics.gameId = :gameId', { gameId: game.id })
-        .andWhere('analytics.gameId IS NOT NULL')
+        .andWhere('analytics.startTime IS NOT NULL')
+        .andWhere('analytics.endTime IS NOT NULL')
         .andWhere('analytics.createdAt BETWEEN :start AND :end', {
           start: fortyEightHoursAgo,
           end: twentyFourHoursAgo
@@ -1113,9 +1139,11 @@ export const getUsersWithAnalytics = async (
     const usersAnalytics = await analyticsRepository
       .createQueryBuilder('analytics')
       .select('analytics.userId', 'userId')
-      .addSelect('COUNT(DISTINCT CASE WHEN analytics.gameId IS NOT NULL THEN analytics.gameId END)', 'totalGamesPlayed')
-      .addSelect('COUNT(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.id END)', 'totalSessionCount')
-      .addSelect('SUM(CASE WHEN analytics.gameId IS NOT NULL THEN analytics.duration ELSE 0 END)', 'totalTimePlayed')
+      .addSelect('COUNT(DISTINCT analytics.gameId)', 'totalGamesPlayed')
+      .addSelect('COUNT(*)', 'totalSessionCount')
+      .addSelect('SUM(analytics.duration)', 'totalTimePlayed')
+      .where('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
       .groupBy('analytics.userId')
       .getRawMany();
 

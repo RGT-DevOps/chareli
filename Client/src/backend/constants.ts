@@ -29,6 +29,7 @@ export const BackendRoute = {
   // Analytics Routes
   ANALYTICS: '/api/analytics',
   ANALYTICS_BY_ID: '/api/analytics/:id',
+  ANALYTICS_END_TIME: '/api/analytics/:id/end',
 
   // Admin Dashboard Routes
   ADMIN_DASHBOARD: '/api/admin/dashboard',
