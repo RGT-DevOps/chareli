@@ -133,7 +133,7 @@ export default function TeamManagement() {
             )?.map((member: User) => (
               <tr
                 key={member.id}
-                className="border-t border-[#d8d9da] text-md font-pincuk"
+                className="border-t border-[#d8d9da] text-md font-pincuk text-lg tracking-wider"
               >
                 <td className="py-6 text-[#121C2D] dark:text-white">
                   {member.firstName || ""} {member.lastName || ""}
@@ -207,7 +207,7 @@ export default function TeamManagement() {
                 invitationsData.data.filter((invitation: any) => !invitation.isAccepted).map((invitation: any) => (
                   <tr
                     key={invitation.id}
-                    className="border-t border-[#d8d9da] text-md font-pincuk"
+                    className="border-t border-[#d8d9da] text-md font-pincuk text-lg tracking-wider"
                   >
                     <td className="py-6 text-[#121C2D] dark:text-white">
                       {invitation.email}

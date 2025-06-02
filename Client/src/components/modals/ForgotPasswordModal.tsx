@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -174,12 +175,12 @@ export function ForgotPasswordModal({
           <DialogDescription className="text-center">
             {(isSubmitted && !isOTPVerificationModalOpen) || (activeTab === "email" && isSubmitted) ? (
               <div className="space-y-4">
-                <p className="text-sm text-center text-black dark:text-white font-pincuk">
+                <p className=" text-center text-black dark:text-white font-pincuk text-xl tracking-wider">
                   We've sent {activeTab === "email" ? "password reset instructions" : "a reset code"} to:
                   <p className="text-md font-semibold text-center text-black dark:text-white mt-2">
                     {submittedContact}
                   </p>
-                  <p className="text-sm text-center text-black dark:text-white font-pincuk mt-2">
+                  <p className=" text-center text-black dark:text-white font-pincuk text-xl tracking-wider mt-2">
                     {activeTab === "email" 
                       ? "Please check your email and follow the instructions to reset your password."
                       : "If this phone number exists in our system, you will receive a reset code shortly."}
@@ -211,7 +212,7 @@ export function ForgotPasswordModal({
               >
                 {({ isSubmitting }) => (
                   <Form className="space-y-4">
-                    <p className="text-sm text-center text-black dark:text-white font-pincuk mb-4">
+                    <p className="text-center text-black dark:text-white font-pincuk text-xl tracking-wider mb-4">
                       {activeTab === "email" 
                         ? "Enter your email address and we'll send you instructions to reset your password."
                         : "Enter your phone number and we'll send you a code to reset your password."}
@@ -235,7 +236,7 @@ export function ForgotPasswordModal({
                               id="email"
                               name="email"
                               placeholder="email"
-                              className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px]"
+                              className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-xl tracking-wider text-[11px] font-normal h-[48px]"
                             />
                           </>
                         ) : (
@@ -284,7 +285,7 @@ export function ForgotPasswordModal({
                       <ErrorMessage
                         name={activeTab === "email" ? "email" : "phoneNumber"}
                         component="div"
-                        className="text-red-500 text-xs mt-1 font-pincuk"
+                        className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                       />
                     </div>
                     <Button

@@ -30,7 +30,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Email</label>
                 <input
                   type="email"
-                  className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-gray-500 font-pincuk text-sm"
+                  className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-gr text-xl tracking-wider"
                   placeholder="user@email.com"
                   disabled
                 />
@@ -40,7 +40,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="New password"
                   />
                   <span
@@ -56,7 +56,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="Confirm password"
                   />
                   <span
@@ -81,7 +81,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                   <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">First Name</label>
                   <input
                     type="text"
-                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="First name"
                   />
                 </div>
@@ -89,7 +89,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                   <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Last Name</label>
                   <input
                     type="text"
-                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="Last Name"
                   />
                 </div>
@@ -98,7 +98,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Phone Number</label>
                 <input
                   type="tel"
-                  className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                  className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                   placeholder="Number"
                 />
               </div>
@@ -107,7 +107,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="New password"
                   />
                   <span
@@ -123,7 +123,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="Confirm password"
                   />
                   <span

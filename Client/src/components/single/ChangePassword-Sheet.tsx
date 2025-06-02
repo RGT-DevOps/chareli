@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
@@ -87,7 +88,7 @@ export function ChangePasswordSheet({ open, onOpenChange }: ChangePasswordSheetP
                       name="oldPassword"
                       type={showOldPassword ? "text" : "password"}
                       placeholder="Enter old password"
-                      className="bg-[#F1F5F9] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white h-14 shadow-none pr-12"
+                      className="bg-[#F1F5F9] mt-1 font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white h-14 shadow-none pr-12"
                     />
                     <button
                       type="button"
@@ -113,7 +114,7 @@ export function ChangePasswordSheet({ open, onOpenChange }: ChangePasswordSheetP
                       name="newPassword"
                       type={showNewPassword ? "text" : "password"}
                       placeholder="Enter new password"
-                      className="bg-[#F1F5F9] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white h-14 shadow-none pr-12"
+                      className="bg-[#F1F5F9] mt-1 font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white h-14 shadow-none pr-12"
                     />
                     <button
                       type="button"
