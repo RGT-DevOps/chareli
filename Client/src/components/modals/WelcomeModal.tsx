@@ -27,19 +27,19 @@ export function WelcomeModal({ open, onOpenChange }: WelcomeDialogProps) {
                     <DialogTitle className="text-2xl font-bold dark:text-white text-black text-left font-boogaloo">
                         Welcome to Our Website
                     </DialogTitle>
-                    <DialogDescription className="text-left dark:text-white text-black font-pincuk text-xs mt-1">
+                    <DialogDescription className="text-left dark:text-white text-black font-pincuk text-xl tracking-wider mt-1">
                         Please take a moment to review our new features
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 mt-6">
                     <Button
-                        className="w-full bg-[#FFC107] hover:bg-[#FFB300] text-black font-pincuk py-3 rounded-md text-lg"
+                        className="w-full bg-[#FFC107] hover:bg-[#FFB300] text-black font-pincuk text-xl tracking-wider py-3 rounded-md"
                         onClick={() => onOpenChange(false)}
                     >
                         New added games
                     </Button>
                     <Button
-                        className="w-full bg-[#E328AF] hover:bg-[#C026D3] text-black font-pincuk py-3 rounded-md text-lg"
+                        className="w-full bg-[#E328AF] hover:bg-[#C026D3] text-black font-pincuk text-xl tracking-wider py-3 rounded-md"
                         onClick={() => onOpenChange(false)}
                     >
                         Larger game screen

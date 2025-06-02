@@ -93,7 +93,7 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
                   name="email"
                   type="email"
                   placeholder="Enter email"
-                  className="col-span-3 shadow-none text-gray-400 font-thin text-sm tracking-wider font-pincuk h-14 bg-[#F1F5F9] border border-[#CBD5E0] dark:bg-[#121C2D] dark:text-white"
+                  className="col-span-3 shadow-none text-gray-400 font-thin text-xl tracking-wider h-14 bg-[#F1F5F9] border border-[#CBD5E0] dark:bg-[#121C2D] dark:text-white"
                 />
                 <ErrorMessage
                   name="email"
@@ -109,7 +109,7 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
                   as="select"
                   id="role"
                   name="role"
-                  className="col-span-3 shadow-none text-gray-400 font-thin text-sm tracking-wider font-pincuk h-14 bg-[#F1F5F9] border border-[#CBD5E0] rounded-lg dark:bg-[#121C2D] dark:text-white p-2"
+                  className="col-span-3 shadow-none text-gray-400 font-thin font-pincuk text-xl tracking-wider h-14 bg-[#F1F5F9] border border-[#CBD5E0] rounded-lg dark:bg-[#121C2D] dark:text-white p-2"
                 >
                   <option value="editor">Editor</option>
                   <option value="admin">Admin</option>

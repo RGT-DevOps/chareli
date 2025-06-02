@@ -33,7 +33,7 @@ export function DeleteConfirmationModal({
         <DialogHeader>
           <DialogTitle className="text-2xl tracking-wider mb-2">{title}</DialogTitle>
         </DialogHeader>
-        <div className="mb-8 text-[#22223B] text-base font-pincuk dark:text-white">{description}</div>
+        <div className="mb-8 text-[#22223B] text-xl tracking-wider dark:text-white">{description}</div>
         <DialogFooter className="flex justify-end gap-4">
           <DialogClose asChild>
             <Button variant="outline" className="w-20 h-12 text-lg rounded-lg dark:bg-white dark:text-black">

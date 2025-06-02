@@ -55,7 +55,7 @@ export default function ViewProfile() {
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-green-500 font-bold text-lg">●</span>
-                <span className="text-gray-700 text-sm dark:text-white font-pincuk">{user.role?.name || 'User'}</span>
+                <span className="text-gray-700 dark:text-white font-pincuk text-lg tracking-wider">{user.role?.name || 'User'}</span>
               </div>
             </div>
             <Button
@@ -82,13 +82,13 @@ export default function ViewProfile() {
             <h3 className="text-xl mb-4 text-[#121C2D] tracking-wide dark:text-white">Profile Details</h3>
             <div className="grid grid-cols-2 gap-y-6 gap-x-8 dark:text-white space-y-6">
               <div className="text-fuchsia-500 tracking-wide text-lg">Name</div>
-              <div className="text-[#334154] font-pincuk dark:text-white whitespace-pre-line">
+              <div className="text-[#334154] font-pincuk text-xl tracking-wider dark:text-white whitespace-pre-line">
                 {user.firstName} {user.lastName}
               </div>
               <div className="text-fuchsia-500 tracking-wide text-lg">Email</div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{user.email}</div>
+              <div className="text-[#334154] font-pincuk text-xl tracking-wider dark:text-white">{user.email}</div>
               <div className="text-fuchsia-500 tracking-wide text-lg">Mobile number</div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{user.phoneNumber || 'Not provided'}</div>
+              <div className="text-[#334154] font-pincuk text-xl tracking-wider dark:text-white">{user.phoneNumber || 'Not provided'}</div>
             </div>
           </div>
         </div>

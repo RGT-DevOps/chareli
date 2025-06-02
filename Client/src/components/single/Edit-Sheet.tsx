@@ -214,7 +214,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                 <ErrorMessage
                   name="thumbnailFile"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -226,12 +226,12 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                   as={Input}
                   id="title"
                   name="title"
-                  className="mt-1 font-pincuk bg-[#F1F5F9] shadow-none dark:bg-[#121C2D]"
+                  className="mt-1 font-pincuk text-xl tracking-wider bg-[#F1F5F9] shadow-none dark:bg-[#121C2D]"
                 />
                 <ErrorMessage
                   name="title"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -243,13 +243,13 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                   as="textarea"
                   id="description"
                   name="description"
-                  className="w-full mt-1 rounded-md border bg-transparent p-2 text-sm font-pincuk dark:text-white dark:bg-[#121C2D]"
+                  className="w-full mt-1 rounded-md border bg-transparent p-2 font-pincuk text-xl tracking-wider dark:text-white dark:bg-[#121C2D]"
                   rows={3}
                 />
                 <ErrorMessage
                   name="description"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -272,7 +272,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                     />
                   </label>
                   {/* {(gameFileName || game.gameFile?.name) && (
-                    <span className="text-sm font-pincuk text-gray-600 dark:text-gray-300">
+                    <span className="text-sm font-pincuk text-xl tracking-wider text-gray-600 dark:text-gray-300">
                       {gameFileName || game.gameFile?.name}
                     </span>
                   )} */}
@@ -280,7 +280,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                 <ErrorMessage
                   name="gameFile"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -293,7 +293,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                     as="select"
                     id="categoryId"
                     name="categoryId"
-                    className="mt-1 w-full rounded-lg dark:bg-[#121C2D] dark:text-white bg-[#F1F5F9] text-[#64748b] px-4 py-3 text-sm font-pincuk outline-none border-none appearance-none pr-10"
+                    className="mt-1 w-full rounded-lg dark:bg-[#121C2D] dark:text-white bg-[#F1F5F9] text-[#64748b] px-4 py-3 font-pincuk text-xl tracking-wider outline-none border-none appearance-none pr-10"
                   >
                     <option value="">Select category</option>
                     {categories?.map((category) => (
@@ -317,7 +317,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                 <ErrorMessage
                   name="categoryId"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -336,7 +336,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                 <ErrorMessage
                   name="config"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 

@@ -36,7 +36,7 @@ export function OTPModal({ open, onClose }: OTPModalProps) {
             <label className="block text-4xl mb-2 font-boogaloo tracking-wider">
               Verify Account
             </label>
-            <p className="font-pincuk text-sm mb-8">
+            <p className="font-pincuk text-xl tracking-wider mb-8">
               Enter the verification code we just sent via email
             </p>
             <div className="flex justify-start">
@@ -71,7 +71,7 @@ export function OTPModal({ open, onClose }: OTPModalProps) {
           </button>
         </form>
         <div className="flex mt-4 items-center gap-2">
-        <p className="font-pincuk text-sm">Didn't recieve a code?</p>
+        <p className="font-pincuk text-xl tracking-wider">Didn't recieve a code?</p>
         <p className="text-[#D946EF] hover:underline">Resend</p>
         </div>
       </div>

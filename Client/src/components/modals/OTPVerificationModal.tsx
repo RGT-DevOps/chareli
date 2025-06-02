@@ -102,7 +102,7 @@ export function OTPVerificationModal({
           <AlertDialogTitle className="text-2xl font-bold dark:text-white text-black font-boogaloo">
             OTP Verification
           </AlertDialogTitle>
-          <AlertDialogDescription className="dark:text-white text-black font-pincuk text-xs mt-1">
+          <AlertDialogDescription className="dark:text-white text-black font-pincuk text-xl tracking-wider mt-1">
             Enter the verification code we just sent to{" "}
             {otpType === "BOTH" ? "both " : ""}
             {contactMethod}
@@ -117,7 +117,7 @@ export function OTPVerificationModal({
               <div className="px-2 py-2 border-2 border-[#E328AF] mx-1 rounded-lg">
                 <input
                   {...props}
-                  className="w-12 h-12 text-center bg-transparent  rounded-none dark:text-white text-black font-pincuk text-2xl font-bold mx-1 focus:outline-none focus:ring-0"
+                  className="w-12 h-12 text-center bg-transparent  rounded-none dark:text-white text-black font-pincuk tracking-wider text-2xl font-bold mx-1 focus:outline-none focus:ring-0"
                 />
               </div>
             )}
@@ -128,7 +128,7 @@ export function OTPVerificationModal({
         </div>
         {error && (
           <div
-            className={`text-sm text-center font-pincuk mt-2 ${
+            className={`text-center font-pincuk text-xl tracking-wider mt-2 ${
               error.includes("resent") ? "text-green-500" : "text-red-500"
             }`}
           >
@@ -142,7 +142,7 @@ export function OTPVerificationModal({
         >
           {isVerifying ? "Verifying..." : "Verify"}
         </Button>
-        <p className="text-sm text-center text-black dark:text-white font-pincuk mt-2">
+        <p className="text-center text-black dark:text-white font-pincuk text-xl tracking-wider mt-2">
           Didn't receive a code?{" "}
           <button
             onClick={handleResendOtp}

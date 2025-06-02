@@ -139,7 +139,7 @@ export default function UserManagement() {
                       {filteredUsers && filteredUsers.slice((page - 1) * usersPerPage, page * usersPerPage).map((user, idx) => (
                         <TableRow
                           key={idx}
-                          className="font-pincuk cursor-pointer hover:bg-[#f3e8ff] dark:hover:bg-[#23243a]"
+                          className="font-pincuk text-lg tracking-wider cursor-pointer hover:bg-[#f3e8ff] dark:hover:bg-[#23243a]"
                           onClick={() => navigate(`/admin/management/${user.id}`, { state: { user } })}
                         >
                           <TableCell>{`${user.firstName || ""} ${user.lastName || ""}`}</TableCell>

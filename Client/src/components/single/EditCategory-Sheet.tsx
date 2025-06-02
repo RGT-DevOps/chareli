@@ -108,9 +108,9 @@ export function EditCategory({ open, onOpenChange, categoryId }: EditCategoryPro
                   id="name"
                   name="name"
                   placeholder="Name"
-                  className="bg-[#F5F6FA] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white"
+                  className="bg-[#F5F6FA] mt-1  font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white"
                 />
-                <ErrorMessage name="name" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage name="name" component="div" className="text-red-500  mt-1 font-pincuk text-xl tracking-wider" />
               </div>
               
               <div>
@@ -122,9 +122,9 @@ export function EditCategory({ open, onOpenChange, categoryId }: EditCategoryPro
                   id="description"
                   name="description"
                   placeholder="Description"
-                  className="bg-[#F5F6FA] mt-1 text-sm rounded-md border border-input w-full min-h-[100px] p-3 resize-none font-pincuk dark:bg-[#121C2D] dark:text-white"
+                  className="bg-[#F5F6FA] mt-1  rounded-md border border-input w-full min-h-[100px] p-3 resize-none font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white"
                 />
-                <ErrorMessage name="description" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage name="description" component="div" className="text-red-500  mt-1 font-pincuk text-xl tracking-wider" />
               </div>
 
               <div className="flex justify-between mt-8 items-center">
