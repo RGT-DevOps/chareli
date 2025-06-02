@@ -21,7 +21,7 @@
 
 @font-face {
   font-family: 'Pincuk';
-  src: url('./fonts/Pincuk-Regular.ttf'),
+  src: url('./fonts/Pincuk.ttf'),
 }
 
 @layer base {
@@ -45,12 +45,12 @@
 
 
 .font-boogaloo {
-  font-family: 'Boogaloo';
+  font-family: 'Boogaloo', cursive;
 }
 
 
 .font-pincuk {
-  font-family: 'Pincuk';
+  font-family: 'Pincuk', cursive;
 }
 
 body {
