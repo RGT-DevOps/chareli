@@ -43,7 +43,7 @@ export default function LoginModal({ open, email }: AdminLoginModalProps) {
             <label className="block font-bold text-lg mb-1 font-boogaloo tracking-wider">Email</label>
             <input
               type="email"
-              className="w-full rounded-lg bg-[#E2E8F0] px-4 py-3 text-gray-500 font-pincuk text-sm border border-[#CBD5E0]"
+              className="w-full rounded-lg bg-[#E2E8F0] px-4 py-3 text-gray-500 font-pincuk text-xl tracking-wider border border-[#CBD5E0]"
               placeholder="Email.com"
               value={email || ''}
               disabled
@@ -54,7 +54,7 @@ export default function LoginModal({ open, email }: AdminLoginModalProps) {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full rounded-lg bg-[#E2E8F0] px-4 py-3 font-pincuk text-sm border border-[#CBD5E0]"
+                className="w-full rounded-lg bg-[#E2E8F0] px-4 py-3 font-pincuk text-xl tracking-wider border border-[#CBD5E0]"
                 placeholder="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
