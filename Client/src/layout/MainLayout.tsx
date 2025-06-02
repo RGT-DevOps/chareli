@@ -16,10 +16,10 @@ const MainLayout: React.FC = () => {
                 <div className='w-[90%] md:w-[85%] lg:w-[800px] mx-auto px-4 md:px-6'>
                     <p className='font-boogaloo mb-3 text-[11px] sm:text-xs md:text-sm'>These games are brought to you by Chareli, a web-based gaming platform.</p>
 
-                    <p className='font-pincuk text-xs sm:text-sm mt-3 mb-3 leading-relaxed'>By using this service, you agree to the Chareli <span className='text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors'>Terms of Service</span>. Chareli's <span className='text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors'>Privacy Policy</span> sets out how we handle your data.
+                    <p className='font-pincuk text-xl tracking-wider sm:text-sm mt-3 mb-3 leading-relaxed'>By using this service, you agree to the Chareli <span className='text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors'>Terms of Service</span>. Chareli's <span className='text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors'>Privacy Policy</span> sets out how we handle your data.
                     </p>
 
-                    <p className='font-pincuk text-xs sm:text-sm leading-relaxed'>Chareli uses cookies to deliver and enhance the quality of its services, to analyze traffic, and to personalize the content that you see. Chareli uses analytics services to serve the content that you see. You can opt out of content personalization at
+                    <p className='font-pincuk text-xl tracking-wider sm:text-sm leading-relaxed'>Chareli uses cookies to deliver and enhance the quality of its services, to analyze traffic, and to personalize the content that you see. Chareli uses analytics services to serve the content that you see. You can opt out of content personalization at
                         <span className='text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors ml-1'>Personalization settings & cookies</span>. You can opt out of ads personalization with <span className='text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors'>ad settings</span>. Note that this setting also affects ads personalization on other sites and apps that partner with Chareli. </p>
                 </div>
                 </footer>

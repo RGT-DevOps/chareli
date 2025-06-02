@@ -261,7 +261,7 @@ export function LoginModal({
                             ? "Enter your email"
                             : "Enter your phone number"
                         }
-                        className={`mt-1 bg-[#E2E8F0] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px] ${
+                        className={`mt-1 bg-[#E2E8F0] border-0 pl-10 font-pincuk text-xl tracking-wider font-normal h-[48px] ${
                           activeTab === "email" ? "pl-10" : ""
                         }`}
                       />
@@ -301,17 +301,17 @@ export function LoginModal({
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="password"
-                      className="mt-1 bg-[#E2E8F0] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px]"
+                      className="mt-1 bg-[#E2E8F0] border-0 pl-10 font-pincuk text-xl tracking-wider font-normal h-[48px]"
                     />
                   </div>
                   <ErrorMessage
                     name="password"
                     component="div"
-                    className="text-red-500 text-xs mt-1 font-pincuk"
+                    className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                   />
                 </div>
                 {loginError && (
-                  <div className="text-red-500 text-xs font-pincuk text-center">
+                  <div className="text-red-500  font-pincuk text-xl tracking-wider text-center">
                     {loginError}
                   </div>
                 )}
@@ -334,7 +334,7 @@ export function LoginModal({
                 >
                   Login
                 </Button>
-                <p className="text-sm text-center text-black dark:text-white font-pincuk">
+                <p className=" text-center text-black dark:text-white font-pincuk text-xl tracking-wider">
                   Don't have an account?{" "}
                   <span
                     className="text-[#C026D3] cursor-pointer hover:underline text-lg font-boogaloo"

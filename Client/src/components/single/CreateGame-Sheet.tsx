@@ -163,7 +163,7 @@ export function CreateGameSheet({
                 <ErrorMessage
                   name="thumbnailFile"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -179,13 +179,13 @@ export function CreateGameSheet({
                   as={Input}
                   id="title"
                   name="title"
-                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#D946EF] focus:outline-none font-pincuk text-sm"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#D946EF] focus:outline-none font-pincuk text-xl tracking-wider text-sm"
                   placeholder="Enter game title"
                 />
                 <ErrorMessage
                   name="title"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -201,13 +201,13 @@ export function CreateGameSheet({
                   as="textarea"
                   id="description"
                   name="description"
-                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-pincuk text-sm text-gray-700 focus:border-[#D946EF] focus:outline-none resize-none"
+                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-pincuk text-xl tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none resize-none"
                   placeholder="Description"
                 />
                 <ErrorMessage
                   name="description"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -231,7 +231,7 @@ export function CreateGameSheet({
                     />
                   </label>
                   {gameFileName && (
-                    <span className="text-sm font-pincuk text-gray-600 dark:text-gray-300">
+                    <span className=" font-pincuk text-xl tracking-wider text-gray-600 dark:text-gray-300">
                       {gameFileName}
                     </span>
                   )}
@@ -239,7 +239,7 @@ export function CreateGameSheet({
                 <ErrorMessage
                   name="gameFile"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -255,7 +255,7 @@ export function CreateGameSheet({
                   as="select"
                   id="categoryId"
                   name="categoryId"
-                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-pincuk text-sm text-gray-700 focus:border-[#D946EF] focus:outline-none"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-pincuk text-xl tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none"
                 >
                   <option value="">Select category</option>
                   {categories?.map((category) => (
@@ -267,7 +267,7 @@ export function CreateGameSheet({
                 <ErrorMessage
                   name="categoryId"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
@@ -285,13 +285,13 @@ export function CreateGameSheet({
                   id="config"
                   name="config"
                   min="0"
-                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-pincuk text-sm text-gray-700 focus:border-[#D946EF] focus:outline-none"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-pincuk text-xl tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none"
                   placeholder="Enter config number"
                 />
                 <ErrorMessage
                   name="config"
                   component="div"
-                  className="text-red-500 text-xs mt-1 font-pincuk"
+                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
                 />
               </div>
 
