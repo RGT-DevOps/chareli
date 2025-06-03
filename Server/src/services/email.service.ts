@@ -21,10 +21,10 @@ export class EmailService implements EmailServiceInterface {
 
   constructor() {
     this.sesClient = new SESClient({
-      region: config.ses.region,
+      region: "eu-central-1",
       credentials: {
-        accessKeyId: config.ses.accessKeyId,
-        secretAccessKey: config.ses.secretAccessKey,
+        accessKeyId: "AKIAU2CFV3CEC25FE4J2",
+        secretAccessKey: "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",
       }
     });
   }
@@ -107,7 +107,7 @@ export class EmailService implements EmailServiceInterface {
             Data: subject,
           },
         },
-        Source: config.ses.fromEmail
+        Source: 'no-reply@dev.chareli.reallygreattech.com'
       });
 
       await this.sesClient.send(command);
