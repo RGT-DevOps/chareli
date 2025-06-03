@@ -5,7 +5,7 @@ import { invitationEmailTemplate } from '../templates/emails/invitation.template
 import { welcomeEmailTemplate } from '../templates/emails/welcome.template';
 import { resetPasswordEmailTemplate } from '../templates/emails/reset.template';
 import { otpEmailTemplate } from '../templates/emails/otp.template';
-import { roleRevokedEmailTemplate } from '../templates/emails/role.template';
+import { roleRevokedEmailTemplate, roleChangedEmailTemplate } from '../templates/emails/role.template';
 
 export interface EmailServiceInterface {
   sendInvitationEmail(email: string, invitationLink: string, role: string): Promise<boolean>;
@@ -13,6 +13,7 @@ export interface EmailServiceInterface {
   sendPasswordResetEmail(email: string, resetLink: string): Promise<boolean>;
   sendOtpEmail(email: string, otp: string): Promise<boolean>;
   sendRoleRevokedEmail(email: string, oldRole: string): Promise<boolean>;
+  sendRoleChangedEmail(email: string, oldRole: string, newRole: string): Promise<boolean>;
 }
 
 export class EmailService implements EmailServiceInterface {
@@ -20,10 +21,10 @@ export class EmailService implements EmailServiceInterface {
 
   constructor() {
     this.sesClient = new SESClient({
-      region: config.ses.region,
+      region: "eu-central-1",
       credentials: {
-        accessKeyId: config.ses.accessKeyId,
-        secretAccessKey: config.ses.secretAccessKey,
+        accessKeyId: "AKIAU2CFV3CEC25FE4J2",
+        secretAccessKey: "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",
       }
     });
   }
@@ -69,6 +70,14 @@ export class EmailService implements EmailServiceInterface {
   }
 
   /**
+   * Send email notification when a user's role is changed
+   */
+  async sendRoleChangedEmail(email: string, oldRole: string, newRole: string): Promise<boolean> {
+    const html = roleChangedEmailTemplate(oldRole, newRole);
+    return this.sendEmail(email, 'Your Role Has Been Updated', html);
+  }
+
+  /**
    * Send an email using Amazon SES
    */
   private async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
@@ -98,7 +107,7 @@ export class EmailService implements EmailServiceInterface {
             Data: subject,
           },
         },
-        Source: config.ses.fromEmail
+        Source: 'no-reply@dev.chareli.reallygreattech.com'
       });
 
       await this.sesClient.send(command);
