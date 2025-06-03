@@ -44,9 +44,9 @@ const Navbar: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (mobileMenuRef.current && 
-          !mobileMenuRef.current.contains(event.target as Node) && 
-          !menuButtonRef.current?.contains(event.target as Node)) {
+      if (mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        !menuButtonRef.current?.contains(event.target as Node)) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile Menu Button */}
-      <button 
+      <button
         ref={menuButtonRef}
         className="md:hidden text-[#D946EF] p-2"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -88,20 +88,20 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           ref={mobileMenuRef}
           className="absolute top-full left-0 right-0 bg-white dark:bg-[#0f1221] shadow-lg md:hidden z-50 border-t border-gray-200 dark:border-gray-800"
         >
           <div className="flex flex-col p-4 gap-4">
-            <Link 
-              to="/about" 
+            <Link
+              to="/about"
               className="text-[#111826] dark:text-[#94A3B7] hover:bg-[#D946EF] hover:text-white px-4 py-2 rounded-md text-lg font-bold"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               About Us
             </Link>
-            <Link 
-              to="/categories" 
+            <Link
+              to="/categories"
               className="text-[#111826] dark:text-[#94A3B7] hover:bg-[#D946EF] hover:text-white px-4 py-2 rounded-md text-lg font-bold"
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -215,7 +215,7 @@ const Navbar: React.FC = () => {
           alt={isDarkMode ? 'light mode' : 'dark mode'}
           className="w-6 h-6 cursor-pointer"
         />
-        
+
         {isAuthenticated ? (
           <>
             {isAdmin && (
@@ -226,21 +226,21 @@ const Navbar: React.FC = () => {
                 Admin Dashboard
               </Button>
             )}
-            
+
             <img
               src={bolt}
               alt="bolt"
               className="cursor-pointer"
               onClick={() => setIsStatsModalOpen(true)}
             />
-            
+
             <img
               src={profileImg}
               alt="profile image"
               className="cursor-pointer"
               onClick={() => setIsProfileModalOpen(true)}
             />
-            
+
             <Button
               onClick={() => {
                 logout();
@@ -256,7 +256,7 @@ const Navbar: React.FC = () => {
             <Button
               onClick={() => setIsLoginModalOpen(true)}
               className="bg-transparent border border-[#111826] dark:border-gray-500 text-[#111826] hover:text-[#111826] dark:text-gray-300 text-lg cursor-pointer hover:bg-accent">
-              Log in  
+              Log in
             </Button>
             <Button
               onClick={() => {
