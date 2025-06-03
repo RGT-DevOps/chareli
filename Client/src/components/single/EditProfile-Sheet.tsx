@@ -98,7 +98,7 @@ export function EditProfileSheet({ open, onOpenChange, profile }: EditProfileShe
                   id="firstName"
                   name="firstName"
                   placeholder="Enter first name"
-                  className={`bg-[#F1F5F9] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white ${
+                  className={`bg-[#F1F5F9] mt-1 font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white ${
                     errors.firstName && touched.firstName ? "border-red-500" : ""
                   }`}
                 />
@@ -117,7 +117,7 @@ export function EditProfileSheet({ open, onOpenChange, profile }: EditProfileShe
                   id="lastName"
                   name="lastName"
                   placeholder="Enter last name"
-                  className={`bg-[#F1F5F9] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white ${
+                  className={`bg-[#F1F5F9] mt-1 font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white ${
                     errors.lastName && touched.lastName ? "border-red-500" : ""
                   }`}
                 />
@@ -137,7 +137,7 @@ export function EditProfileSheet({ open, onOpenChange, profile }: EditProfileShe
                   name="email"
                   type="email"
                   placeholder="Enter email"
-                  className={`bg-[#F1F5F9] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white ${
+                  className={`bg-[#F1F5F9] mt-1 font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white ${
                     errors.email && touched.email ? "border-red-500" : ""
                   }`}
                 />
@@ -156,7 +156,7 @@ export function EditProfileSheet({ open, onOpenChange, profile }: EditProfileShe
                   id="phone"
                   name="phone"
                   placeholder="Enter phone number"
-                  className={`bg-[#F1F5F9] mt-1 text-sm font-pincuk dark:bg-[#121C2D] dark:text-white ${
+                  className={`bg-[#F1F5F9] mt-1 font-pincuk text-xl tracking-wider dark:bg-[#121C2D] dark:text-white ${
                     errors.phone && touched.phone ? "border-red-500" : ""
                   }`}
                 />

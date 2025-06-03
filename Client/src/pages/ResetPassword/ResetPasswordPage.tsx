@@ -121,18 +121,18 @@ export function ResetPasswordPage() {
         {isTokenChecking ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E328AF]"></div>
-            <p className="mt-4 text-sm text-black dark:text-white font-pincuk">
+            <p className="mt-4  text-black dark:text-white font-pincuk text-lg tracking-wider">
               {isPhoneFlow ? "Preparing reset form..." : "Verifying your reset token..."}
             </p>
           </div>
         ) : !isTokenValid ? (
           <div className="space-y-4 py-4">
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               {isPhoneFlow 
                 ? "Unable to process your password reset request."
                 : "The password reset link is invalid or has expired."}
             </p>
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               Please request a new password reset link.
             </p>
             <div className="flex flex-col space-y-2 mt-4">
@@ -154,10 +154,10 @@ export function ResetPasswordPage() {
           </div>
         ) : isSuccess ? (
           <div className="space-y-4 py-4">
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               Your password has been reset successfully.
             </p>
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               You can now log in with your new password.
             </p>
             <div className="flex flex-col space-y-2 mt-4">
@@ -178,7 +178,7 @@ export function ResetPasswordPage() {
           >
             {({ isSubmitting }) => (
               <Form className="space-y-4">
-                <p className="text-sm text-center text-black dark:text-white font-pincuk mb-4">
+                <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider mb-4">
                   Enter your new password below.
                 </p>
                 <div className="relative">
@@ -209,13 +209,13 @@ export function ResetPasswordPage() {
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="New password"
-                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px]"
+                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-xl tracking-wider text-[11px] font-normal h-[48px]"
                     />
                   </div>
                   <ErrorMessage
                     name="password"
                     component="div"
-                    className="text-red-500 text-xs mt-1 font-pincuk"
+                    className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                   />
                 </div>
                 <div className="relative">
@@ -246,13 +246,13 @@ export function ResetPasswordPage() {
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm password"
-                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px]"
+                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-xl tracking-wider text-[11px] font-normal h-[48px]"
                     />
                   </div>
                   <ErrorMessage
                     name="confirmPassword"
                     component="div"
-                    className="text-red-500 text-xs mt-1 font-pincuk"
+                    className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                   />
                 </div>
                 <div className="space-y-2">

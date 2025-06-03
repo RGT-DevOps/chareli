@@ -107,7 +107,7 @@ export default function GameActivity() {
               </TableCell>
             </TableRow>
           ) : gamesToShow.map((game: any) => (
-              <TableRow key={game.id} className="font-pincuk">
+              <TableRow key={game.id} className="font-pincuk text-xl tracking-wider">
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <GameThumbnail src={game.thumbnailUrl} alt={game.title} />
@@ -118,12 +118,12 @@ export default function GameActivity() {
                 <TableCell>{game.metrics.averagePlayTime} min</TableCell>
                 <TableCell>
                   {game.status === "active" ? (
-                    <span className="inline-flex items-center gap-2 p-1 rounded bg-[#419E6A] text-white font-pincuk text-sm">
+                    <span className="inline-flex items-center gap-2 p-1 rounded bg-[#419E6A] text-white font-pincuk text-xl tracking-wider">
                       <span className="w-2 h-2 bg-white rounded-full inline-block"></span>
                       Active
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-2 p-1 rounded bg-[#CBD5E0] text-[#22223B] font-pincuk text-sm">
+                    <span className="inline-flex items-center gap-2 p-1 rounded bg-[#CBD5E0] text-[#22223B] font-pincuk text-xl tracking-wider">
                       <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
                       Inactive
                     </span>

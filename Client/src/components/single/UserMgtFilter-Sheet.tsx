@@ -75,7 +75,7 @@ export function UserManagementFilterSheet({
                   ...filters.registrationDates,
                   startDate: e.target.value
                 })}
-                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin text-sm tracking-wider font-pincuk dark:bg-[#121C2D]" 
+                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]" 
               />
               <Input 
                 type="date" 
@@ -84,7 +84,7 @@ export function UserManagementFilterSheet({
                   ...filters.registrationDates,
                   endDate: e.target.value
                 })}
-                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin text-sm tracking-wider font-pincuk dark:bg-[#121C2D]" 
+                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]" 
               />
             </div>
           </div>
@@ -98,7 +98,7 @@ export function UserManagementFilterSheet({
               value={filters.sessionCount}
               onChange={(e) => handleChange('sessionCount', e.target.value)}
               placeholder="Minimum sessions"
-              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin text-sm tracking-wider font-pincuk dark:bg-[#121C2D]"
+              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]"
             />
           </div>
 
@@ -115,7 +115,7 @@ export function UserManagementFilterSheet({
                   min: parseInt(e.target.value) || 0
                 })}
                 placeholder="Min minutes"
-                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin text-sm tracking-wider font-pincuk dark:bg-[#121C2D]"
+                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]"
               />
               <Input 
                 type="number"
@@ -126,7 +126,7 @@ export function UserManagementFilterSheet({
                   max: parseInt(e.target.value) || 0
                 })}
                 placeholder="Max minutes"
-                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin text-sm tracking-wider font-pincuk dark:bg-[#121C2D]"
+                className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ export function UserManagementFilterSheet({
             <select 
               value={filters.gameCategory}
               onChange={(e) => handleChange('gameCategory', e.target.value)}
-              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 px-3 text-gray-400 font-thin text-sm tracking-wider font-pincuk rounded dark:bg-[#121C2D]"
+              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 px-3 text-gray-400 font-thin font-pincuk text-xl tracking-wider rounded dark:bg-[#121C2D]"
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
@@ -152,7 +152,7 @@ export function UserManagementFilterSheet({
             <select 
               value={filters.gameTitle}
               onChange={(e) => handleChange('gameTitle', e.target.value)}
-              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 px-3 text-gray-400 font-thin text-sm tracking-wider font-pincuk rounded dark:bg-[#121C2D]"
+              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 px-3 text-gray-400 font-thin font-pincuk text-xl tracking-wider rounded dark:bg-[#121C2D]"
             >
               <option value="">All Games</option>
               {titles.map((title) => (

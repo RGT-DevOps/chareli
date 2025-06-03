@@ -58,13 +58,13 @@ export default function ViewGame() {
           />
           <div className="flex gap-2 items-center">
           <h2 className="text-xl font-bold font-boogaloo mb-2 text-[#121C2D] tracking-wider dark:text-white">{(game as any).game?.title || "-"}</h2>
-          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded text-sm font-pincuk mb-2 ${(game as any).game?.status === "active" ? "bg-[#D946EF]/20 dark:bg-[#E879F9] text-[#121C2D]" : "bg-[#CBD5E0] text-[#121C2D]"}`}>
+          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded font-pincuk text-xl tracking-wider mb-2 ${(game as any).game?.status === "active" ? "bg-[#D946EF]/20 dark:bg-[#E879F9] text-[#121C2D]" : "bg-[#CBD5E0] text-[#121C2D]"}`}>
             <span className={`w-2 h-2 rounded inline-block ${(game as any).game?.status === "active" ? "bg-[#419E6A]" : "bg-red-500"}`}></span>
             {(game as any).game?.status === "active" ? "Active" : "Inactive"}
           </span>
           <RiDeleteBin6Line className="text-[#121C2D] w-4 h-6 dark:text-white" />
           </div>
-          {/* <p className="text-center text-[#475568] mb-4 text-sm dark:text-white tracking-wider font-pincuk">{(game as any).game?.description || "N/A"}</p> */}
+          {/* <p className="text-center text-[#475568] mb-4 text-sm dark:text-white tracking-wider font-pincuk text-xl tracking-wider">{(game as any).game?.description || "N/A"}</p> */}
           <div className="flex flex-col gap-2 w-full">
             <Button
               variant="outline"
@@ -90,16 +90,16 @@ export default function ViewGame() {
         <div className="flex-1 flex flex-col gap-6">
           <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-6">
             <h3 className="text-xl font-bold mb-2 text-[#475568] tracking-wider dark:text-white">Overview</h3>
-            <p className="text-[#475568] text-sm whitespace-pre-line dark:text-white tracking-wider font-pincuk">{(game as any).game?.description || "-"}</p>
+            <p className="text-[#475568]  whitespace-pre-line dark:text-white  font-pincuk text-lg tracking-wider">{(game as any).game?.description || "-"}</p>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h4 className="font-bold mb-1 text-[#475568] tracking-wider text-lg dark:text-white">Game Category</h4>
-              <p className="text-sm text-[#475568] dark:text-white tracking-wider font-pincuk">{(game as any).game?.category?.name || "-"}</p>
+              <p className=" text-[#475568] dark:text-white  font-pincuk text-lg tracking-wider">{(game as any).game?.category?.name || "-"}</p>
             </div>
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h4 className="font-bold mb-1 text-[#475568] dark:text-white">Game Code</h4>
-              <a href={game?.code || "#"} className="text-[#475568] text-sm underline dark:text-white tracking-wider font-pincuk" target="_blank" rel="noopener noreferrer">{game?.code || ""}</a>
+              <a href={game?.code || "#"} className="text-[#475568]  underline dark:text-white  font-pincuk text-lg tracking-wider" target="_blank" rel="noopener noreferrer">{game?.code || ""}</a>
             </div>
           </div>
           <div>
@@ -151,7 +151,7 @@ export default function ViewGame() {
             <h2 className="text-2xl font-boogaloo dark:text-white mb-2 text-[#121C2D]">
               Are you sure you want to {game?.status === "active" ? "disable" : "enable"} this game?
             </h2>
-            <p className="dark:text-[#CBD5E0] mb-8 text-[#121C2D] font-pincuk">
+            <p className="dark:text-[#CBD5E0] mb-8 text-[#121C2D] font-pincuk text-xl tracking-wider">
               {game?.status === "active" 
                 ? "Players will not be able to access this game until you enable it again."
                 : "Players will be able to access this game once enabled."
