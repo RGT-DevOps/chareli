@@ -72,13 +72,13 @@ const UserManagementView = () => {
               </h2>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`${response.user.isActive ? 'text-green-500' : 'text-red-500'} font-bold text-lg`}>●</span>
-                <span className="text-gray-700 text-sm dark:text-white font-pincuk">{response.user.role.name}</span>
+                <span className="text-gray-700  dark:text-white font-pincuk textxgl tracking-wider">{response.user.role.name}</span>
               </div>
             </div>
             <div className="mt-2 text-sm text-gray-500 font-sans font-semibold dark:text-white flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
               last login:{" "}
               <div className="flex items-center">
-                <span className="bg-indigo-100 px-2 py-0 rounded text-gray-700 dark:bg-[#94A3B7] font-pincuk">
+                <span className="bg-indigo-100 px-2 py-0 rounded text-gray-700 dark:bg-[#94A3B7] font-pincuk text-xl tracking-wider">
                   <span className="text-yellow-500 font-bold text-lg">●</span>
                   {response.user.lastLoggedIn ? new Date(response.user.lastLoggedIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
                 </span>
@@ -95,7 +95,7 @@ const UserManagementView = () => {
                 <span className="text-[#475568] text-lg font mb-1 dark:text-white">
                   Minutes Played
                 </span>
-                <span className="text-sm text-[#475568] font-pincuk dark:text-white">
+                <span className=" text-[#475568] font-pincuk text-lg tracking-wider dark:text-white">
                   {formatTime(response.analytics?.totalTimePlayed || 0)}
                 </span>
               </div>
@@ -108,7 +108,7 @@ const UserManagementView = () => {
                 <span className="text-[#475568] text-lg font mb-1 dark:text-white">
                   Total Plays
                 </span>
-                <span className="text-sm text-[#475568] font-pincuk dark:text-white">
+                <span className=" text-[#475568] font-pincuk text-lg tracking-wider dark:text-white">
                   {response.analytics?.totalGamesPlayed || 0}
                 </span>
               </div>
@@ -121,7 +121,7 @@ const UserManagementView = () => {
                 <span className="text-[#475568] text-lg font mb-1 dark:text-white">
                   Sessions
                 </span>
-                <span className="text-sm text-[#475568] font-pincuk dark:text-white">
+                <span className=" text-[#475568] font-pincuk text-lg tracking-wider dark:text-white">
                   {response.analytics?.totalSessionCount || 0}
                 </span>
               </div>
@@ -135,17 +135,17 @@ const UserManagementView = () => {
             <h3 className="text-lg font-bold mb-4 text-[#121C2D] tracking-wide dark:text-white">Profile Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-x-16 lg:gap-x-96 space-y-border-b dark:text-white">
               <div className="text-fuchsia-500  tracking-wide">Name</div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{`${response.user.firstName} ${response.user.lastName}`}</div>
+              <div className="text-[#334154] font-pincuk text-lg tracking-wider dark:text-white">{`${response.user.firstName} ${response.user.lastName}`}</div>
               <div className="text-fuchsia-500  tracking-wide">Email</div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{response.user.email}</div>
+              <div className="text-[#334154] font-pincuk text-lg tracking-wider dark:text-white">{response.user.email}</div>
               <div className="text-fuchsia-500  tracking-wide">
                 Mobile number
               </div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{response.user.phoneNumber || '-'}</div>
+              <div className="text-[#334154] font-pincuk text-lg tracking-wider dark:text-white">{response.user.phoneNumber || '-'}</div>
               <div className="text-fuchsia-500  tracking-wide">
                 Country
               </div>
-              <div className="text-[#334154] font-pincuk dark:text-white">-</div>
+              <div className="text-[#334154] font-pincuk text-lg tracking-wider dark:text-white">-</div>
             </div>
           </div>
           {/* Games */} 
@@ -179,7 +179,7 @@ const UserManagementView = () => {
                         </div>
                         <span className="text-[#121C2D] text-lg tracking-wider dark:text-white">{game.gameTitle || 'Unknown Game'}</span>
                       </td>
-                      <td className="py-2 text-lg text-[#334154] font-pincuk dark:text-white">{formatTime(game.totalPlayTime || 0)}</td>
+                      <td className="py-2 text-lg text-[#334154] font-pincuk text-xl tracking-wider dark:text-white">{formatTime(game.totalPlayTime || 0)}</td>
                     </tr>
                   ))
                 )}

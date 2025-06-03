@@ -98,11 +98,11 @@ export default function UserActivityLog() {
                 </TableCell>
               </TableRow>
             ) : activitiesToShow.map((row: any, idx) => (
-                <TableRow key={idx} className="font-pincuk">
-                  <TableCell>{row.name}</TableCell>
+                <TableRow key={idx} className="font-pincuk text-xl tracking-wider">
+                  <TableCell>{row.name?.trim() ? row.name : "-"}</TableCell>
                   <TableCell>
                     <span
-                      className={`flex items-center gap-3 px-2 py-1 rounded-lg font-pincuk text-sm ${
+                      className={`flex items-center gap-3 px-2 py-1 rounded-lg font-pincuk text-xl tracking-wider ${
                         row.userStatus === "Online"
                           ? "bg-[#4BA366] text-white"
                           : "bg-[#D3D8DF] text-white"
@@ -124,7 +124,7 @@ export default function UserActivityLog() {
                   <TableCell>{row.lastGamePlayed || "-"}</TableCell>
                   <TableCell>
                     {row.startTime ? (
-                      <span className="flex items-center gap-2 bg-[#AEB8C6] rounded-lg px-2 py-1 w-fit font-pincuk text-sm text-white">
+                      <span className="flex items-center gap-2 bg-[#AEB8C6] rounded-lg px-2 py-1 w-fit font-pincuk text-xl tracking-wider text-white">
                         <div 
                           className="min-w-[8px] min-h-[8px] rounded-full bg-[#2ECC40]"
                           style={{ aspectRatio: '1/1' }}
@@ -135,7 +135,7 @@ export default function UserActivityLog() {
                   </TableCell>
                   <TableCell>
                     {row.endTime ? (
-                      <span className="flex items-center gap-2 bg-[#AEB8C6] rounded-lg px-2 py-1 w-fit font-pincuk text-sm text-white">
+                      <span className="flex items-center gap-2 bg-[#AEB8C6] rounded-lg px-2 py-1 w-fit font-pincuk text-xl tracking-wider text-white">
                         <div 
                           className="min-w-[8px] min-h-[8px] rounded-full bg-[#E74C3C]"
                           style={{ aspectRatio: '1/1' }}

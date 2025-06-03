@@ -86,7 +86,7 @@ export default function GameCategories() {
                 </button>
               </div>
             </div>
-            <p className="text-[#475568] text-sm mb-2 font-pincuk tracking-wide dark:text-white">
+            <p className="text-[#475568] mb-2 font-pincuk text-xl tracking-wider dark:text-white">
               {cat.description || 'No description'}
             </p>
             <span className="text-[#D946EF] font-bold text-sm shadow-none tracking-wider">

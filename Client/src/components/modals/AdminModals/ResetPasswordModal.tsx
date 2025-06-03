@@ -38,7 +38,7 @@ export default function ResetPasswordModal({ open, onClose }: ResetPasswordModal
             <label className="block font-bold text-2xl mb-2 font-boogaloo tracking-wider">Email</label>
             <input
               type="email"
-              className="w-full rounded-lg bg-[#E2E8F0] px-4 py-3 text-gray-500 font-pincuk text-sm  border border-[#CBD5E0]"
+              className="w-full rounded-lg bg-[#E2E8F0] px-4 py-3 text-gray-500 font-pincuk text-xl tracking-wider  border border-[#CBD5E0]"
               placeholder="Email"
               value={email}
               onChange={e => setEmail(e.target.value)}
