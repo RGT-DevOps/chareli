@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - staging
-  pull_request:
-    branches:
-      - staging
-    types: [opened, synchronize, reopened]
 
 permissions:
   packages: write
@@ -157,3 +153,62 @@ jobs:
 
       - name: Invalidate CloudFront Distribution
         run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID_CLIENT }} --paths "/*"
+
+  notify-discord:
+    name: Notify Discord
+    needs: [build-and-test, deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/staging' }}
+
+    steps:
+      - name: Generate Build Status
+        id: build-status
+        run: |
+          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
+            echo "build_msg=:white_check_mark: Build & Test PASSED" >> $GITHUB_OUTPUT
+          else
+            echo "build_msg=:x: Build & Test FAILED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Backend Deploy Status
+        id: backend-status
+        run: |
+          if [[ "${{ needs.deploy-backend.result }}" == "success" ]]; then
+            echo "backend_msg=:white_check_mark: Backend deployment to App Runner SUCCESSFUL" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.deploy-backend.result }}" == "skipped" ]]; then
+            echo "backend_msg=:warning: Backend deployment SKIPPED" >> $GITHUB_OUTPUT
+          else
+            echo "backend_msg=:x: Backend deployment to App Runner FAILED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Frontend Deploy Status
+        id: frontend-status
+        run: |
+          if [[ "${{ needs.deploy-frontend.result }}" == "success" ]]; then
+            echo "frontend_msg=:white_check_mark: Frontend deployment to S3/CloudFront SUCCESSFUL" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.deploy-frontend.result }}" == "skipped" ]]; then
+            echo "frontend_msg=:warning: Frontend deployment SKIPPED" >> $GITHUB_OUTPUT
+          else
+            echo "frontend_msg=:x: Frontend deployment to S3/CloudFront FAILED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Discord
+        if: always()
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: Chareli Dev Pipeline Bot
+          message: |
+            🚀 **Chareli Dev Deployment Summary**
+
+            🔀 Branch: `${{ github.ref_name }}`
+            📄 Commit: `${{ github.sha }}` by `${{ github.actor }}`
+            🏗️ Event: `${{ github.event_name }}`
+
+            🧪 **Build & Test:** ${{ steps.build-status.outputs.build_msg }}
+            🖥️ **Backend (App Runner):** ${{ steps.backend-status.outputs.backend_msg }}
+            🌐 **Frontend (S3/CloudFront):** ${{ steps.frontend-status.outputs.frontend_msg }}
+
+            🔗 [View Run on GitHub](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
