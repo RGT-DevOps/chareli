@@ -24,15 +24,16 @@ const initialValues = {
 };
 
 export function ResetPasswordPage() {
-  const { token } = useParams<{ token: string }>();
+  const { token, userId } = useParams<{ token?: string; userId?: string }>();
+  const isPhoneFlow = !!userId;
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isTokenValid, setIsTokenValid] = useState(false);
   const [isTokenChecking, setIsTokenChecking] = useState(true); // Start with true to show loading state
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const resetPassword = useResetPassword();
   const navigate = useNavigate();
+  const resetPassword = useResetPassword();
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
@@ -40,10 +41,16 @@ export function ResetPasswordPage() {
   // Use a ref to track if we've already verified the token
   const hasVerifiedToken = useRef(false);
 
-
   useEffect(() => {
-    if (!token) {
+    if (!token && !userId) {
       navigate("/");
+      return;
+    }
+
+    if (isPhoneFlow) {
+      // For phone flow, we don't need to verify anything since OTP was already verified
+      setIsTokenValid(true);
+      setIsTokenChecking(false);
       return;
     }
 
@@ -61,30 +68,28 @@ export function ResetPasswordPage() {
         } catch (error) {
           setIsTokenValid(false);
           setIsTokenChecking(false);
-          toast.error("Invalid or expired reset token");
+          console.log(error)
+          // toast.error("Invalid or expired reset token");
         }
       };
       
       verifyTokenDirectly();
     }
-  }, [token, navigate]);
+  }, [token, userId, navigate, isPhoneFlow]);
 
 
   const handleSubmit = async (values: typeof initialValues) => {
     try {
       await resetPassword.mutateAsync({
-        token: token || "",
+        token: isPhoneFlow ? undefined : token,
+        userId: isPhoneFlow ? userId : undefined,
         password: values.password,
         confirmPassword: values.confirmPassword,
       });
       setIsSuccess(true);
       toast.success("Password reset successful");
     } catch (error: any) {
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error("Failed to reset password. Please try again.");
-      }
+      console.log(error)
     }
   };
 
@@ -113,16 +118,18 @@ export function ResetPasswordPage() {
         {isTokenChecking ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E328AF]"></div>
-            <p className="mt-4 text-sm text-black dark:text-white font-pincuk">
-              Verifying your reset token...
+            <p className="mt-4  text-black dark:text-white font-pincuk text-lg tracking-wider">
+              {isPhoneFlow ? "Preparing reset form..." : "Verifying your reset token..."}
             </p>
           </div>
         ) : !isTokenValid ? (
           <div className="space-y-4 py-4">
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
-              The password reset link is invalid or has expired.
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
+              {isPhoneFlow 
+                ? "Unable to process your password reset request."
+                : "The password reset link is invalid or has expired."}
             </p>
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               Please request a new password reset link.
             </p>
             <div className="flex flex-col space-y-2 mt-4">
@@ -144,10 +151,10 @@ export function ResetPasswordPage() {
           </div>
         ) : isSuccess ? (
           <div className="space-y-4 py-4">
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               Your password has been reset successfully.
             </p>
-            <p className="text-sm text-center text-black dark:text-white font-pincuk">
+            <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider">
               You can now log in with your new password.
             </p>
             <div className="flex flex-col space-y-2 mt-4">
@@ -168,7 +175,7 @@ export function ResetPasswordPage() {
           >
             {({ isSubmitting }) => (
               <Form className="space-y-4">
-                <p className="text-sm text-center text-black dark:text-white font-pincuk mb-4">
+                <p className=" text-center text-black dark:text-white font-pincuk text-lg tracking-wider mb-4">
                   Enter your new password below.
                 </p>
                 <div className="relative">
@@ -199,13 +206,13 @@ export function ResetPasswordPage() {
                       name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="New password"
-                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px]"
+                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-xl tracking-wider text-[11px] font-normal h-[48px]"
                     />
                   </div>
                   <ErrorMessage
                     name="password"
                     component="div"
-                    className="text-red-500 text-xs mt-1 font-pincuk"
+                    className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                   />
                 </div>
                 <div className="relative">
@@ -236,22 +243,31 @@ export function ResetPasswordPage() {
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm password"
-                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-[11px] font-normal h-[48px]"
+                      className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-xl tracking-wider text-[11px] font-normal h-[48px]"
                     />
                   </div>
                   <ErrorMessage
                     name="confirmPassword"
                     component="div"
-                    className="text-red-500 text-xs mt-1 font-pincuk"
+                    className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
                   />
                 </div>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo"
-                >
-                  {isSubmitting ? "Resetting..." : "Reset Password"}
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo"
+                  >
+                    {isSubmitting ? "Resetting..." : "Reset Password"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => navigate("/")}
+                    className="w-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white border border-gray-300 dark:border-gray-700 font-boogaloo"
+                  >
+                    Return to Home
+                  </Button>
+                </div>
               </Form>
             )}
           </Formik>

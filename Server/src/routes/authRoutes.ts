@@ -8,6 +8,7 @@ import {
   forgotPassword,
   verifyResetToken,
   resetPassword,
+  forgotPasswordPhone,
   requestOtp
 } from '../controllers/authController';
 import {
@@ -18,7 +19,8 @@ import {
   verifyInvitationToken,
   resetPasswordFromInvitation,
   revokeRole,
-  changePassword
+  changePassword,
+  changeUserRole
 } from '../controllers/userManagementController';
 import { authenticate, isAdmin } from '../middlewares/authMiddleware';
 import { validateBody, validateParams } from '../middlewares/validationMiddleware';
@@ -64,13 +66,26 @@ router.post(
   resetPasswordFromInvitation
 );
 
-// Password reset routes
+// Email-based password reset routes
 router.post('/forgot-password', authLimiter, validateBody(forgotPasswordSchema), forgotPassword);
 router.get('/reset-password/:token', validateParams(yup.object({ token: yup.string().required('Token is required') })), verifyResetToken);
+// Password reset routes (supports both email and phone)
+router.post('/forgot-password/phone', authLimiter, validateBody(yup.object({
+  phoneNumber: yup.string().required('Phone number is required')
+})), forgotPasswordPhone);
+
+// Email-based reset (with token)
 router.post(
   '/reset-password/:token',
   authLimiter,
-  validateParams(yup.object({ token: yup.string().required('Token is required') })),
+  validateBody(resetPasswordSchema),
+  resetPassword
+);
+
+// Phone-based reset (no token)
+router.post(
+  '/reset-password',
+  authLimiter,
   validateBody(resetPasswordSchema),
   resetPassword
 );
@@ -93,6 +108,15 @@ router.put(
   isAdmin,
   validateParams(yup.object({ id: yup.string().uuid('Invalid user ID').required('User ID is required') })),
   revokeRole
+);
+
+router.put(
+  '/users/:id/role',
+  authenticate,
+  isAdmin,
+  validateParams(yup.object({ id: yup.string().uuid('Invalid user ID').required('User ID is required') })),
+  validateBody(yup.object({ role: yup.string().oneOf(['player', 'editor', 'admin', 'superadmin'], 'Invalid role').required('Role is required') })),
+  changeUserRole
 );
 
 export default router;

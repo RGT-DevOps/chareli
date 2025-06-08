@@ -40,7 +40,7 @@ export default function CreateNewPassModal({ open, onClose }: ResetPasswordModal
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-xl tracking-wider"
                 placeholder="New password"
               />
               <span
@@ -56,7 +56,7 @@ export default function CreateNewPassModal({ open, onClose }: ResetPasswordModal
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-xl tracking-wider"
                 placeholder="Confirm password"
               />
               <span

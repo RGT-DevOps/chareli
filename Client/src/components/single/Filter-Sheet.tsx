@@ -56,7 +56,7 @@ export function FilterSheet({ children, onFilter, onReset }: FilterSheetProps) {
                 Select Category
               </Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-14 bg-[#F1F5F9] border border-[#CBD5E0] font-pincuk w-full">
+                <SelectTrigger className="h-14 bg-[#F1F5F9] border border-[#CBD5E0] font-pincuk text-xl tracking-wider w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-[#121C2D]">
@@ -77,7 +77,7 @@ export function FilterSheet({ children, onFilter, onReset }: FilterSheetProps) {
                 Select Game Status
               </Label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="h-14 bg-[#F1F5F9] border border-[#CBD5E0] font-pincuk w-full">
+                <SelectTrigger className="h-14 bg-[#F1F5F9] border border-[#CBD5E0] font-pincuk text-xl tracking-wider w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-[#121C2D]">

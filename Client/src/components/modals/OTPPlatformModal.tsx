@@ -53,13 +53,13 @@ export function OTPPlatformModal({
                     <AlertDialogTitle className="text-2xl font-bold dark:text-white text-black font-boogaloo">
                         OTP Verification
                     </AlertDialogTitle>
-                    <AlertDialogDescription className=" dark:text-white text-black font-pincuk text-xs mt-1">
+                    <AlertDialogDescription className=" dark:text-white text-black font-pincuk text-xl tracking-wider mt-1">
                         Select platform where you want to receive OTP
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="space-y-4 mt-6">
                     {error && (
-                        <div className="text-red-500 text-xs font-pincuk text-center mb-4">
+                        <div className="text-red-500 font-pincuk text-xl tracking-wider text-center mb-4">
                             {error}
                         </div>
                     )}

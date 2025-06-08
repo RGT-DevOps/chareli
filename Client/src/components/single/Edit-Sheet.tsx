@@ -1,23 +1,28 @@
-import { useState, useEffect } from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
+import { useState, useEffect } from 'react';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetFooter,
   SheetClose,
-} from "../ui/sheet";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Button } from "../ui/button";
-import { DeleteConfirmationModal } from "../modals/DeleteConfirmationModal";
-import { XIcon } from "lucide-react";
-import { useGameById, useUpdateGame, useDeleteGame } from "../../backend/games.service";
-import { useCategories } from "../../backend/category.service";
-import { toast } from "sonner";
-import uploadImg from "../../assets/Fetch-upload.svg";
-import type { GameResponse } from "../../backend/types";
+} from '../ui/sheet';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Button } from '../ui/button';
+import { DeleteConfirmationModal } from '../modals/DeleteConfirmationModal';
+import { XIcon } from 'lucide-react';
+import {
+  useGameById,
+  useUpdateGame,
+  useDeleteGame,
+} from '../../backend/games.service';
+import { useCategories } from '../../backend/category.service';
+import { toast } from 'sonner';
+import uploadImg from '../../assets/fetch-upload.svg';
+import GameCreationProgress from './GameCreationProgress';
+// import type { GameResponse } from "../../backend/types";
 
 interface EditSheetProps {
   open: boolean;
@@ -42,7 +47,7 @@ const validationSchema = Yup.object({
     .min(0, 'Config must be a positive number'),
   categoryId: Yup.string().required('Category is required'),
   thumbnailFile: Yup.mixed<File>(),
-  gameFile: Yup.mixed<File>()
+  gameFile: Yup.mixed<File>(),
 });
 
 export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
@@ -50,8 +55,13 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [gameFileName, setGameFileName] = useState<string | null>(null);
+  const [showProgress, setShowProgress] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
 
   const { data: game, error } = useGameById(gameId);
+
+  console.log('games by id', gameFileName);
 
   // Close sheet if game is not found
   useEffect(() => {
@@ -70,9 +80,9 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
       setGameFileName(null);
 
       // Set thumbnail preview if available
-      if (game.thumbnailFile?.url) {
+      if (game.thumbnailFile?.s3Key) {
         setIsImageLoading(true);
-        setThumbnailPreview(game.thumbnailFile.url);
+        setThumbnailPreview(game.thumbnailFile.s3Key);
       }
 
       // Set game file name if available
@@ -86,12 +96,17 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
 
   const handleSubmit = async (values: FormValues, { setSubmitting }: any) => {
     try {
+      // Show progress bar
+      setShowProgress(true);
+      setProgress(0);
+      setCurrentStep('Preparing update...');
+
       const formData = new FormData();
       formData.append('title', values.title);
       formData.append('description', values.description);
       formData.append('config', String(values.config));
       formData.append('categoryId', values.categoryId);
-      
+
       if (values.thumbnailFile) {
         formData.append('thumbnailFile', values.thumbnailFile);
       }
@@ -99,11 +114,34 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
         formData.append('gameFile', values.gameFile);
       }
 
+      // Simulate progress steps
+      setProgress(20);
+      setCurrentStep('Updating thumbnail...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setProgress(50);
+      setCurrentStep('Updating game file...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setProgress(80);
+      setCurrentStep('Processing update...');
+      
       await updateGame.mutateAsync({ id: gameId, data: formData });
-      toast.success("Game updated successfully!");
+      
+      setProgress(100);
+      setCurrentStep('Update complete!');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      toast.success('Game updated successfully!');
+      setShowProgress(false);
+      setProgress(0);
+      setCurrentStep('');
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to update game");
+      setShowProgress(false);
+      setProgress(0);
+      setCurrentStep('');
+      toast.error('Failed to update game');
     } finally {
       setSubmitting(false);
     }
@@ -112,11 +150,11 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
   const handleDelete = async () => {
     try {
       await deleteGame.mutateAsync(gameId);
-      toast.success("Game deleted successfully");
+      toast.success('Game deleted successfully');
       setShowDeleteModal(false);
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to delete game");
+      toast.error('Failed to delete game');
     }
   };
 
@@ -131,9 +169,14 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="max-w-md w-full overflow-y-auto p-6 font-boogaloo dark:bg-[#0F1621]">
+      <SheetContent
+        side="right"
+        className="max-w-md w-full overflow-y-auto p-6 font-boogaloo dark:bg-[#0F1621]"
+      >
         <div className="mb-4">
-          <SheetTitle className="text-lg mt-8 tracking-wider border-b">Edit Game</SheetTitle>
+          <SheetTitle className="text-lg mt-8 tracking-wider border-b">
+            Edit Game
+          </SheetTitle>
         </div>
         <Formik
           initialValues={initialValues}
@@ -146,11 +189,13 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                 <Label className="">Update Thumbnail icon</Label>
                 <div className="mt-2 relative w-36 h-36">
                   {thumbnailPreview ? (
-                    <>
+                    <label className="relative w-36 h-36 cursor-pointer group">
                       <img
                         src={thumbnailPreview}
                         alt="Thumbnail"
-                        className={`w-36 h-36 rounded-lg object-cover transition-opacity duration-200 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+                        className={`w-36 h-36 rounded-lg object-cover transition-opacity duration-200 group-hover:opacity-75 ${
+                          isImageLoading ? 'opacity-0' : 'opacity-100'
+                        }`}
                         onLoad={() => setIsImageLoading(false)}
                         onError={(e) => {
                           // If image fails to load, clear the preview
@@ -158,18 +203,40 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                           e.currentTarget.onerror = null; // Prevent infinite loop
                         }}
                       />
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">Click to change</span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFieldValue('thumbnailFile', file);
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setThumbnailPreview(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           setThumbnailPreview(null);
                           setFieldValue('thumbnailFile', undefined);
                         }}
-                        className="absolute top-2 right-2 bg-[#C026D3] text-white rounded-full w-4 h-4 flex items-center justify-center shadow"
+                        className="absolute top-2 right-2 bg-[#C026D3] text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-[#a21caf] transition-colors"
                         title="Remove thumbnail"
                       >
-                        <XIcon className="w-3 h-3" />
+                        <XIcon className="w-4 h-4" />
                       </button>
-                    </>
+                    </label>
                   ) : isImageLoading ? (
                     <div className="w-36 h-36 rounded-lg bg-[#F1F5F9] dark:bg-[#121C2D] animate-pulse flex items-center justify-center">
                       <div className="w-8 h-8 border-4 border-[#D946EF] border-t-transparent rounded-full animate-spin"></div>
@@ -198,67 +265,140 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                     </label>
                   )}
                 </div>
-                <ErrorMessage name="thumbnailFile" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage
+                  name="thumbnailFile"
+                  component="div"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                />
               </div>
 
               <div className="mt-8">
-                <Label htmlFor="title" className="">Title</Label>
+                <Label htmlFor="title" className="">
+                  Title
+                </Label>
                 <Field
                   as={Input}
                   id="title"
                   name="title"
-                  className="mt-1 font-pincuk bg-[#F1F5F9] shadow-none dark:bg-[#121C2D]"
+                  className="mt-1 font-pincuk text-xl tracking-wider bg-[#F1F5F9] shadow-none dark:bg-[#121C2D]"
                 />
-                <ErrorMessage name="title" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage
+                  name="title"
+                  component="div"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                />
               </div>
 
               <div className="mt-8">
-                <Label htmlFor="description" className="">Short Description</Label>
+                <Label htmlFor="description" className="">
+                  Short Description
+                </Label>
                 <Field
                   as="textarea"
                   id="description"
                   name="description"
-                  className="w-full mt-1 rounded-md border bg-transparent p-2 text-sm font-pincuk dark:text-white dark:bg-[#121C2D]"
+                  className="w-full mt-1 rounded-md border bg-transparent p-2 font-pincuk text-xl tracking-wider dark:text-white dark:bg-[#121C2D]"
                   rows={3}
                 />
-                <ErrorMessage name="description" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage
+                  name="description"
+                  component="div"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                />
               </div>
 
               <div className="mt-8">
                 <Label className="text-lg mb-2 block">Game Upload .zip</Label>
-                <div className="flex items-center gap-4">
-                  <label className="w-40 h-38 flex flex-col items-center justify-center border border-[#CBD5E0] rounded-lg cursor-pointer hover:border-[#D946EF] transition">
-                    <img src={uploadImg} alt="upload" />
-                    <input
-                      type="file"
-                      accept=".zip"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setFieldValue('gameFile', file);
-                          setGameFileName(file.name);
-                        }
-                      }}
-                    />
-                  </label>
-                  {(gameFileName || game.gameFile?.name) && (
-                    <span className="text-sm font-pincuk text-gray-600 dark:text-gray-300">
-                      {gameFileName || game.gameFile?.name}
-                    </span>
+                <div className="mt-2 relative w-36 h-36">
+                  {(gameFileName || game.gameFile) ? (
+                    <label className="relative w-36 h-36 cursor-pointer group">
+                      {/* Show game thumbnail as visual representation */}
+                      <img
+                        src={thumbnailPreview || game.thumbnailFile?.s3Key || uploadImg}
+                        alt="Game File"
+                        className="w-36 h-36 rounded-lg object-cover transition-opacity duration-200 group-hover:opacity-75"
+                        onError={(e) => {
+                          // If thumbnail fails to load, show upload icon
+                          e.currentTarget.src = uploadImg;
+                        }}
+                      />
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">Click to change</span>
+                      </div>
+                      {/* ZIP badge overlay */}
+                      <div className="absolute top-2 left-2 bg-[#D946EF] text-white rounded px-2 py-1 text-xs font-bold">
+                        ZIP
+                      </div>
+                      <input
+                        type="file"
+                        accept=".zip"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFieldValue('gameFile', file);
+                            setGameFileName(file.name);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setGameFileName(null);
+                          setFieldValue('gameFile', undefined);
+                        }}
+                        className="absolute top-2 right-2 bg-[#C026D3] text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-[#a21caf] transition-colors"
+                        title="Remove game file"
+                      >
+                        <XIcon className="w-4 h-4" />
+                      </button>
+                    </label>
+                  ) : (
+                    <label className="w-36 h-36 flex flex-col items-center justify-center border border-[#e5e7eb] rounded-lg cursor-pointer hover:bg-[#f3e8ff] transition">
+                      <span className="flex items-center justify-center">
+                        <img src={uploadImg} alt="upload" />
+                      </span>
+                      <input
+                        type="file"
+                        accept=".zip"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFieldValue('gameFile', file);
+                            setGameFileName(file.name);
+                          }
+                        }}
+                      />
+                    </label>
                   )}
                 </div>
-                <ErrorMessage name="gameFile" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                {/* Show game title as file name */}
+                {(gameFileName || game.gameFile) && (
+                  <div className="mt-2 text-sm font-pincuk tracking-wider text-gray-600 dark:text-gray-300">
+                    📁 {gameFileName || `${game.title}.zip`}
+                  </div>
+                )}
+                <ErrorMessage
+                  name="gameFile"
+                  component="div"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                />
               </div>
 
               <div className="mt-8">
-                <Label htmlFor="categoryId" className="">Game Category</Label>
+                <Label htmlFor="categoryId" className="">
+                  Game Category
+                </Label>
                 <div className="relative">
                   <Field
                     as="select"
                     id="categoryId"
                     name="categoryId"
-                    className="mt-1 w-full rounded-lg dark:bg-[#121C2D] dark:text-white bg-[#F1F5F9] text-[#64748b] px-4 py-3 text-sm font-pincuk outline-none border-none appearance-none pr-10"
+                    className="mt-1 w-full rounded-lg dark:bg-[#121C2D] dark:text-white bg-[#F1F5F9] text-[#64748b] px-4 py-3 font-pincuk text-xl tracking-wider outline-none border-none appearance-none pr-10"
                   >
                     <option value="">Select category</option>
                     {categories?.map((category) => (
@@ -269,15 +409,27 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                   </Field>
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#64748b]">
                     <svg width="20" height="20" fill="none" viewBox="0 0 20 20">
-                      <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path
+                        d="M6 8l4 4 4-4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </span>
                 </div>
-                <ErrorMessage name="categoryId" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage
+                  name="categoryId"
+                  component="div"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                />
               </div>
 
               <div>
-                <Label htmlFor="config" className="mt-8">Game Config</Label>
+                <Label htmlFor="config" className="mt-8">
+                  Game Config
+                </Label>
                 <Field
                   as={Input}
                   type="number"
@@ -286,41 +438,54 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                   min="0"
                   className="mt-1 bg-[#F1F5F9] shadow-none border-none dark:bg-[#121C2D]"
                 />
-                <ErrorMessage name="config" component="div" className="text-red-500 text-xs mt-1 font-pincuk" />
+                <ErrorMessage
+                  name="config"
+                  component="div"
+                  className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                />
               </div>
 
               <SheetFooter className="flex flex-row justify-between mt-6">
-                <Button 
+                <Button
                   type="button"
-                  variant="destructive" 
-                  onClick={() => setShowDeleteModal(true)} 
+                  variant="destructive"
+                  onClick={() => setShowDeleteModal(true)}
                   className="dark:bg-[#EF4444]"
                 >
                   Delete
                 </Button>
                 <div className="flex gap-2">
                   <SheetClose asChild>
-                    <Button 
+                    <Button
                       type="button"
-                      variant="outline" 
+                      variant="outline"
                       className="dark:text-black dark:bg-white"
                     >
                       Cancel
                     </Button>
                   </SheetClose>
-                  <Button 
+                  <Button
                     type="submit"
                     disabled={isSubmitting}
-                    variant="default" 
+                    variant="default"
                     className="bg-[#D946EF] hover:bg-accent dark:text-white"
                   >
-                    {isSubmitting ? "Updating..." : "Update"}
+                    {isSubmitting ? 'Updating...' : 'Update'}
                   </Button>
                 </div>
               </SheetFooter>
             </Form>
           )}
         </Formik>
+        
+        {/* Progress Bar */}
+        {showProgress && (
+          <GameCreationProgress 
+            progress={progress}
+            currentStep={currentStep}
+            isComplete={progress === 100}
+          />
+        )}
       </SheetContent>
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

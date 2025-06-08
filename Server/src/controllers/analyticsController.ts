@@ -383,6 +383,63 @@ export const updateAnalytics = async (
  *       500:
  *         description: Internal server error
  */
+/**
+ * @swagger
+ * /analytics/{id}/end:
+ *   post:
+ *     summary: Update analytics end time during page unload
+ *     tags: [Analytics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - endTime
+ *             properties:
+ *               endTime:
+ *                 type: string
+ *                 format: date-time
+ */
+export const updateAnalyticsEndTime = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { endTime } = req.body;
+    
+    const analytics = await analyticsRepository.findOne({
+      where: { id }
+    });
+    
+    if (!analytics) {
+      return next(ApiError.notFound(`Analytics entry with id ${id} not found`));
+    }
+    
+    analytics.endTime = new Date(endTime);
+    await analyticsRepository.save(analytics);
+    
+    res.status(200).json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteAnalytics = async (
   req: Request,
   res: Response,

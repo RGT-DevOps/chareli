@@ -3,16 +3,21 @@ import { AppDataSource } from '../config/database';
 import { Game, GameStatus } from '../entities/Games';
 import { Category } from '../entities/Category';
 import { File } from '../entities/Files';
+import { Analytics } from '../entities/Analytics';
 import { ApiError } from '../middlewares/errorHandler';
 import { RoleType } from '../entities/Role';
 import { Not } from 'typeorm';
 import { s3Service } from '../services/s3.service';
+import { zipService } from '../services/zip.service';
 import multer from 'multer';
 import logger from '../utils/logger';
+import { v4 as uuidv4 } from 'uuid';
 
 const gameRepository = AppDataSource.getRepository(Game);
 const categoryRepository = AppDataSource.getRepository(Category);
 const fileRepository = AppDataSource.getRepository(File);
+
+
 
 /**
  * @swagger
@@ -82,34 +87,86 @@ export const getAllGames = async (
       categoryId, 
       status, 
       search,
-      createdById 
+      createdById,
+      filter
     } = req.query;
     
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     
-    const queryBuilder = gameRepository.createQueryBuilder('game')
+    let queryBuilder = gameRepository.createQueryBuilder('game')
       .leftJoinAndSelect('game.category', 'category')
       .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
       .leftJoinAndSelect('game.gameFile', 'gameFile')
       .leftJoinAndSelect('game.createdBy', 'createdBy');
+
+    // Handle special filters
+    if (filter === 'recently_added') {
+      // Get games from the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      queryBuilder.andWhere('game.createdAt >= :sevenDaysAgo', { sevenDaysAgo });
+    } else if (filter === 'popular') {
+      queryBuilder = gameRepository.createQueryBuilder('game')
+        .leftJoinAndSelect('game.category', 'category')
+        .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
+        .leftJoinAndSelect('game.gameFile', 'gameFile')
+        .leftJoinAndSelect('game.createdBy', 'createdBy')
+        .leftJoin('analytics', 'a', 'a.gameId = game.id')
+        .addSelect([
+          'COUNT(DISTINCT a.userId) as playerCount',
+          'SUM(a.duration) as totalPlayTime',
+          'COUNT(a.id) as sessionCount'
+        ])
+        .groupBy('game.id')
+        .addGroupBy('category.id')
+        .addGroupBy('thumbnailFile.id')
+        .addGroupBy('gameFile.id')
+        .addGroupBy('createdBy.id')
+        .orderBy('playerCount', 'DESC')
+        .addOrderBy('totalPlayTime', 'DESC')
+        .addOrderBy('sessionCount', 'DESC');
+    } else if (filter === 'recommended' && req.user?.userId) {
+      // First find user's most played category
+      const userTopCategory = await AppDataSource
+        .getRepository(Analytics)
+        .createQueryBuilder('analytics')
+        .select('g.categoryId', 'categoryId')
+        .innerJoin('games', 'g', 'analytics.gameId = g.id')
+        .where('analytics.userId = :userId', { userId: req.user.userId })
+        .groupBy('g.categoryId')
+        .orderBy('SUM(analytics.duration)', 'DESC')
+        .limit(1)
+        .getRawOne();
+
+      if (userTopCategory) {
+        queryBuilder
+          .where('game.categoryId = :topCategoryId', { topCategoryId: userTopCategory.categoryId })
+          .andWhere('game.id NOT IN ' +
+            AppDataSource.createQueryBuilder()
+              .select('DISTINCT a.gameId')
+              .from('analytics', 'a')
+              .where('a.userId = :userId', { userId: req.user.userId })
+              .getQuery()
+          )
+          .setParameter('userId', req.user.userId)
+          .orderBy('game.createdAt', 'DESC');
+      }
+    }
     
-    // Apply category filter if provided
+    // Apply standard filters
     if (categoryId) {
       queryBuilder.andWhere('game.categoryId = :categoryId', { categoryId });
     }
     
-    // Apply status filter if provided
     if (status) {
       queryBuilder.andWhere('game.status = :status', { status });
     }
     
-    // Apply creator filter if provided
     if (createdById) {
       queryBuilder.andWhere('game.createdById = :createdById', { createdById });
     }
     
-    // Apply search filter if provided
     if (search) {
       queryBuilder.andWhere(
         '(game.title ILIKE :search OR game.description ILIKE :search)',
@@ -127,6 +184,20 @@ export const getAllGames = async (
       .orderBy('game.createdAt', 'DESC');
     
     const games = await queryBuilder.getMany();
+
+    // Transform game file and thumbnail URLs to direct S3 URLs
+    games.forEach(game => {
+      if (game.gameFile) {
+        const s3Key = game.gameFile.s3Key;
+        const baseUrl = s3Service.getBaseUrl();
+        game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      }
+      if (game.thumbnailFile) {
+        const s3Key = game.thumbnailFile.s3Key;
+        const baseUrl = s3Service.getBaseUrl();
+        game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      }
+    });
     
     res.status(200).json({
       success: true,
@@ -220,6 +291,18 @@ export const getGameById = async (
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
     
+    // Transform game file and thumbnail URLs to direct S3 URLs
+    if (game.gameFile) {
+      const s3Key = game.gameFile.s3Key;
+      const baseUrl = s3Service.getBaseUrl();
+      game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+    }
+    if (game.thumbnailFile) {
+      const s3Key = game.thumbnailFile.s3Key;
+      const baseUrl = s3Service.getBaseUrl();
+      game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+    }
+
     // Find similar games (same category, different ID, active status)
     let similarGames: Game[] = [];
     
@@ -230,18 +313,31 @@ export const getGameById = async (
           id: Not(id), // Exclude the current game
           status: GameStatus.ACTIVE
         },
-        relations: ['thumbnailFile'],
+        relations: ['thumbnailFile', 'gameFile'],
         take: 5, // Limit to 5 similar games
         order: { createdAt: 'DESC' } // Get the newest games first
       });
+
+      // Transform similar games' file and thumbnail URLs to direct S3 URLs
+      similarGames.forEach(similarGame => {
+        if (similarGame.gameFile) {
+          const s3Key = similarGame.gameFile.s3Key;
+          const baseUrl = s3Service.getBaseUrl();
+          similarGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+        }
+        if (similarGame.thumbnailFile) {
+          const s3Key = similarGame.thumbnailFile.s3Key;
+          const baseUrl = s3Service.getBaseUrl();
+          similarGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+        }
+      });
     }
-    
-    // Return the game with similar games
+      
     res.status(200).json({
       success: true,
       data: {
         ...game,
-        similarGames
+        similarGames: similarGames
       }
     });
   } catch (error) {
@@ -305,7 +401,7 @@ export const getGameById = async (
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: Infinity, // No size limit for game files
   }
 });
 
@@ -326,6 +422,11 @@ export const createGame = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  // Start a transaction
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
   try {
     const { 
       title, 
@@ -350,77 +451,116 @@ export const createGame = async (
     const thumbnailFile = files.thumbnailFile[0];
     const gameFile = files.gameFile[0];
     
-    // Check if category exists if provided
-    if (categoryId) {
-      const category = await categoryRepository.findOne({
-        where: { id: categoryId }
-      });
-      
-      if (!category) {
-        return next(ApiError.badRequest(`Category with id ${categoryId} not found`));
+    try {
+      // Check if category exists if provided
+      if (categoryId) {
+        const category = await queryRunner.manager.findOne(Category, {
+          where: { id: categoryId }
+        });
+        
+        if (!category) {
+          throw new ApiError(400, `Category with id ${categoryId} not found`);
+        }
       }
+
+      // Process game zip file first to validate it
+      logger.info('Processing game zip file...');
+      const processedZip = await zipService.processGameZip(gameFile.buffer);
+      
+      if (processedZip.error) {
+        throw new ApiError(400, processedZip.error);
+      }
+
+      // Generate unique game folder name
+      const gameFolderId = uuidv4();
+
+      // Upload thumbnail to S3
+      logger.info('Uploading thumbnail file to S3...');
+      const thumbnailUploadResult = await s3Service.uploadFile(
+        thumbnailFile.buffer,
+        thumbnailFile.originalname,
+        thumbnailFile.mimetype,
+        'thumbnails'
+      );
+
+      // Upload game folder to S3
+      logger.info('Uploading game folder to S3...');
+      const s3GamePath = `games/${gameFolderId}`;
+      await s3Service.uploadDirectory(processedZip.extractedPath, s3GamePath);
+
+      // Create file records in the database using transaction
+      logger.info('Creating file records in the database...');
+      const thumbnailFileRecord = fileRepository.create({
+        s3Key: thumbnailUploadResult.key,
+        type: 'thumbnail'
+      });
+
+      if (!processedZip.indexPath) {
+        throw new ApiError(400, 'No index.html found in the zip file');
+      }
+
+      const indexPath = processedZip.indexPath.replace(/\\/g, '/');
+      const gameFileRecord = fileRepository.create({
+        s3Key: `${s3GamePath}/${indexPath}`,
+        type: 'game_file'
+      });
+
+      await queryRunner.manager.save([thumbnailFileRecord, gameFileRecord]);
+
+      // Create new game with file IDs using transaction
+      logger.info('Creating game record...');
+      const game = gameRepository.create({
+        title,
+        description,
+        thumbnailFileId: thumbnailFileRecord.id,
+        gameFileId: gameFileRecord.id,
+        categoryId,
+        status,
+        config,
+        createdById: req.user?.userId
+      });
+
+      await queryRunner.manager.save(game);
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+
+      // Fetch the game with relations to return
+      const savedGame = await gameRepository.findOne({
+        where: { id: game.id },
+        relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
+      });
+
+      if (!savedGame) {
+        return next(ApiError.notFound(`Game with id ${game.id} not found`));
+      }
+
+      // Transform game file and thumbnail URLs to direct S3 URLs
+      if (savedGame.gameFile) {
+        const s3Key = savedGame.gameFile.s3Key;
+        const baseUrl = s3Service.getBaseUrl();
+        savedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      }
+      if (savedGame.thumbnailFile) {
+        const s3Key = savedGame.thumbnailFile.s3Key;
+        const baseUrl = s3Service.getBaseUrl();
+        savedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      }
+
+      res.status(201).json({
+        success: true,
+        data: savedGame,
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      await queryRunner.rollbackTransaction();
+      throw error;
     }
-    
-    // Upload files to S3
-    logger.info('Uploading thumbnail file to S3...');
-    const thumbnailUploadResult = await s3Service.uploadFile(
-      thumbnailFile.buffer,
-      thumbnailFile.originalname,
-      thumbnailFile.mimetype,
-      'thumbnails'
-    );
-    
-    logger.info('Uploading game file to S3...');
-    const gameFileUploadResult = await s3Service.uploadFile(
-      gameFile.buffer,
-      gameFile.originalname,
-      gameFile.mimetype,
-      'games'
-    );
-    
-    // Create file records in the database
-    logger.info('Creating file records in the database...');
-    const thumbnailFileRecord = fileRepository.create({
-      s3Key: thumbnailUploadResult.key,
-      s3Url: thumbnailUploadResult.url,
-      type: 'thumbnail'
-    });
-    
-    const gameFileRecord = fileRepository.create({
-      s3Key: gameFileUploadResult.key,
-      s3Url: gameFileUploadResult.url,
-      type: 'game_file'
-    });
-    
-    await fileRepository.save([thumbnailFileRecord, gameFileRecord]);
-    
-    // Create new game with file IDs
-    logger.info('Creating game record...');
-    const game = gameRepository.create({
-      title,
-      description,
-      thumbnailFileId: thumbnailFileRecord.id,
-      gameFileId: gameFileRecord.id,
-      categoryId,
-      status,
-      config,
-      createdById: req.user?.userId // Set current user as creator
-    });
-    
-    await gameRepository.save(game);
-    
-    // Fetch the game with relations to return
-    const savedGame = await gameRepository.findOne({
-      where: { id: game.id },
-      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
-    });
-    
-    res.status(201).json({
-      success: true,
-      data: savedGame,
-    });
   } catch (error) {
     next(error);
+  } finally {
+    // Release query runner
+    await queryRunner.release();
   }
 };
 
@@ -487,6 +627,11 @@ export const updateGame = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  // Start a transaction
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
   try {
     const { id } = req.params;
     const { 
@@ -497,7 +642,7 @@ export const updateGame = async (
       config
     } = req.body;
     
-    const game = await gameRepository.findOne({
+    const game = await queryRunner.manager.findOne(Game, {
       where: { id }
     });
     
@@ -525,7 +670,6 @@ export const updateGame = async (
       logger.info('Creating new thumbnail file record...');
       const thumbnailFileRecord = fileRepository.create({
         s3Key: thumbnailUploadResult.key,
-        s3Url: thumbnailUploadResult.url,
         type: 'thumbnail'
       });
       
@@ -539,24 +683,35 @@ export const updateGame = async (
     if (files?.gameFile && files.gameFile[0]) {
       const gameFile = files.gameFile[0];
       
-      // Upload to S3
-      logger.info('Uploading new game file to S3...');
-      const gameFileUploadResult = await s3Service.uploadFile(
-        gameFile.buffer,
-        gameFile.originalname,
-        gameFile.mimetype,
-        'games'
-      );
+      // Process game zip file first to validate it
+      logger.info('Processing game zip file...');
+      const processedZip = await zipService.processGameZip(gameFile.buffer);
       
-      // Create file record
+      if (processedZip.error) {
+        throw new ApiError(400, processedZip.error);
+      }
+
+      // Generate unique game folder name
+      const gameFolderId = uuidv4();
+
+      // Upload game folder to S3
+      logger.info('Uploading game folder to S3...');
+      const s3GamePath = `games/${gameFolderId}`;
+      await s3Service.uploadDirectory(processedZip.extractedPath, s3GamePath);
+
+      // Create file record for the index.html
       logger.info('Creating new game file record...');
+      if (!processedZip.indexPath) {
+        throw new ApiError(400, 'No index.html found in the zip file');
+      }
+
+      const indexPath = processedZip.indexPath.replace(/\\/g, '/');
       const gameFileRecord = fileRepository.create({
-        s3Key: gameFileUploadResult.key,
-        s3Url: gameFileUploadResult.url,
+        s3Key: `${s3GamePath}/${indexPath}`,
         type: 'game_file'
       });
       
-      await fileRepository.save(gameFileRecord);
+      await queryRunner.manager.save(gameFileRecord);
       
       // Update game with new file ID
       game.gameFileId = gameFileRecord.id;
@@ -581,20 +736,44 @@ export const updateGame = async (
     if (status) game.status = status as GameStatus;
     if (config !== undefined) game.config = config;
     
-    await gameRepository.save(game);
+    await queryRunner.manager.save(game);
+
+    // Commit transaction
+    await queryRunner.commitTransaction();
     
     // Fetch the updated game with relations to return
-    const updatedGame = await gameRepository.findOne({
-      where: { id },
-      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
-    });
+      const updatedGame = await gameRepository.findOne({
+        where: { id },
+        relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
+      });
+
+      if (!updatedGame) {
+        return next(ApiError.notFound(`Game with id ${id} not found`));
+      }
+
+      // Transform game file and thumbnail URLs to direct S3 URLs
+      if (updatedGame.gameFile) {
+        const s3Key = updatedGame.gameFile.s3Key;
+        const baseUrl = s3Service.getBaseUrl();
+        updatedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      }
+      if (updatedGame.thumbnailFile) {
+        const s3Key = updatedGame.thumbnailFile.s3Key;
+        const baseUrl = s3Service.getBaseUrl();
+        updatedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      }
     
-    res.status(200).json({
-      success: true,
-      data: updatedGame,
-    });
+      res.status(200).json({
+        success: true,
+        data: updatedGame,
+      });
   } catch (error) {
+    // Rollback transaction on error
+    await queryRunner.rollbackTransaction();
     next(error);
+  } finally {
+    // Release query runner
+    await queryRunner.release();
   }
 };
 

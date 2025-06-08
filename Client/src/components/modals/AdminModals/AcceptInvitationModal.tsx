@@ -18,29 +18,29 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
-      <div className="bg-[#F1F5F9] rounded-2xl p-10 w-[420px] max-w-full shadow-none border border-[#E2E8F0] flex flex-col items-center">
-        <h2 className="text-3xl font-bold text-[#D946EF] mb-6 underline underline-offset-4 text-center font-boogaloo">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-[#F1F5F9] rounded-2xl p-4 sm:p-6 md:p-8 w-[90%] sm:w-[420px] md:w-[450px] lg:w-[480px] max-w-[90vw] shadow-xl border border-[#E2E8F0] flex flex-col items-center mx-4">
+        <h2 className="text-2xl sm:text-3xl font-bold text-[#D946EF] mb-4 sm:mb-6 underline underline-offset-4 text-center font-boogaloo">
           Accept Invitation
         </h2>
         <form className="w-full flex flex-col gap-4">
           {isExistingUser ? (
             <> 
               <div>
-                <label className="block font-bold text-lg mb-1 font-boogaloo trackig-wider">Email</label>
+                <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Email</label>
                 <input
                   type="email"
-                  className="w-full rounded-lg bg-gray-200 px-4 py-3 text-gray-500 font-pincuk text-sm"
+                  className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 text-gr text-xl tracking-wider"
                   placeholder="user@email.com"
                   disabled
                 />
               </div>
               <div>
-                <label className="block font-bold text-lg mb-1 font-boogaloo trackig-wider">Reset Password</label>
+                <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Reset Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="New password"
                   />
                   <span
@@ -52,11 +52,11 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 </div>
               </div>
               <div>
-                <label className="block font-bold text-lg mb-1 font-boogaloo trackig-wider">Confirm New Password</label>
+                <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Confirm New Password</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="Confirm password"
                   />
                   <span
@@ -69,7 +69,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
               </div>
               <button
                 type="submit"
-                className="w-full mt-4 bg-[#D946EF] text-white font-bold py-3 rounded-lg text-lg tracking-wider"
+                className="w-full mt-4 bg-[#D946EF] text-white font-bold py-2 sm:py-3 rounded-lg text-base sm:text-lg tracking-wider"
               >
                 Login
               </button>
@@ -78,36 +78,36 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
             <>
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block font-bold text-lg mb-1 font-boogaloo tracking-wider">First Name</label>
+                  <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">First Name</label>
                   <input
                     type="text"
-                    className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="First name"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block font-bold text-lg mb-1 font-boogaloo tracking-wider">Last Name</label>
+                  <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Last Name</label>
                   <input
                     type="text"
-                    className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="Last Name"
                   />
                 </div>
               </div>
               <div>
-                <label className="block font-bold text-lg mb-1 font-boogaloo tracking-wider">Phone Number</label>
+                <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Phone Number</label>
                 <input
                   type="tel"
-                  className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                  className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                   placeholder="Number"
                 />
               </div>
               <div>
-                <label className="block font-bold text-lg mb-1 font-boogaloo tracking-wider">Reset Password</label>
+                <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Reset Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="New password"
                   />
                   <span
@@ -119,11 +119,11 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
                 </div>
               </div>
               <div>
-                <label className="block font-bold text-lg mb-1 font-boogaloo tracking-wider">Confirm New Password</label>
+                <label className="block font-bold text-base sm:text-lg mb-1 font-boogaloo tracking-wider">Confirm New Password</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
-                    className="w-full rounded-lg bg-gray-200 px-4 py-3 font-pincuk text-sm"
+                    className="w-full rounded-lg bg-gray-200 px-3 sm:px-4 py-2 sm:py-3 font-pincuk text-xl tracking-wider"
                     placeholder="Confirm password"
                   />
                   <span
@@ -136,7 +136,7 @@ export const AcceptInvitationModal: React.FC<AcceptInvitationModalProps> = ({
               </div>
               <button
                 type="submit"
-                className="w-full mt-4 bg-[#D946EF] text-white font-bold py-3 rounded-lg text-lg tracking-wider"
+                className="w-full mt-4 bg-[#D946EF] text-white font-bold py-2 sm:py-3 rounded-lg text-base sm:text-lg tracking-wider"
               >
                 Sign Up
               </button>

@@ -1,23 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { backendService } from './api.service';
 import { BackendRoute } from './constants';
-import type { GameResponse, GameStatus } from './types';
+import type { GameResponse, GameStatus, PaginatedResponse } from './types';
 
-export const useGames = (params?: { categoryId?: string; status?: GameStatus }) => {
-  return useQuery<GameResponse[]>({
+export const useGames = (params?: { 
+  categoryId?: string; 
+  status?: GameStatus; 
+  filter?: 'popular' | 'recommended' | 'recently_added';
+  search?: string;
+  limit?: number;
+}) => {
+  return useQuery<PaginatedResponse<GameResponse>>({
     queryKey: [BackendRoute.GAMES, params],
     queryFn: async () => {
       const response = await backendService.get(BackendRoute.GAMES, { params });
-      return response.data as GameResponse[];
+      return response.data as PaginatedResponse<GameResponse>;
     },
   });
 };
 
 export const useGameById = (id: string) => {
-  return useQuery<GameResponse>({
+  return useQuery<any>({
     queryKey: [BackendRoute.GAMES, id],
     queryFn: async () => {
       const response = await backendService.get(BackendRoute.GAME_BY_ID.replace(':id', id));
+      console.log('Game API Response:', response.data);
       return response.data as GameResponse;
     },
   });
@@ -34,6 +41,7 @@ export const useCreateGame = () => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAMES_ANALYTICS] });
     },
   });
 };
@@ -50,6 +58,36 @@ export const useUpdateGame = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES, id] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAMES_ANALYTICS] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAME_ANALYTICS, id] });
+    },
+  });
+};
+
+export const useToggleGameStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ gameId, currentStatus }: { gameId: string; currentStatus: string }) => {
+      const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+      const formData = new FormData();
+      formData.append('status', newStatus);
+      
+      const response = await backendService.put(BackendRoute.GAME_BY_ID.replace(':id', gameId), formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    },
+    onSuccess: (_, { gameId }) => {
+      // Invalidate all games queries (this will update Home and Categories pages)
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES, gameId] });
+      // Invalidate admin queries
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAMES_ANALYTICS] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAME_ANALYTICS, gameId] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAMES]});
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.CATEGORIES]});
     },
   });
 };
@@ -61,6 +99,7 @@ export const useDeleteGame = () => {
       backendService.delete(BackendRoute.GAME_BY_ID.replace(':id', id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_GAMES_ANALYTICS] });
     },
   });
 };
