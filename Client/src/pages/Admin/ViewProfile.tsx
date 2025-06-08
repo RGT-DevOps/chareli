@@ -1,6 +1,5 @@
 import { CiEdit } from "react-icons/ci";
 import { Button } from "../../components/ui/button";
-import gameImg from "@/assets/gamesImg/1.svg";
 import { IoChevronBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import EditProfileSheet from "../../components/single/EditProfile-Sheet";
@@ -46,9 +45,9 @@ export default function ViewProfile() {
         <div className="flex flex-col items-center">
           <div className="w-96 bg-[#f6f8fc] rounded-2xl p-6 flex flex-col items-center mb-8 dark:bg-[#334154]">
             <img
-              src={gameImg}
-              alt="avatar"
-              className="w-20 h-20 rounded-full"
+              src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
+              alt="Profile"
+              className="w-20 h-20 rounded-full border-2 border-[#D946EF]"
             />
             <div className="flex gap-3 items-center mt-4">
               <h2 className="mb-0 text-xl font-semibold text-[#121C2D] dark:text-white tracking-wider">
@@ -56,7 +55,7 @@ export default function ViewProfile() {
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-green-500 font-bold text-lg">●</span>
-                <span className="text-gray-700 text-sm dark:text-white font-pincuk">{user.role?.name || 'User'}</span>
+                <span className="text-gray-700 dark:text-white font-pincuk text-lg tracking-wider">{user.role?.name || 'User'}</span>
               </div>
             </div>
             <Button
@@ -83,13 +82,13 @@ export default function ViewProfile() {
             <h3 className="text-xl mb-4 text-[#121C2D] tracking-wide dark:text-white">Profile Details</h3>
             <div className="grid grid-cols-2 gap-y-6 gap-x-8 dark:text-white space-y-6">
               <div className="text-fuchsia-500 tracking-wide text-lg">Name</div>
-              <div className="text-[#334154] font-pincuk dark:text-white whitespace-pre-line">
+              <div className="text-[#334154] font-pincuk text-xl tracking-wider dark:text-white whitespace-pre-line">
                 {user.firstName} {user.lastName}
               </div>
               <div className="text-fuchsia-500 tracking-wide text-lg">Email</div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{user.email}</div>
+              <div className="text-[#334154] font-pincuk text-xl tracking-wider dark:text-white">{user.email}</div>
               <div className="text-fuchsia-500 tracking-wide text-lg">Mobile number</div>
-              <div className="text-[#334154] font-pincuk dark:text-white">{user.phoneNumber || 'Not provided'}</div>
+              <div className="text-[#334154] font-pincuk text-xl tracking-wider dark:text-white">{user.phoneNumber || 'Not provided'}</div>
             </div>
           </div>
         </div>

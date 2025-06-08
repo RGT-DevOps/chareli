@@ -24,15 +24,22 @@ interface Config {
     email: string;
     password: string;
   };
-  twilio: {
-    accountSid: string;
-    authToken: string;
-    phoneNumber: string;
+  smsService: {
+    region: string;
+    accessKeyId: string;
+    secretAccessKey: string;
+    senderName: string;
   };
   email: {
     service: string;
     user: string;
     password: string;
+  };
+  ses: {
+    region: string;
+    accessKeyId: string;
+    secretAccessKey: string;
+    fromEmail: string;
   };
   otp: {
     expiryMinutes: number;
@@ -52,6 +59,11 @@ interface Config {
     endpoint?: string;
     forcePathStyle?: boolean;
     signedUrlExpiration: number;
+  };
+  cloudfront: {
+    distributionDomain: string;
+    keyPairId: string;
+    cookieExpiration: number;
   };
 }
 
@@ -75,15 +87,22 @@ const config: Config = {
     email: process.env.SUPERADMIN_EMAIL || 'admin@example.com',
     password: process.env.SUPERADMIN_PASSWORD || 'Admin123!',
   },
-  twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
-    authToken: process.env.TWILIO_AUTH_TOKEN || '',
-    phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
+  smsService: {
+    region: process.env.AWS_REGION || 'us-east-1',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    senderName: process.env.AWS_SNS_SENDER_NAME || 'Chareli',
   },
   email: {
     service: process.env.EMAIL_SERVICE || '',
     user: process.env.EMAIL_USER || '',
     password: process.env.EMAIL_PASSWORD || '',
+  },
+  ses: {
+    region: process.env.AWS_REGION || 'eu-central-1',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    fromEmail: process.env.AWS_SES_FROM_EMAIL || 'no-reply@dev.chareli.reallygreattech.com',
   },
   otp: {
     expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || '5', 10),
@@ -103,6 +122,11 @@ const config: Config = {
     endpoint: process.env.AWS_S3_ENDPOINT,
     forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true',
     signedUrlExpiration: parseInt(process.env.AWS_SIGNED_URL_EXPIRATION || '3600', 10),
+  },
+  cloudfront: {
+    distributionDomain: process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN || '',
+    keyPairId: process.env.CLOUDFRONT_KEY_PAIR_ID || '',
+    cookieExpiration: 86400, // 1 day in seconds
   }
 };
 

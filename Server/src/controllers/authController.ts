@@ -5,13 +5,18 @@ import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Analytics } from '../entities/Analytics';
 import { OtpType } from '../entities/Otp';
+import { SystemConfig } from '../entities/SystemConfig';
+import { otpService } from '../services/otp.service';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+import { getCountryFromIP } from './signupAnalyticsController';
 
 // Section: Core Authentication
 // This controller handles core authentication functions like registration, login, and OTP verification
 
 const userRepository = AppDataSource.getRepository(User);
 const analyticsRepository = AppDataSource.getRepository(Analytics);
+const systemConfigRepository = AppDataSource.getRepository(SystemConfig);
 
 /**
  * @swagger
@@ -50,8 +55,8 @@ const analyticsRepository = AppDataSource.getRepository(Analytics);
  *         description: Internal server error
  */
 export const registerPlayer = async (
-  req: Request,
-  res: Response,
+  req: Request, 
+  res: Response, 
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -62,6 +67,15 @@ export const registerPlayer = async (
       return next(ApiError.badRequest('All fields are required'));
     }
 
+    // Get IP address
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddress = Array.isArray(forwarded)
+      ? forwarded[0]
+      : (forwarded || req.socket.remoteAddress || req.ip || '');
+
+    // Get country from IP
+    const country = await getCountryFromIP(ipAddress);
+
     // Register the user
     const user = await authService.registerPlayer(
       firstName,
@@ -70,7 +84,8 @@ export const registerPlayer = async (
       password,
       phoneNumber,
       isAdult || false,
-      hasAcceptedTerms
+      hasAcceptedTerms,
+      country || undefined
     );
 
     // Create analytics entry for signup
@@ -137,8 +152,8 @@ export const registerPlayer = async (
  *         description: Internal server error
  */
 export const registerFromInvitation = async (
-  req: Request,
-  res: Response,
+  req: Request, 
+  res: Response, 
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -150,6 +165,15 @@ export const registerFromInvitation = async (
       return next(ApiError.badRequest('All fields are required'));
     }
 
+    // Get IP address
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddress = Array.isArray(forwarded)
+      ? forwarded[0]
+      : (forwarded || req.socket.remoteAddress || req.ip || '');
+
+    // Get country from IP
+    const country = await getCountryFromIP(ipAddress);
+
     // Register the user
     const user = await authService.registerFromInvitation(
       token,
@@ -158,7 +182,8 @@ export const registerFromInvitation = async (
       password,
       phoneNumber,
       isAdult || false,
-      hasAcceptedTerms
+      hasAcceptedTerms,
+      country || undefined
     );
 
     // Create analytics entry for signup from invitation
@@ -188,7 +213,7 @@ export const registerFromInvitation = async (
  * /auth/login:
  *   post:
  *     summary: Login
- *     description: Login with email and password
+ *     description: Login with email or phone number and password
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -197,13 +222,11 @@ export const registerFromInvitation = async (
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - identifier
  *               - password
- *               - otpType
  *           example:
- *             email: "john.doe@example.com"
+ *             identifier: "john.doe@example.com or +1234567890"
  *             password: "StrongPassword123!"
- *             otpType: "SMS"
  *     responses:
  *       200:
  *         description: Login successful, OTP sent
@@ -220,53 +243,96 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { email, password, otpType } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!email || !password) {
-      return next(ApiError.badRequest('Email and password are required'));
+    if (!identifier || !password) {
+      return next(ApiError.badRequest('Identifier (email or phone) and password are required'));
     }
 
-    const user = await authService.login(email, password);
+    const user = await authService.login(identifier, password);
 
-    const hasEmail = !!user.email;
-    const hasPhone = !!user.phoneNumber;
-    
-    let selectedOtpType: OtpType;
-    
-    if (hasEmail && hasPhone) {
-      selectedOtpType = otpType || OtpType.SMS;
-    } else if (hasEmail) {
-      selectedOtpType = OtpType.EMAIL;
-    } else if (hasPhone) {
-      selectedOtpType = OtpType.SMS;
-    } else {
-      return next(ApiError.badRequest('User has no contact methods for OTP delivery'));
-    }
-    
+    // Get authentication config
+    const authConfig = await systemConfigRepository.findOne({
+      where: { key: 'authentication_settings' }
+    });
+
+    const settings = authConfig?.value?.settings;
+
     try {
-      await authService.sendOtp(user, selectedOtpType);
-      
-      res.status(200).json({
-        success: true,
-        message: `Login successful. Please verify with OTP sent to your ${selectedOtpType === OtpType.EMAIL ? 'email' : selectedOtpType === OtpType.SMS ? 'phone' : 'email and phone'}.`,
-        data: {
-          userId: user.id,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          hasEmail,
-          hasPhone,
-          otpType: selectedOtpType
-        }
-      });
-    } catch (error) {
-      // If there's an error sending the OTP, it might be because the user doesn't have the required contact method
-      if (error instanceof Error && error.message.includes('does not have a phone number')) {
-        return next(ApiError.badRequest('User does not have a phone number for SMS OTP'));
-      } else if (error instanceof Error && error.message.includes('does not have an email address')) {
-        return next(ApiError.badRequest('User does not have an email address for EMAIL OTP'));
-      } else {
-        throw error;
+      // Determine authentication flow based on config
+      if (settings?.both?.enabled) {
+        const otpResult = await authService.sendOtp(user, OtpType.BOTH);
+        res.status(200).json({
+          success: true,
+          message: `Login successful. ${otpResult.message}`,
+          data: {
+            userId: user.id,
+            requiresOtp: true,
+            otpType: otpResult.actualType,
+            email: user.email,
+            phoneNumber: user.phoneNumber
+          }
+        });
+        return;
       }
+
+      if (!settings?.email?.enabled && !settings?.sms?.enabled) {
+        // No OTP required, generate tokens immediately
+        const tokens = await authService.generateTokens(user);
+        res.status(200).json({
+          success: true,
+          message: 'Login successful.',
+          data: {
+            userId: user.id,
+            requiresOtp: false,
+            tokens,
+            email: user.email,
+            phoneNumber: user.phoneNumber
+          }
+        });
+        return;
+      }
+
+      if (settings?.email?.enabled) {
+        const otpResult = await authService.sendOtp(user, OtpType.EMAIL);
+        res.status(200).json({
+          success: true,
+          message: `Login successful. ${otpResult.message}`,
+          data: {
+            userId: user.id,
+            requiresOtp: true,
+            otpType: otpResult.actualType,
+            email: user.email,
+            phoneNumber: user.phoneNumber
+          }
+        });
+        return;
+      }
+
+      if (settings?.sms?.enabled) {
+        const otpResult = await authService.sendOtp(user, OtpType.SMS);
+        res.status(200).json({
+          success: true,
+          message: `Login successful. ${otpResult.message}`,
+          data: {
+            userId: user.id,
+            requiresOtp: true,
+            otpType: otpResult.actualType,
+            email: user.email,
+            phoneNumber: user.phoneNumber
+          }
+        });
+        return;
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('does not have a phone number or email address')) {
+          return next(ApiError.badRequest('User does not have any contact information (phone number or email address) for OTP verification'));
+        } else if (error.message.includes('does not have an email address or phone number')) {
+          return next(ApiError.badRequest('User does not have any contact information (email address or phone number) for OTP verification'));
+        }
+      }
+      throw error;
     }
   } catch (error) {
     next(error instanceof Error ? ApiError.unauthorized(error.message) : error);
@@ -397,7 +463,7 @@ export const refreshToken = async (
  * @swagger
  * /auth/forgot-password:
  *   post:
- *     summary: Forgot password
+ *     summary: Forgot password (Email)
  *     description: Request a password reset link to be sent to your email
  *     tags: [Authentication]
  *     requestBody:
@@ -520,6 +586,100 @@ export const verifyResetToken = async (
  *       500:
  *         description: Internal server error
  */
+/**
+ * @swagger
+ * /auth/forgot-password/phone:
+ *   post:
+ *     summary: Forgot password (Phone)
+ *     description: Request a password reset OTP to be sent to your phone
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phoneNumber
+ *           example:
+ *             phoneNumber: "+1234567890"
+ *     responses:
+ *       200:
+ *         description: OTP sent if phone number exists
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
+export const forgotPasswordPhone = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { phoneNumber } = req.body;
+    
+    if (!phoneNumber) {
+      return next(ApiError.badRequest('Phone number is required'));
+    }
+
+    // Find user by phone number
+    const user = await userRepository.findOne({ where: { phoneNumber } });
+    
+    // Always return success to prevent phone number enumeration
+    if (!user) {
+      res.status(200).json({
+        success: true,
+        message: 'If your phone number exists in our system, you will receive a reset code shortly.'
+      });
+      return;
+    }
+
+    // Generate and send OTP
+    const otp = await otpService.generateOtp(user.id, OtpType.SMS);
+    await otpService.sendOtp(user.id, otp, OtpType.SMS);
+
+    res.status(200).json({
+      success: true,
+      message: 'Reset code sent to your phone number.',
+      data: {
+        userId: user.id
+      }
+    });
+  } catch (error) {
+    next(ApiError.internal('An error occurred while processing your request'));
+  }
+};
+
+/**
+ * @swagger
+ * /auth/reset-password/phone:
+ *   post:
+ *     summary: Reset password (Phone)
+ *     description: Reset password after OTP verification via phone
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - password
+ *               - confirmPassword
+ *           example:
+ *             userId: "cff600fe-639b-4c1f-880b-58d23af4a2c7"
+ *             password: "NewStrongPassword123!"
+ *             confirmPassword: "NewStrongPassword123!"
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
 export const resetPassword = async (
   req: Request,
   res: Response,
@@ -527,7 +687,7 @@ export const resetPassword = async (
 ): Promise<void> => {
   try {
     const { token } = req.params;
-    const { password, confirmPassword } = req.body;
+    const { userId, password, confirmPassword } = req.body;
 
     // Validate required fields
     if (!password || !confirmPassword) {
@@ -539,8 +699,28 @@ export const resetPassword = async (
       return next(ApiError.badRequest('Passwords do not match'));
     }
 
-    // Reset password
-    await authService.resetPassword(token, password);
+    let user;
+    if (token) {
+      // Email flow - verify token and get user
+      user = await authService.verifyResetToken(token);
+    } else if (userId) {
+      // Phone flow - get user directly (OTP already verified)
+      user = await userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        return next(ApiError.notFound('User not found'));
+      }
+    } else {
+      return next(ApiError.badRequest('Token or userId is required'));
+    }
+
+    // Hash and update password
+    user.password = await bcrypt.hash(password, 10);
+    if (token) {
+      // Clear reset token if email flow
+      user.resetToken = '';
+      user.resetTokenExpiry = new Date(0);
+    }
+    await userRepository.save(user);
 
     res.status(200).json({
       success: true,
@@ -597,22 +777,15 @@ export const requestOtp = async (
       return next(ApiError.notFound('User not found'));
     }
 
-    // Validate OTP type based on user's contact info
-    if (otpType === OtpType.EMAIL && !user.email) {
-      return next(ApiError.badRequest('User does not have an email address'));
-    }
-    if (otpType === OtpType.SMS && !user.phoneNumber) {
-      return next(ApiError.badRequest('User does not have a phone number'));
-    }
-
-    // Send OTP
-    await authService.sendOtp(user, otpType);
+    // Send OTP with fallback handling
+    const otpResult = await authService.sendOtp(user, otpType);
 
     res.status(200).json({
       success: true,
-      message: `OTP sent successfully to ${otpType === OtpType.EMAIL ? 'email' : otpType === OtpType.SMS ? 'phone' : 'email and phone'}.`,
+      message: otpResult.message,
       data: {
-        userId: user.id
+        userId: user.id,
+        actualType: otpResult.actualType
       }
     });
   } catch (error) {

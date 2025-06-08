@@ -28,6 +28,12 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface OtpResult {
+  success: boolean;
+  actualType: OtpType;
+  message: string;
+}
+
 export class AuthService {
   /**
    * Register a new user (only available for players)
@@ -39,7 +45,8 @@ export class AuthService {
     password: string,
     phoneNumber: string,
     isAdult: boolean = false,
-    hasAcceptedTerms: boolean = false
+    hasAcceptedTerms: boolean = false,
+    country?: string
   ): Promise<User> {
     // Check if user already exists
     // Get the player role
@@ -66,7 +73,8 @@ export class AuthService {
       isVerified: false,
       isActive: true,
       isAdult,
-      hasAcceptedTerms
+      hasAcceptedTerms,
+      country
     });
 
     await userRepository.save(user);
@@ -84,7 +92,8 @@ export class AuthService {
     password: string,
     phoneNumber: string,
     isAdult: boolean = false,
-    hasAcceptedTerms: boolean = false
+    hasAcceptedTerms: boolean = false,
+    country?: string
   ): Promise<User> {
     // Find the invitation
     const invitation = await invitationRepository.findOne({
@@ -119,7 +128,8 @@ export class AuthService {
       isVerified: false,
       isActive: true,
       isAdult,
-      hasAcceptedTerms
+      hasAcceptedTerms,
+      country
     });
 
     await userRepository.save(user);
@@ -132,20 +142,23 @@ export class AuthService {
   }
 
   
-  async login(email: string, password: string): Promise<User> {
+  async login(identifier: string, password: string): Promise<User> {
+    // Detect if it's email or phone based on format
+    const isEmail = identifier.includes('@');
+    
     const user = await userRepository.findOne({
-      where: { email },
+      where: isEmail ? { email: identifier } : { phoneNumber: identifier },
       select: ['id', 'email', 'password', 'firstName', 'lastName', 'phoneNumber', 'isActive', 'isVerified', 'roleId'],
       relations: ['role']
     });
 
     if (!user) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid credentials');
     }
 
     // If user was inactive due to inactivity, reactivate them
@@ -161,21 +174,68 @@ export class AuthService {
     return user;
   }
 
-  async sendOtp(user: User, type: OtpType = OtpType.SMS): Promise<boolean> {
-    if (type === OtpType.SMS || type === OtpType.BOTH) {
+  async sendOtp(user: User, type: OtpType = OtpType.SMS): Promise<OtpResult> {
+    let actualType = type;
+    let fallbackUsed = false;
+
+    // Determine the best available method based on user's contact info
+    if (type === OtpType.SMS && !user.phoneNumber) {
+      if (user.email) {
+        actualType = OtpType.EMAIL;
+        fallbackUsed = true;
+        logger.info(`User ${user.id} has no phone number, falling back to email OTP`);
+      } else {
+        throw new Error('User does not have a phone number or email address for OTP');
+      }
+    }
+
+    if (type === OtpType.EMAIL && !user.email) {
+      if (user.phoneNumber) {
+        actualType = OtpType.SMS;
+        fallbackUsed = true;
+        logger.info(`User ${user.id} has no email address, falling back to SMS OTP`);
+      } else {
+        throw new Error('User does not have an email address or phone number for OTP');
+      }
+    }
+
+    if (type === OtpType.BOTH) {
+      // For BOTH type, send to whatever is available
+      if (!user.phoneNumber && !user.email) {
+        throw new Error('User does not have a phone number or email address for OTP');
+      }
       if (!user.phoneNumber) {
-        throw new Error('User does not have a phone number');
+        actualType = OtpType.EMAIL;
+        fallbackUsed = true;
+        logger.info(`User ${user.id} has no phone number, sending email OTP only`);
+      } else if (!user.email) {
+        actualType = OtpType.SMS;
+        fallbackUsed = true;
+        logger.info(`User ${user.id} has no email address, sending SMS OTP only`);
       }
     }
 
-    if (type === OtpType.EMAIL || type === OtpType.BOTH) {
-      if (!user.email) {
-        throw new Error('User does not have an email address');
+    const otp = await otpService.generateOtp(user.id, actualType);
+    const success = await otpService.sendOtp(user.id, otp, actualType);
+    
+    let message = '';
+    if (fallbackUsed) {
+      if (actualType === OtpType.EMAIL) {
+        message = `OTP sent to your email address (${user.email})`;
+      } else if (actualType === OtpType.SMS) {
+        message = `OTP sent to your phone number (${user.phoneNumber})`;
+      }
+    } else {
+      if (actualType === OtpType.EMAIL) {
+        message = `OTP sent to your email address (${user.email}).`;
+      } else if (actualType === OtpType.SMS) {
+        message = `OTP sent to your phone number (${user.phoneNumber}).`;
+      } else if (actualType === OtpType.BOTH) {
+        message = `OTP sent to both your email (${user.email}) and phone (${user.phoneNumber}).`;
       }
     }
 
-    const otp = await otpService.generateOtp(user.id, type);
-    return otpService.sendOtp(user.id, otp, type);
+    return { success, actualType, message };
   }
 
   
@@ -264,10 +324,30 @@ export class AuthService {
     }
 
     // Check for pending invitation
-    const existingInvitation = await invitationRepository.findOne({ where: { email } });
+    const existingInvitation = await invitationRepository.findOne({ 
+      where: { 
+        email,
+        isAccepted: false,
+        expiresAt: MoreThan(new Date())
+      } 
+    });
     if (existingInvitation) {
-      throw new Error('Invitation for this email already exists');
+      throw new Error('Active invitation for this email already exists');
     }
+
+    // Clean up old invitations for this email (expired or accepted)
+    await invitationRepository.delete({
+      email,
+      isAccepted: true
+    });
+    
+    // Delete expired invitations
+    await invitationRepository.createQueryBuilder()
+      .delete()
+      .from(Invitation)
+      .where('email = :email', { email })
+      .andWhere('expiresAt <= :now', { now: new Date() })
+      .execute();
 
     const role = await roleRepository.findOne({ where: { name: roleName } });
     if (!role) {
@@ -298,7 +378,8 @@ export class AuthService {
     await invitationRepository.save(invitation);
 
     // Generate invitation link - point to frontend route
-    const frontendUrl = config.env === 'development' ? 'http://localhost:5173' : '';
+    const frontendUrl = 'https://dev.chareli.reallygreattech.com';
+    // const frontendUrl = config.env === 'development' ? 'http://localhost:5173' : '';
     const invitationLink = `${frontendUrl}/register-invitation/${token}`;
 
     // Send invitation email
@@ -308,6 +389,54 @@ export class AuthService {
   }
 
  
+  /**
+   * Change a user's role directly
+   */
+  async changeUserRole(
+    userId: string,
+    newRoleName: RoleType,
+    changedById: string
+  ): Promise<User> {
+    // Find the user
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      relations: ['role']
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Check if user already has this role
+    if (user.role.name === newRoleName) {
+      throw new Error('User already has this role');
+    }
+
+    // Find the new role
+    const newRole = await roleRepository.findOne({ where: { name: newRoleName } });
+    if (!newRole) {
+      throw new Error(`Role ${newRoleName} not found`);
+    }
+
+    // Find the person making the change
+    const changer = await userRepository.findOne({ where: { id: changedById } });
+    if (!changer) {
+      throw new Error('User making the change not found');
+    }
+
+    const oldRoleName = user.role.name;
+    
+    // Update user's role
+    user.role = newRole;
+    user.roleId = newRole.id;
+    await userRepository.save(user);
+
+    // Send email notification about role change
+    await emailService.sendRoleChangedEmail(user.email, oldRoleName, newRoleName);
+
+    return user;
+  }
+
   async requestPasswordReset(email: string): Promise<boolean> {
     // Find the user
     const user = await userRepository.findOne({ where: { email } });
@@ -335,7 +464,8 @@ export class AuthService {
     await userRepository.save(user);
     
     // Generate reset link - point to frontend route instead of API endpoint
-    const frontendUrl = config.env === 'development' ? 'http://localhost:5173' : '';
+    // const frontendUrl = config.env === 'development' ? 'http://localhost:5173' : '';
+    const frontendUrl = 'https://dev.chareli.reallygreattech.com';
     const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
     
     try {

@@ -7,7 +7,7 @@
   src: url('./fonts/Pong-Game.ttf'),
     /* font-weight: normal; */
     /* font-style: normal; */
-  /* src: url('./fonts/Boogaloo-Regular.ttf'), */
+    /* src: url('./fonts/Boogaloo-Regular.ttf'), */
     /* font-weight: normal; */
     /* font-style: normal; */
 }
@@ -21,13 +21,13 @@
 
 @font-face {
   font-family: 'Pincuk';
-  src: url('./fonts/Pincuk-Regular.ttf'),
+  src: url('./fonts/Pincuk.ttf'),
 }
 
 @layer base {
   :root {
     --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%; 
+    --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
@@ -54,19 +54,49 @@
 }
 
 body {
-    cursor: url('./assets/icn_hand.svg'), auto;
-}
-
-button, [role="button"] {
   cursor: url('./assets/icn_hand.svg'), auto;
 }
 
-a, .cursor-pointer {
+button,
+[role="button"] {
+  cursor: url('./assets/icn_hand.svg'), auto;
+}
+
+a,
+.cursor-pointer {
   cursor: url('./assets/icn_hand.svg'), pointer;
 }
 
 img.cursor-pointer {
   cursor: url('./assets/icn_hand.svg'), pointer;
+}
+
+/* Override custom cursor for admin routes */
+body.admin-route,
+body.admin-route *,
+body.admin-route button,
+body.admin-route [role="button"],
+body.admin-route a,
+body.admin-route .cursor-pointer,
+body.admin-route img.cursor-pointer {
+  cursor: default !important;
+}
+
+body.admin-route a:hover,
+body.admin-route button:hover,
+body.admin-route [role="button"]:hover,
+body.admin-route .cursor-pointer:hover {
+  cursor: pointer !important;
+}
+
+/* Ensure input fields have text cursor in admin */
+body.admin-route input[type="text"],
+body.admin-route input[type="email"],
+body.admin-route input[type="password"],
+body.admin-route input[type="search"],
+body.admin-route input[type="number"],
+body.admin-route textarea {
+  cursor: text !important;
 }
 
 /* card hover box shadow */
@@ -78,7 +108,7 @@ img.cursor-pointer {
 
 .gradient-shadow-hover:hover::after {
   opacity: 1;
-  box-shadow: 0 10px 12px 0 rgba(217,70,239,0.5);
+  box-shadow: 0 10px 12px 0 rgba(217, 70, 239, 0.5);
   filter: blur(2px);
   /* mix-blend-mode: lighten; */
   /* filter: drop-shadow(8px 8px 10px #D946EF); */
@@ -103,9 +133,28 @@ img.cursor-pointer {
 
 /* Hide scrollbar but allow scrolling */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background-size: 1000px 100%;
 }

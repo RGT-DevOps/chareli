@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../config/database';
 import { SignupAnalytics } from '../entities/SignupAnalytics';
 import { Between } from 'typeorm';
+import NodeCache from 'node-cache';
+
+// Initialize cache with 24h TTL
+const ipCache = new NodeCache({ stdTTL: 86400 });
 
 const signupAnalyticsRepository = AppDataSource.getRepository(SignupAnalytics);
 
@@ -38,32 +42,79 @@ function detectDeviceType(userAgent: string): string {
   return 'desktop';
 }
 
-/**
- * Get country from IP address using ip-api.com
- * @param ipAddress The IP address
- * @returns Country name or null if not found
- */
-async function getCountryFromIP(ipAddress: string): Promise<string | null> {
+
+function isPrivateIP(ip: string): boolean {
+  return ip === '127.0.0.1' || 
+         ip === '::1' || 
+         ip === 'localhost' || 
+         ip.startsWith('192.168.') || 
+         ip.startsWith('10.') || 
+         ip.startsWith('172.16.');
+}
+
+export async function getCountryFromIP(ipAddress: string): Promise<string | null> {
   try {
-    // Skip for localhost or private IPs
-    if (
-      ipAddress === '127.0.0.1' || 
-      ipAddress === 'localhost' || 
-      ipAddress.startsWith('192.168.') || 
-      ipAddress.startsWith('10.') || 
-      ipAddress.startsWith('172.16.')
-    ) {
+    // Check cache first
+    const cached = ipCache.get<string>(ipAddress);
+    if (cached) {
+      console.log('IP cache hit:', ipAddress);
+      return cached;
+    }
+
+    // Handle private/local IPs
+    if (isPrivateIP(ipAddress)) {
       return 'Local';
     }
-    
-    const response = await fetch(`http://ip-api.com/json/${ipAddress}?fields=country,status`);
-    const data = await response.json() as { status: string; country: string };
-    return data.status === 'success' ? data.country : null;
+
+    console.log('Fetching country for IP:', ipAddress);
+    const response = await fetch(`https://ipapi.co/${ipAddress}/json/`);
+    const data = await response.json() as {
+      error?: string;
+      country_name?: string;
+    };
+
+    if (data.error) {
+      console.error('IP API error:', data.error);
+      return null;
+    }
+
+    // Cache successful results
+    if (data.country_name) {
+      ipCache.set(ipAddress, data.country_name);
+    }
+
+    return data.country_name || null;
   } catch (error) {
     console.error('Error getting country from IP:', error);
     return null;
   }
 }
+
+/**
+ * Test endpoint to verify IP country detection
+ */
+export const testIPCountry = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { ip } = req.params;
+    const country = await getCountryFromIP(ip);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        ip,
+        country,
+        cached: ipCache.has(ip)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 /**
  * @swagger
@@ -100,8 +151,7 @@ export const trackSignupClick = async (
 ): Promise<void> => {
   try {
     const { sessionId, type } = req.body;
-    
-    // Validate required fields
+
     if (!type) {
       res.status(400).json({ 
         success: false, 
@@ -109,34 +159,37 @@ export const trackSignupClick = async (
       });
       return;
     }
-    
-    const ipAddress = req.ip || req.socket.remoteAddress || '';
+
+    // Extract real IP address (behind proxy/CDN safe)
+    const forwarded = req.headers['x-forwarded-for'];
+    const ipAddress = Array.isArray(forwarded)
+      ? forwarded[0]
+      : (forwarded || req.socket.remoteAddress || req.ip || '');
+
+    console.log('Detected IP address:', ipAddress); 
+
     const userAgent = req.headers['user-agent'] || '';
-    
-    // Detect device type
     const deviceType = detectDeviceType(userAgent);
-    
-    // Get country from IP
+
     const country = await getCountryFromIP(ipAddress);
-    
-    // Create analytics entry
+
     const analytics = signupAnalyticsRepository.create({
       sessionId: sessionId || undefined,
       ipAddress,
       country: country || undefined,
       deviceType,
-      type // Store the form type
+      type,
     });
-    
+
     await signupAnalyticsRepository.save(analytics);
-    
+
     res.status(201).json({ success: true });
   } catch (error) {
     console.error('Failed to track signup click:', error);
-    // Don't block the user experience
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: true }); // don't block user experience
   }
 };
+
 
 /**
  * @swagger
