@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FieldProps, FormikHelpers } from "formik";
 import type { LoginCredentials } from "../../backend/types";
@@ -19,7 +19,6 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import "../../styles/phone-input.css";
 import { useNavigate } from "react-router-dom";
-import { isValidRole } from "../../utils/main";
 
 interface LoginDialogProps {
   open: boolean;
@@ -42,7 +41,6 @@ interface LoginResponse {
   phoneNumber?: string;
   email?: string;
   requiresOtp: boolean;
-  role: string;
   otpType?: "EMAIL" | "SMS" | "BOTH";
   message: string;
   tokens?: {
@@ -80,19 +78,23 @@ export function LoginModal({
   hideSignUpLink = false,
 }: LoginDialogProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [loginResponse, setLoginResponse] = useState<LoginResponse | null>(
-    null
-  );
-  const [isOTPVerificationModalOpen, setIsOTPVerificationModalOpen] =
-    useState(false);
+  const [loginResponse, setLoginResponse] = useState<LoginResponse | null>(null);
+  const [isOTPVerificationModalOpen, setIsOTPVerificationModalOpen] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] =
-    useState(false);
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { login } = useAuth();
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
+
+  // Watch for authentication state changes
+  useEffect(() => {
+    if (shouldRedirect && isAuthenticated) {
+      navigate("/");
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect, isAuthenticated, navigate]);
 
   const handleLogin = async (
     values: LoginFormValues,
@@ -100,7 +102,6 @@ export function LoginModal({
   ) => {
     try {
       setLoginError("");
-      setIsLoggingIn(true);
       const credentials: LoginCredentials = {
         identifier: activeTab === "email" ? values.email! : values.phoneNumber!,
         password: values.password,
@@ -115,25 +116,23 @@ export function LoginModal({
         setIsOTPVerificationModalOpen(true);
         onOpenChange(false);
         toast.info(response.message);
-        setIsLoggingIn(false);
       } else {
+        // No OTP required, show success and redirect
         toast.success(response.message);
-        if (isValidRole(response.role)) {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
+        setShouldRedirect(true);
         onOpenChange(false);
-        setIsLoggingIn(false);
       }
     } catch (error: any) {
-      setIsLoggingIn(false);
       if (error.response?.data?.message) {
         setLoginError(error.response.data.message);
         toast.error(error.response.data.message);
       } else {
-        setLoginError("Invalid email or password. Please try again.");
-        toast.error("Invalid email or password. Please try again.");
+        const errorMsg =
+          activeTab === "phone"
+            ? "Invalid phone number or password. Please try again."
+            : "Invalid email or password. Please try again.";
+        setLoginError(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       actions.setSubmitting(false);
@@ -141,10 +140,7 @@ export function LoginModal({
   };
 
   return (
-    <Dialog
-      open={open && !isLoggingIn}
-      onOpenChange={isLoggingIn ? () => {} : onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <CustomDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221] p-0">
         {/* Custom Close Button */}
         <button
@@ -362,9 +358,7 @@ export function LoginModal({
         onOpenChange={setIsOTPVerificationModalOpen}
         userId={loginResponse?.userId || ""}
         contactMethod={
-          loginResponse?.otpType === "BOTH" &&
-          loginResponse?.email &&
-          loginResponse?.phoneNumber
+          loginResponse?.otpType === "BOTH" && loginResponse?.email && loginResponse?.phoneNumber
             ? `${loginResponse.email} and ${loginResponse.phoneNumber}`
             : loginResponse?.email || loginResponse?.phoneNumber || ""
         }
