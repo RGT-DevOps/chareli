@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { backendService } from "./api.service";
 import { BackendRoute } from "./constants";
@@ -7,9 +8,11 @@ export const useFormattedSystemConfigs = () => {
   return useQuery({
     queryKey: [BackendRoute.SYSTEM_CONFIG_FORMATTED],
     queryFn: async () => {
-      const response = await backendService.get(BackendRoute.SYSTEM_CONFIG_FORMATTED);
+      const response = await backendService.get(
+        BackendRoute.SYSTEM_CONFIG_FORMATTED
+      );
       return response.data;
-    }
+    },
   });
 };
 
@@ -19,12 +22,12 @@ export const useSystemConfigByKey = (key: string) => {
     queryKey: [BackendRoute.SYSTEM_CONFIG, key],
     queryFn: async () => {
       const response = await backendService.get(
-        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(':key', key)
+        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(":key", key)
       );
       return response.data;
     },
     retry: false, // Don't retry on 404
-    enabled: true // Always enabled by default
+    enabled: true, // Always enabled by default
   });
 };
 
@@ -35,7 +38,7 @@ export const useAllSystemConfigs = () => {
     queryFn: async () => {
       const response = await backendService.get(BackendRoute.SYSTEM_CONFIG);
       return response.data;
-    }
+    },
   });
 };
 
@@ -44,16 +47,21 @@ export const useCreateSystemConfig = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const headers = data instanceof FormData 
-        ? { 'Content-Type': 'multipart/form-data' }
-        : { 'Content-Type': 'application/json' };
+      const headers =
+        data instanceof FormData
+          ? { "Content-Type": "multipart/form-data" }
+          : { "Content-Type": "application/json" };
 
-      const response = await backendService.post(BackendRoute.SYSTEM_CONFIG, data, { headers });
+      const response = await backendService.post(
+        BackendRoute.SYSTEM_CONFIG,
+        data,
+        { headers }
+      );
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.SYSTEM_CONFIG] });
-    }
+    },
   });
 };
 
@@ -63,14 +71,14 @@ export const useUpdateSystemConfig = () => {
   return useMutation({
     mutationFn: async ({ key, data }: { key: string; data: any }) => {
       const response = await backendService.put(
-        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(':key', key),
+        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(":key", key),
         data
       );
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.SYSTEM_CONFIG] });
-    }
+    },
   });
 };
 
@@ -80,12 +88,12 @@ export const useDeleteSystemConfig = () => {
   return useMutation({
     mutationFn: async (key: string) => {
       const response = await backendService.delete(
-        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(':key', key)
+        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(":key", key)
       );
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.SYSTEM_CONFIG] });
-    }
+    },
   });
 };

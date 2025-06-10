@@ -1,43 +1,43 @@
-import click from '../../../assets/click.svg'
+import click from "../../../assets/click.svg";
 import { Card } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { PopUpSheet } from "../../../components/single/PopUp-Sheet";
 import { AcceptInvitationModal } from "../../../components/modals/AdminModals/AcceptInvitationModal";
 import StatsCard from "./StatsCard";
-import PieChart from '../../../components/charts/piechart';
-import { useState } from 'react';
-import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
-import { useUsersAnalytics } from '../../../backend/analytics.service';
-import { useSystemConfigByKey } from '../../../backend/configuration.service';
-import KeepPlayingModal from '../../../components/modals/KeepPlayingModal';
-import { MostPlayedGames } from './MostPlayedGames';
-import { RecentUserActivity } from './RecentUserActivity';
+import PieChart from "../../../components/charts/piechart";
+import { useState } from "react";
+import { useSignupAnalyticsData } from "../../../backend/signup.analytics.service";
+import { useUsersAnalytics } from "../../../backend/analytics.service";
+import { useSystemConfigByKey } from "../../../backend/configuration.service";
+import KeepPlayingModal from "../../../components/modals/KeepPlayingModal";
+import { MostPlayedGames } from "./MostPlayedGames";
+import { RecentUserActivity } from "./RecentUserActivity";
 
 export default function Home() {
-
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
   const [showKeepPlayingModal, setShowKeepPlayingModal] = useState(false);
-  const { data: popupConfig } = useSystemConfigByKey('popup');
+  const { data: popupConfig } = useSystemConfigByKey("popup");
 
   const handleShowPopup = () => {
     if (popupConfig?.value?.enabled) {
-      const delay = (popupConfig?.value?.delay || 3) * 1000;
-      setTimeout(() => {
-        setShowKeepPlayingModal(true);
-      }, delay);
+      // const delay = (popupConfig?.value?.delay || 3) * 1000;
+      // setTimeout(() => {
+      setShowKeepPlayingModal(true);
+      // }, delay);
     }
   };
   return (
     <div>
-      <div className="px-6 pb-3">
-      </div>
+      <div className="px-6 pb-3"></div>
       <div className="px-6">
         <StatsCard />
         {/* pop up */}
         <div className="col-span-1 md:col-span-2 lg:col-span-4 my-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
             <div className="justify-between items-center flex p-3">
-              <p className="text-3xl dark:text-[#D946EF]">Dynamic Popup System</p>
+              <p className="text-3xl dark:text-[#D946EF]">
+                Dynamic Popup System
+              </p>
               <PopUpSheet>
                 <Button className="bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200">
                   Create New Pop-up
@@ -48,8 +48,8 @@ export default function Home() {
             <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
               <div className="justify-end flex flex-col p-3 space-y-4">
                 <p className="text-lg">User View</p>
-                <p className="text-lg">Pop-Up will appear after {popupConfig?.value?.delay || 3} seconds</p>
-                <Button 
+                {/* <p className="text-lg">Pop-Up will appear after {popupConfig?.value?.delay || 3} seconds</p> */}
+                <Button
                   onClick={handleShowPopup}
                   className="w-32 bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200"
                 >
@@ -69,13 +69,18 @@ export default function Home() {
             {/* inner card */}
             <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
               <div className="flex flex-col space-y-8">
-
                 <div className="">
                   <div className="justify-start flex items-center gap-4">
-                    <img src={click} alt="click" className="w-10 h-10 dark:text-white" />
-                    <p className="text-lg text-[#64748A] dark:text-white">Total clicks on Sign-up form</p>
+                    <img
+                      src={click}
+                      alt="click"
+                      className="w-10 h-10 dark:text-white"
+                    />
+                    <p className="text-lg text-[#64748A] dark:text-white">
+                      Total clicks on Sign-up form
+                    </p>
                   </div>
-                  
+
                   <SignupClickInsights />
                 </div>
               </div>
@@ -92,11 +97,16 @@ export default function Home() {
         </div>
       </div>
 
-      <AcceptInvitationModal open={isAcceptInviteOpen} onOpenChange={setIsAcceptInviteOpen} isExistingUser={true} />
-      <KeepPlayingModal 
-        open={showKeepPlayingModal} 
+      <AcceptInvitationModal
+        open={isAcceptInviteOpen}
+        onOpenChange={setIsAcceptInviteOpen}
+        isExistingUser={true}
+      />
+      <KeepPlayingModal
+        open={showKeepPlayingModal}
         openSignUpModal={() => setShowKeepPlayingModal(false)}
         isGameLoading={false}
+        setOpen={setShowKeepPlayingModal}
       />
     </div>
   );
@@ -104,13 +114,15 @@ export default function Home() {
 
 // Separate component for signup click insights
 function SignupClickInsights() {
-  const { data: signupAnalytics, isLoading: analyticsLoading } = useSignupAnalyticsData();
-  const { data: usersWithAnalytics, isLoading: usersLoading } = useUsersAnalytics();
-  
+  const { data: signupAnalytics, isLoading: analyticsLoading } =
+    useSignupAnalyticsData();
+  const { data: usersWithAnalytics, isLoading: usersLoading } =
+    useUsersAnalytics();
+
   if (analyticsLoading || usersLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
-  
+
   if (!signupAnalytics || !usersWithAnalytics) {
     return <div className="text-center py-4">No data available</div>;
   }
@@ -121,7 +133,7 @@ function SignupClickInsights() {
 
   const chartData = [
     { name: "Didn't register", value: didntRegisterCount, fill: "#F3C7FA" },
-    { name: "Verified users", value: verifiedCount, fill: "#D24CFB" }
+    { name: "Verified users", value: verifiedCount, fill: "#D24CFB" },
   ];
 
   return <PieChart data={chartData} />;
