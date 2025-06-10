@@ -162,21 +162,19 @@ export function LoginModal({
           <div className="flex font-boogaloo text-xl tracking-wide">
             <div className="px-6 flex w-full border-b">
               <button
-                className={`flex-1 py-2 font-semibold ${
-                  activeTab === "email"
+                className={`flex-1 py-2 font-semibold ${activeTab === "email"
                     ? "text-[#E328AF] border-b-2 border-[#E328AF]"
                     : "text-gray-500"
-                }`}
+                  }`}
                 onClick={() => setActiveTab("email")}
               >
                 Email
               </button>
               <button
-                className={`flex-1 py-2 font-semibold ${
-                  activeTab === "phone"
+                className={`flex-1 py-2 font-semibold ${activeTab === "phone"
                     ? "text-[#E328AF] border-b-2 border-[#E328AF]"
                     : "text-gray-500"
-                }`}
+                  }`}
                 onClick={() => setActiveTab("phone")}
               >
                 Phone Number
@@ -271,9 +269,8 @@ export function LoginModal({
                             ? "Enter your email"
                             : "Enter your phone number"
                         }
-                        className={`mt-1 bg-[#E2E8F0] border-0 pl-10 font-boogaloo text-xl tracking-wider font-normal h-[48px] ${
-                          activeTab === "email" ? "pl-10" : ""
-                        }`}
+                        className={`mt-1 bg-[#E2E8F0] border-0 pl-10 font-boogaloo text-xl tracking-wider font-normal h-[48px] ${activeTab === "email" ? "pl-10" : ""
+                          }`}
                       />
                     )}
                   </div>
