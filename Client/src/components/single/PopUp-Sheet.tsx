@@ -34,7 +34,7 @@ export function PopUpSheet({ children }: { children: React.ReactNode }) {
     title: "",
     subtitle: "",
     delay: 0,
-    enabled: true
+    enabled: true,
   };
 
   return (
@@ -165,7 +165,7 @@ export function PopUpSheet({ children }: { children: React.ReactNode }) {
                 </SheetClose>
                 <Button
                   type="submit"
-                  className="w-40 h-12 bg-[#D946EF] dark:text-white"
+                  className="w-40 h-12 bg-[#D946EF] dark:text-white  dark:hover:bg-[#c026d3]"
                   disabled={isSubmitting || createConfig.isPending}
                 >
                   {isSubmitting || createConfig.isPending
