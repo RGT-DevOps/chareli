@@ -18,7 +18,7 @@ env:
   IMAGE_TAG_SERVER_FIXED: latest
 
   S3_BUCKET_CLIENT: chareli-react-app-staging-0a866340
-  CLOUDFRONT_DISTRIBUTION_ID_CLIENT: ED93QD3A93Q1N
+  CLOUDFRONT_DISTRIBUTION_ID_CLIENT: E1LXFG5G4LBPY7
 
 jobs:
   build-and-test:
@@ -199,9 +199,9 @@ jobs:
         uses: appleboy/discord-action@v1.2.0
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          username: Chareli Dev Pipeline Bot
+          username: Chareli Staging Pipeline Bot
           message: |
-            🚀 **Chareli Dev Deployment Summary**
+            🚀 **Chareli Staging Deployment Summary**
 
             🔀 Branch: `${{ github.ref_name }}`
             📄 Commit: `${{ github.sha }}` by `${{ github.actor }}`
