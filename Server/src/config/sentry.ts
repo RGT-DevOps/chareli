@@ -1,126 +1,89 @@
-import * as Sentry from '@sentry/node';
 import { Express, Request, Response, NextFunction } from 'express';
-import config from './config';
 import logger from '../utils/logger';
 
 /**
  * Initialize Sentry for error monitoring and performance tracking
- * Only active in production mode
+ * DISABLED - This function does nothing to prevent Sentry errors
  * @param app Express application instance
  */
 export const initializeSentry = (app: Express): void => {
-  if (!config.sentry.enabled) {
-    logger.info('Sentry is disabled (non-production environment)');
-    return;
-  }
-
-  if (!config.sentry.dsn) {
-    logger.warn('Sentry DSN not provided, skipping Sentry initialization');
-    return;
-  }
-
-  logger.info(`Initializing Sentry in ${config.sentry.environment} environment`);
-  
-  Sentry.init({
-    dsn: config.sentry.dsn,
-    environment: config.sentry.environment,
-    tracesSampleRate: config.sentry.tracesSampleRate,
-    beforeSend(event) {
-      if (config.env === 'production') {
-        return event;
-      }
-      return null;
-    },
-  });
+  logger.info('Sentry is disabled - no initialization performed');
+  // No-op: Do nothing to prevent any Sentry-related errors
 };
 
 /**
  * Create Sentry request handler middleware
- * Captures request data for error reporting
+ * DISABLED - Returns no-op middleware
  */
 export const sentryRequestHandler = () => {
-  if (config.env === 'production') {
-    // @ts-ignore - Ignore TypeScript errors for Sentry API
-    return Sentry.Handlers.requestHandler();
-  }
+  // No-op: Always return pass-through middleware
   return (_req: Request, _res: Response, next: NextFunction) => next();
 };
 
 /**
  * Create Sentry tracing middleware
- * Enables performance monitoring
+ * DISABLED - Returns no-op middleware
  */
 export const sentryTracingHandler = () => {
-  if (config.env === 'production') {
-    // @ts-ignore - Ignore TypeScript errors for Sentry API
-    return Sentry.Handlers.tracingHandler();
-  }
+  // No-op: Always return pass-through middleware
   return (_req: Request, _res: Response, next: NextFunction) => next();
 };
 
 /**
  * Create Sentry error handler middleware
- * Captures and reports errors to Sentry
+ * DISABLED - Returns no-op middleware
  */
 export const sentryErrorHandler = () => {
-  if (config.env === 'production') {
-    // @ts-ignore - Ignore TypeScript errors for Sentry API
-    return Sentry.Handlers.errorHandler();
-  }
+  // No-op: Always return pass-through error handler
   return (err: Error, _req: Request, _res: Response, next: NextFunction) => next(err);
 };
 
 /**
  * Capture and report an exception to Sentry
+ * DISABLED - Does nothing
  * @param error Error to capture
  */
 export const captureException = (error: Error): string => {
-  if (config.env === 'production') {
-    return Sentry.captureException(error);
-  }
+  // No-op: Always return empty string, never capture anything
   return '';
 };
 
 /**
  * Capture and report a message to Sentry
+ * DISABLED - Does nothing
  * @param message Message to capture
  * @param level Severity level
  */
-export const captureMessage = (message: string, level?: Sentry.SeverityLevel): string => {
-  if (config.env === 'production') {
-    return Sentry.captureMessage(message, level);
-  }
+export const captureMessage = (message: string, level?: any): string => {
+  // No-op: Always return empty string, never capture anything
   return '';
 };
 
 /**
  * Set user information for error context
+ * DISABLED - Does nothing
  * @param user User information
  */
-export const setUser = (user: Sentry.User | null): void => {
-  if (config.env === 'production') {
-    Sentry.setUser(user);
-  }
+export const setUser = (user: any | null): void => {
+  // No-op: Do nothing
 };
 
 /**
  * Set additional context for error reporting
+ * DISABLED - Does nothing
  * @param name Context name
  * @param context Context data
  */
 export const setContext = (name: string, context: Record<string, unknown>): void => {
-  if (config.env === 'production') {
-    Sentry.setContext(name, context);
-  }
+  // No-op: Do nothing
 };
 
 /**
  * Set tag for error filtering and categorization
+ * DISABLED - Does nothing
  * @param key Tag key
  * @param value Tag value
  */
 export const setTag = (key: string, value: string): void => {
-  if (config.env === 'production') {
-    Sentry.setTag(key, value);
-  }
+  // No-op: Do nothing
 };
