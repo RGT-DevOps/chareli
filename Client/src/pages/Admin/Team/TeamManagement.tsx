@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { MdOutlineCancel } from "react-icons/md";
 import { InviteSheet } from "../../../components/single/Invite-Sheet";

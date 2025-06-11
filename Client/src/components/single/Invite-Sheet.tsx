@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -58,8 +59,8 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Sheet 
-      open={open} 
+    <Sheet
+      open={open}
       onOpenChange={(newOpen) => {
         if (!newOpen && formikRef.current) {
           formikRef.current.resetForm();
@@ -123,7 +124,7 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
                 <SheetClose asChild>
                   <Button
                     type="button"
-                    className="w-20 h-12 text-[#334154] bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-accent"
+                    className="w-20 h-12 text-[#334154] bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-slate-100"
                     onClick={() => formikRef.current?.resetForm()}
                   >
                     Cancel
@@ -131,7 +132,7 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
                 </SheetClose>
                 <Button
                   type="submit"
-                  className="w-22 h-12 bg-[#D946EF] dark:text-white hover:text-[#D946EF] hover:bg-[#F3E8FF]"
+                  className="w-22 h-12 bg-[#D946EF] dark:text-white hover:text-[#D946EF] hover:bg-[#F3E8FF] dark:hover:bg-[#c026d3]"
                   disabled={isSubmitting || isPending || !isValid || !dirty}
                 >
                   {isSubmitting || isPending ? "Sending..." : "Send Invite"}

@@ -158,14 +158,14 @@ export function PopUpSheet({ children }: { children: React.ReactNode }) {
                 <SheetClose asChild>
                   <Button
                     type="button"
-                    className="w-20 h-12 text-[#334154] bg-[#F8FAFC] border border-[#E2E8F0]"
+                    className="w-20 h-12 text-[#334154] bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-"
                   >
                     Cancel
                   </Button>
                 </SheetClose>
                 <Button
                   type="submit"
-                  className="w-40 h-12 bg-[#D946EF] dark:text-white  dark:hover:bg-[#c026d3]"
+                  className="w-40 h-12 bg-[#D946EF] hover:bg-[#c026d3] dark:text-white  dark:hover:bg-[#c026d3]"
                   disabled={isSubmitting || createConfig.isPending}
                 >
                   {isSubmitting || createConfig.isPending
