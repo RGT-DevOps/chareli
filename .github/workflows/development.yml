@@ -3,7 +3,7 @@ name: Deploy to Staging Environment (Chareli)
 on:
   push:
     branches:
-      - staging
+      - development
 
 permissions:
   packages: write
