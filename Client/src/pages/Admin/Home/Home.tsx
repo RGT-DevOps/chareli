@@ -4,27 +4,20 @@ import { Button } from "../../../components/ui/button";
 import { PopUpSheet } from "../../../components/single/PopUp-Sheet";
 import { AcceptInvitationModal } from "../../../components/modals/AdminModals/AcceptInvitationModal";
 import StatsCard from "./StatsCard";
-import PieChart from "../../../components/charts/piechart";
-import { useState } from "react";
-import { useSignupAnalyticsData } from "../../../backend/signup.analytics.service";
-import { useUsersAnalytics } from "../../../backend/analytics.service";
-import { useSystemConfigByKey } from "../../../backend/configuration.service";
-import KeepPlayingModal from "../../../components/modals/KeepPlayingModal";
-import { MostPlayedGames } from "./MostPlayedGames";
-import { RecentUserActivity } from "./RecentUserActivity";
+import PieChart from '../../../components/charts/piechart';
+import { useState } from 'react';
+import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
+import { useUsersAnalytics } from '../../../backend/analytics.service';
+import AdminKeepPlayingModal from '../../../components/modals/AdminKeepPlayingModal';
+import { MostPlayedGames } from './MostPlayedGames';
+import { RecentUserActivity } from './RecentUserActivity';
 
 export default function Home() {
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
   const [showKeepPlayingModal, setShowKeepPlayingModal] = useState(false);
-  const { data: popupConfig } = useSystemConfigByKey("popup");
 
   const handleShowPopup = () => {
-    if (popupConfig?.value?.enabled) {
-      // const delay = (popupConfig?.value?.delay || 3) * 1000;
-      // setTimeout(() => {
-      setShowKeepPlayingModal(true);
-      // }, delay);
-    }
+    setShowKeepPlayingModal(true);
   };
   return (
     <div>
@@ -48,8 +41,7 @@ export default function Home() {
             <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
               <div className="justify-end flex flex-col p-3 space-y-4">
                 <p className="text-lg">User View</p>
-                {/* <p className="text-lg">Pop-Up will appear after {popupConfig?.value?.delay || 3} seconds</p> */}
-                <Button
+                <Button 
                   onClick={handleShowPopup}
                   className="w-32 bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200"
                 >
@@ -97,14 +89,10 @@ export default function Home() {
         </div>
       </div>
 
-      <AcceptInvitationModal
-        open={isAcceptInviteOpen}
-        onOpenChange={setIsAcceptInviteOpen}
-        isExistingUser={true}
-      />
-      <KeepPlayingModal
-        open={showKeepPlayingModal}
-        openSignUpModal={() => setShowKeepPlayingModal(false)}
+      <AcceptInvitationModal open={isAcceptInviteOpen} onOpenChange={setIsAcceptInviteOpen} isExistingUser={true} />
+      <AdminKeepPlayingModal 
+        open={showKeepPlayingModal} 
+        onClose={() => setShowKeepPlayingModal(false)}
         isGameLoading={false}
         setOpen={setShowKeepPlayingModal}
       />
