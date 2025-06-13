@@ -1,9 +1,15 @@
 import React from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/single/Navbar";
 
 const MainLayout: React.FC = () => {
   const location = useLocation();
+
+  const navigation = useNavigate();
+  const handleTermsPage = () => {
+    navigation("/terms");
+  };
+
   const isGamePlay = location.pathname.includes("/gameplay/");
   return (
     <div className="min-h-screen bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 transition-colors duration-300">
@@ -21,7 +27,7 @@ const MainLayout: React.FC = () => {
 
             <p className="font-pincuk text-xl tracking-wider sm:text-sm mt-3 mb-3 leading-relaxed">
               By using this service, you agree to the Chareli{" "}
-              <span className="text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors">
+              <span className="text-[#C026D3] underline cursor-pointer hover:text-[#db2ee8] transition-colors" onClick={handleTermsPage}>
                 Terms of Service
               </span>
               . Chareli's{" "}
