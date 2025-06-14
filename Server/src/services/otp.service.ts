@@ -59,15 +59,15 @@ export class OtpService implements OtpServiceInterface {
     otpRecord.userId = userId;
     
     // Use type assertion to handle nullable fields
-    if (type === OtpType.EMAIL || type === OtpType.BOTH) {
+    if (type === OtpType.EMAIL) {
       otpRecord.email = user.email;
-    } else {
-      otpRecord.email = null as any;
-    }
-    
-    if (type === OtpType.SMS || type === OtpType.BOTH) {
+      otpRecord.phoneNumber = null as any;
+    } else if (type === OtpType.SMS) {
       otpRecord.phoneNumber = user.phoneNumber;
+      otpRecord.email = null as any;
     } else {
+      // For NONE type, set both to null
+      otpRecord.email = null as any;
       otpRecord.phoneNumber = null as any;
     }
     
@@ -134,8 +134,8 @@ export class OtpService implements OtpServiceInterface {
     let emailSent = false;
     let smsSent = false;
 
-    // Send via Email if type is EMAIL or BOTH
-    if (type === OtpType.EMAIL || type === OtpType.BOTH) {
+    // Send via Email if type is EMAIL
+    if (type === OtpType.EMAIL) {
       if (!user.email) {
         throw new Error('User does not have an email address for OTP delivery');
       }
@@ -146,15 +146,12 @@ export class OtpService implements OtpServiceInterface {
         logger.info(`OTP sent successfully to email: ${user.email}`);
       } catch (error) {
         logger.error('Failed to send OTP via email:', error);
-        if (type === OtpType.EMAIL) {
-          // If email is the only method and it fails, throw error
-          throw new Error('Failed to send OTP via email');
-        }
+        throw new Error('Failed to send OTP via email');
       }
     }
 
-    // Send via SMS if type is SMS or BOTH
-    if (type === OtpType.SMS || type === OtpType.BOTH) {
+    // Send via SMS if type is SMS
+    if (type === OtpType.SMS) {
       if (!user.phoneNumber) {
         throw new Error('User does not have a phone number for OTP delivery');
       }
@@ -172,7 +169,10 @@ export class OtpService implements OtpServiceInterface {
             logger.info(`SMS sent successfully via Twilio to ${user.phoneNumber}, SID: ${result.sid}`);
             smsSent = true;
           } catch (error) {
+            const twilioError = error instanceof Error ? error.message : 'Unknown Twilio error';
             logger.error('Failed to send OTP via Twilio:', error);
+            // Store the actual Twilio error for diagnostics
+            (this as any).lastTwilioError = twilioError;
           }
         } else {
           try {
@@ -201,14 +201,36 @@ export class OtpService implements OtpServiceInterface {
         }
     }
 
-    // For BOTH type, return true if at least one method was successful
     // For single methods, we would have thrown an error above if it failed
     const success = (type === OtpType.EMAIL && emailSent) || 
-                   (type === OtpType.SMS && smsSent) || 
-                   (type === OtpType.BOTH && (emailSent || smsSent));
+                   (type === OtpType.SMS && smsSent) ||
+                   (type === OtpType.NONE); // NONE type always succeeds (no OTP sent)
 
     if (!success) {
-      throw new Error('Failed to send OTP via any available method');
+      // Create diagnostic information for DevOps debugging
+      const provider = config.twilio.enabled ? 'Twilio' : 'AWS-SNS';
+      const missingConfig = [];
+      
+      if (config.twilio.enabled) {
+        if (!config.twilio.accountSid) missingConfig.push('TWILIO_ACCOUNT_SID');
+        if (!config.twilio.authToken) missingConfig.push('TWILIO_AUTH_TOKEN');
+        if (!config.twilio.fromNumber) missingConfig.push('TWILIO_FROM_NUMBER');
+      } else {
+        if (!config.smsService.accessKeyId) missingConfig.push('AWS_ACCESS_KEY_ID');
+        if (!config.smsService.secretAccessKey) missingConfig.push('AWS_SECRET_ACCESS_KEY');
+        if (!config.smsService.region) missingConfig.push('AWS_REGION');
+      }
+      
+      let diagnostics = missingConfig.length > 0 
+        ? ` [Provider: ${provider}, Missing: ${missingConfig.join(', ')}]`
+        : ` [Provider: ${provider}, Config: OK]`;
+      
+      // If config is OK but still failed, include the actual error from the provider
+      if (missingConfig.length === 0 && (this as any).lastTwilioError) {
+        diagnostics += ` - Error: ${(this as any).lastTwilioError}`;
+      }
+        
+      throw new Error('Failed to send OTP via any available method' + diagnostics);
     }
 
     return success;

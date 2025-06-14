@@ -240,8 +240,8 @@ export class AuthService {
             return OtpType.SMS;
           
           case 'none':
-            // No OTP required when "none" is selected
-            throw new Error('OTP verification is disabled for this authentication method');
+            // No OTP required when "none" is selected - return special type
+            return OtpType.NONE;
           
           default:
             // Fallback to default behavior
@@ -272,17 +272,12 @@ export class AuthService {
 
   /**
    * Get default OTP type based on user's available contact information
+   * NOTE: This should only be used when no admin configuration is found
    */
   private getDefaultOtpType(user: User): OtpType {
-    if (user.email && user.phoneNumber) {
-      return OtpType.BOTH;
-    } else if (user.email) {
-      return OtpType.EMAIL;
-    } else if (user.phoneNumber) {
-      return OtpType.SMS;
-    } else {
-      throw new Error('User does not have any contact information for OTP verification');
-    }
+    // This method should only be called when there's no admin configuration
+    // In that case, we still need to respect the strict no-fallback rule
+    throw new Error('No authentication configuration found. Please contact administrator.');
   }
 
   async sendOtp(user: User, type: OtpType): Promise<OtpResult> {
@@ -294,8 +289,6 @@ export class AuthService {
       message = `OTP sent to your email address (${user.email}).`;
     } else if (type === OtpType.SMS) {
       message = `OTP sent to your phone number (${user.phoneNumber}).`;
-    } else if (type === OtpType.BOTH) {
-      message = `OTP sent to both your email (${user.email}) and phone (${user.phoneNumber}).`;
     }
 
     return { success, actualType: type, message };

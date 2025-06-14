@@ -20,7 +20,7 @@ interface OTPVerificationDialogProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   contactMethod?: string; // Email or phone number that received the OTP
-  otpType?: "EMAIL" | "SMS" | "BOTH"; // Type of OTP sent
+  otpType?: "EMAIL" | "SMS" | "NONE"; // Type of OTP sent
   onVerificationSuccess?: () => void; // Callback for when verification is successful
 }
 
@@ -130,9 +130,7 @@ export function OTPVerificationModal({
             OTP Verification
           </AlertDialogTitle>
           <AlertDialogDescription className="dark:text-white text-black font-boogaloo text-md tracking-wider sm:text-sm mt-1">
-            Enter the verification code we just sent to{" "}
-            {otpType === "BOTH" ? "both " : ""}
-            {contactMethod}
+            Enter the verification code we just sent to {contactMethod}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex justify-center my-4 sm:my-6">
