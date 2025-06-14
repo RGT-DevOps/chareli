@@ -10,6 +10,7 @@ import { otpService } from '../services/otp.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { getCountryFromIP, extractClientIP } from '../utils/ipUtils';
+import logger from '../utils/logger';
 
 // Section: Core Authentication
 // This controller handles core authentication functions like registration, login, and OTP verification
@@ -249,14 +250,10 @@ export const login = async (
 
     // Check if user has completed first login - if yes, skip OTP and login directly
     if (user.hasCompletedFirstLogin) {
-      // Generate tokens immediately for returning users
       const tokens = await authService.generateTokens(user);
-      
-      // Update lastLoggedIn timestamp
       user.lastLoggedIn = new Date();
       await userRepository.save(user);
       
-      // Create analytics entry for login
       const loginAnalytics = new Analytics();
       loginAnalytics.userId = user.id;
       loginAnalytics.activityType = 'Logged in';
@@ -277,10 +274,38 @@ export const login = async (
       return;
     }
 
-    // For first-time login, require OTP verification
+    // For first-time login, check if OTP is required based on admin configuration
     try {
-      // Use the new reusable function to determine OTP delivery method based on configuration
       const otpType = await authService.determineOtpDeliveryMethod(user);
+    
+      if (otpType === OtpType.NONE) {
+        const tokens = await authService.generateTokens(user);
+        user.lastLoggedIn = new Date();
+        user.hasCompletedFirstLogin = true;
+        await userRepository.save(user);
+        
+        // Create analytics entry for login
+        const loginAnalytics = new Analytics();
+        loginAnalytics.userId = user.id;
+        loginAnalytics.activityType = 'Logged in';
+        await analyticsRepository.save(loginAnalytics);
+
+        res.status(200).json({
+          success: true,
+          message: 'Login successful.',
+          data: {
+            userId: user.id,
+            requiresOtp: false,
+            tokens,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            role: user?.role.name
+          }
+        });
+        return;
+      }
+      
+      // OTP is required - send OTP
       const otpResult = await authService.sendOtp(user, otpType);
       res.status(200).json({
         success: true,
@@ -300,10 +325,35 @@ export const login = async (
         } else if (error.message.includes('does not have an email address or phone number')) {
           return next(ApiError.badRequest('User does not have any contact information (email address or phone number) for OTP verification'));
         }
+        
+        // OTP sending failed - log for DevOps but don't show error to user
+        logger.error('OTP Service Configuration Error:', error.message);
+        
+        // Return success to user (silent failure) but include diagnostic info for DevOps
+        res.status(200).json({
+          success: true,
+          message: 'First-time login. Please contact support for verification.',
+          data: {
+            userId: user.id,
+            requiresOtp: true,
+            otpType: 'UNAVAILABLE',
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            note: 'OTP service temporarily unavailable'
+          },
+          // Diagnostic information for DevOps (hidden from UI)
+          _debug: {
+            otpError: error.message,
+            timestamp: new Date().toISOString(),
+            service: 'OTP'
+          }
+        });
+        return;
       }
       throw error;
     }
   } catch (error) {
+    // This catches actual login credential errors (user not found, wrong password)
     next(error instanceof Error ? ApiError.unauthorized(error.message) : error);
   }
 };

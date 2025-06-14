@@ -43,7 +43,7 @@ interface LoginResponse {
   email?: string;
   requiresOtp: boolean;
   role: string;
-  otpType?: "EMAIL" | "SMS" | "BOTH";
+  otpType?: "EMAIL" | "SMS" | "NONE";
   message: string;
   tokens?: {
     accessToken: string;
@@ -375,9 +375,9 @@ export function LoginModal({
         onOpenChange={setIsOTPVerificationModalOpen}
         userId={loginResponse?.userId || ""}
         contactMethod={
-          loginResponse?.otpType === "BOTH" && loginResponse?.email && loginResponse?.phoneNumber
-            ? `${loginResponse.email} and ${loginResponse.phoneNumber}`
-            : loginResponse?.email || loginResponse?.phoneNumber || ""
+          loginResponse?.otpType === "EMAIL" ? (loginResponse?.email || "your registered email") :
+          loginResponse?.otpType === "SMS" ? (loginResponse?.phoneNumber || "your registered phone number") :
+          "your registered contact method"
         }
         otpType={loginResponse?.otpType}
       />
