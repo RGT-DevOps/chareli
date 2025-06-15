@@ -25,7 +25,7 @@ type GameType = GameData | null | undefined;
 export default function GamePlay() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const {
     data: game,
     isLoading: isGameDetailsLoading,
@@ -39,7 +39,7 @@ export default function GamePlay() {
   const [expanded, setExpanded] = useState(false);
   const [isGameIframeLoading, setIsGameIframeLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  // Removed unused timeRemaining state
 
   const analyticsIdRef = useRef<string | null>(null);
   const { mutate: createAnalytics } = useCreateAnalytics();
@@ -97,16 +97,11 @@ export default function GamePlay() {
       game.config > 0 &&
       !isGameIframeLoading
     ) {
-      setTimeRemaining(game.config * 60);
       timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev !== null && prev <= 1) {
-            clearInterval(timer);
-            setIsModalOpen(true);
-            return 0;
-          }
-          return prev !== null ? prev - 1 : null;
-        });
+        if (game.config * 60 <= 1) {
+          clearInterval(timer);
+          setIsModalOpen(true);
+        }
       }, 1000);
     }
     return () => clearInterval(timer);
