@@ -14,10 +14,25 @@ import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { cloudFrontService } from '../services/cloudfront.service';
 import config from '../config/config';
+import { getCloudFrontCookieOptions } from '../middlewares/authMiddleware';
 
 const gameRepository = AppDataSource.getRepository(Game);
 const categoryRepository = AppDataSource.getRepository(Category);
 const fileRepository = AppDataSource.getRepository(File);
+
+/**
+ * Helper function to transform S3 key to CloudFront URL
+ */
+const transformToCloudFrontUrl = (s3Key: string): string => {
+  // If s3Key already contains a full URL, extract just the key part
+  if (s3Key.includes('amazonaws.com/')) {
+    const parts = s3Key.split('amazonaws.com/');
+    s3Key = parts[1] || s3Key;
+  }
+  
+  return `https://${config.cloudfront.distributionDomain}/${s3Key}`;
+};
+
 
 /**
  * @swagger
@@ -191,17 +206,13 @@ export const getAllGames = async (
 
     const games = await queryBuilder.getMany();
 
-    // Transform game file and thumbnail URLs to direct S3 URLs
+    // Transform game file and thumbnail URLs to CloudFront URLs
     games.forEach((game) => {
       if (game.gameFile) {
-        const s3Key = game.gameFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+        game.gameFile.s3Key = transformToCloudFrontUrl(game.gameFile.s3Key);
       }
       if (game.thumbnailFile) {
-        const s3Key = game.thumbnailFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+        game.thumbnailFile.s3Key = transformToCloudFrontUrl(game.thumbnailFile.s3Key);
       }
     });
 
@@ -297,16 +308,12 @@ export const getGameById = async (
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
 
-    // Transform game file and thumbnail URLs to direct S3 URLs
+    // Transform game file and thumbnail URLs to CloudFront URLs
     if (game.gameFile) {
-      const s3Key = game.gameFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      game.gameFile.s3Key = transformToCloudFrontUrl(game.gameFile.s3Key);
     }
     if (game.thumbnailFile) {
-      const s3Key = game.thumbnailFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      game.thumbnailFile.s3Key = transformToCloudFrontUrl(game.thumbnailFile.s3Key);
     }
 
     // Find similar games (same category, different ID, active status)
@@ -324,17 +331,13 @@ export const getGameById = async (
         order: { createdAt: 'DESC' }, // Get the newest games first
       });
 
-      // Transform similar games' file and thumbnail URLs to direct S3 URLs
+      // Transform similar games' file and thumbnail URLs to CloudFront URLs
       similarGames.forEach((similarGame) => {
         if (similarGame.gameFile) {
-          const s3Key = similarGame.gameFile.s3Key;
-          const baseUrl = s3Service.getBaseUrl();
-          similarGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+          similarGame.gameFile.s3Key = transformToCloudFrontUrl(similarGame.gameFile.s3Key);
         }
         if (similarGame.thumbnailFile) {
-          const s3Key = similarGame.thumbnailFile.s3Key;
-          const baseUrl = s3Service.getBaseUrl();
-          similarGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+          similarGame.thumbnailFile.s3Key = transformToCloudFrontUrl(similarGame.thumbnailFile.s3Key);
         }
       });
     }
@@ -547,16 +550,12 @@ export const createGame = async (
         return next(ApiError.notFound(`Game with id ${game.id} not found`));
       }
 
-      // Transform game file and thumbnail URLs to direct S3 URLs
+      // Transform game file and thumbnail URLs to CloudFront URLs
       if (savedGame.gameFile) {
-        const s3Key = savedGame.gameFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        savedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+        savedGame.gameFile.s3Key = transformToCloudFrontUrl(savedGame.gameFile.s3Key);
       }
       if (savedGame.thumbnailFile) {
-        const s3Key = savedGame.thumbnailFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        savedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+        savedGame.thumbnailFile.s3Key = transformToCloudFrontUrl(savedGame.thumbnailFile.s3Key);
       }
 
       res.status(201).json({
@@ -759,16 +758,12 @@ export const updateGame = async (
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
 
-    // Transform game file and thumbnail URLs to direct S3 URLs
+    // Transform game file and thumbnail URLs to CloudFront URLs
     if (updatedGame.gameFile) {
-      const s3Key = updatedGame.gameFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      updatedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      updatedGame.gameFile.s3Key = transformToCloudFrontUrl(updatedGame.gameFile.s3Key);
     }
     if (updatedGame.thumbnailFile) {
-      const s3Key = updatedGame.thumbnailFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      updatedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      updatedGame.thumbnailFile.s3Key = transformToCloudFrontUrl(updatedGame.thumbnailFile.s3Key);
     }
 
     res.status(200).json({
@@ -868,8 +863,12 @@ export const deleteGame = async (
  * @swagger
  * /games/{id}/session:
  *   post:
- *     summary: Authorize a game session
- *     description: Verifies user is authenticated and generates signed cookies to access private game files from CloudFront.
+ *     summary: Authorize a game session (FALLBACK METHOD)
+ *     description: |
+ *       FALLBACK METHOD: Verifies user is authenticated and generates signed cookies to access private game files from CloudFront.
+ *       
+ *       NOTE: CloudFront cookies are now automatically set via middleware when accessing game routes.
+ *       This endpoint is kept for backward compatibility and special cases where cookie refresh is needed.
  *     tags: [Games]
  *     security:
  *       - bearerAuth: []
@@ -924,13 +923,14 @@ export const getGameSessionCookies = async (
 
     // 4. Set the cookies on the response.
     // These options are CRITICAL for security and functionality.
-    const cookieOptions = {
-      domain: config.cloudfront.distributionDomain, // IMPORTANT: Must be the CloudFront domain.
-      path: '/',
-      httpOnly: true, // Prevents client-side script access.
-      secure: config.env === 'production', // Send only over HTTPS in production.
-      sameSite: 'none' as const, // Required for cross-domain cookies. Add 'secure: true'.
-    };
+    // const cookieOptions = {
+    //   domain: config.cloudfront.distributionDomain, // IMPORTANT: Must be the CloudFront domain.
+    //   path: '/',
+    //   httpOnly: true, // Prevents client-side script access.
+    //   secure: config.env === 'production', // Send only over HTTPS in production.
+    //   sameSite: 'none' as const, // Required for cross-domain cookies. Add 'secure: true'.
+    // };
+    const cookieOptions = getCloudFrontCookieOptions();
 
     // The AWS SDK returns an object with cookie names as keys. We loop through
     // them and set each one on the response.

@@ -4,6 +4,9 @@ import { ApiError } from './errorHandler';
 import { RoleType } from '../entities/Role';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
+import { cloudFrontService } from '../services/cloudfront.service';
+import config from '../config/config';
+import logger from '../utils/logger';
 
 /**
  * Middleware to optionally verify JWT token and attach user to request
@@ -164,4 +167,40 @@ export const isOwnerOrAdmin = (req: Request, res: Response, next: NextFunction) 
   }
   
   return next(ApiError.forbidden('You do not have permission to access this resource'));
+};
+
+
+export const getCloudFrontCookieOptions = () => {
+    return {
+      domain: config.cloudfront.distributionDomain,
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none' as const,
+    };
+};
+
+
+
+/**
+ * Middleware to set CloudFront cookies for AWS resource access
+ * Use this middleware for any route that needs to access CloudFront resources
+ */
+export const setCloudFrontCookies = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Generate CloudFront cookies for resource access
+    const signedCookies = cloudFrontService.getSignedCookies('*');
+    
+    const cookieOptions = getCloudFrontCookieOptions();
+
+    for (const [cookieName, cookieValue] of Object.entries(signedCookies)) {
+      res.cookie(cookieName, cookieValue, cookieOptions);
+    }
+    
+    logger.info('CloudFront cookies set');
+    next();
+  } catch (error) {
+    logger.error('Failed to set CloudFront cookies:', error);
+    next(); // Continue even if CloudFront fails
+  }
 };
