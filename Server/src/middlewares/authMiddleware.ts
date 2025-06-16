@@ -172,7 +172,7 @@ export const isOwnerOrAdmin = (req: Request, res: Response, next: NextFunction) 
 
 export const getCloudFrontCookieOptions = () => {
     return {
-      domain: config.cloudfront.distributionDomain,
+      // domain: config.cloudfront.distributionDomain,
       path: '/',
       httpOnly: true,
       secure: true,
