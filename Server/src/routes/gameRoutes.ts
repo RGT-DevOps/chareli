@@ -9,7 +9,12 @@ import {
   uploadGameFiles,
   uploadGameFilesForUpdate,
 } from '../controllers/gameController';
-import { authenticate, isAdmin } from '../middlewares/authMiddleware';
+import { 
+  authenticate, 
+  isAdmin, 
+  optionalAuthenticate,
+  setCloudFrontCookies
+} from '../middlewares/authMiddleware';
 import {
   validateBody,
   validateParams,
@@ -25,9 +30,9 @@ import {
 
 const router = Router();
 
-// All game routes require authentication and admin privileges
-router.get('/', validateQuery(gameQuerySchema), getAllGames);
-router.get('/:id', validateParams(gameIdParamSchema), getGameById);
+// GET routes that need AWS access for thumbnails/game files - use CloudFront middleware
+router.get('/', optionalAuthenticate, setCloudFrontCookies, validateQuery(gameQuerySchema), getAllGames);
+router.get('/:id', optionalAuthenticate, setCloudFrontCookies, validateParams(gameIdParamSchema), getGameById);
 
 router.use(authenticate);
 router.use(isAdmin);
