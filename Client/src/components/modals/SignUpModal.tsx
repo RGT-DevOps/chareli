@@ -202,7 +202,7 @@ export function SignUpModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <CustomDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221] h-fit">
+      <CustomDialogContent className="sm:max-w-[500px] dark:bg-[#0F1221] max-h-[95vh] flex flex-col">
         {/* Custom Close Button */}
         <button
           className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#C026D3] flex items-center justify-center shadow-lg hover:bg-[#a21caf] transition-colors"
@@ -226,8 +226,8 @@ export function SignUpModal({
               validateOnBlur={false}
             >
               {({ isSubmitting }) => (
-                <Form className="space-y-1 flex flex-col h-full">
-                  <div className="overflow-auto pb-8 custom-scrollbar">
+                <Form className="space-y-2 flex flex-col h-full">
+                  <div className="overflow-y-auto max-h-[60vh] pb-4 pr-2 custom-scrollbar">
                     {/* Authentication Fields */}
                     {(() => {
                       const fields = getAuthFields(config);
@@ -263,7 +263,7 @@ export function SignUpModal({
                           )}
 
                           {(fields.showAll || fields.showPhone) && (
-                            <div className="relative pt-4">
+                            <div className="relative pt-3">
                               <Label
                                 htmlFor="phoneNumber"
                                 className="font-boogaloo text-base text-black dark:text-white"
@@ -325,7 +325,7 @@ export function SignUpModal({
 
                           {/* Name Fields */}
                           {(fields.firstName || fields.lastName) && (
-                            <div className="flex space-x-4 mt-4">
+                            <div className="flex space-x-4 mt-3">
                               {fields.firstName && (
                                 <div className="flex-1 relative">
                                   <Label
