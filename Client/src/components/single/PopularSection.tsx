@@ -64,8 +64,8 @@ const PopularSection = ({ searchQuery, setSearchQuery }: PopularSectionProps) =>
                                             className="w-full h-[290px] min-h-[290px] max-h-[290px] object-cover rounded-[32px] border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)]"
                                             onClick={() => handleGamePlay(game.id)}
                                         />
-                                        {/* Game Info Overlay */}
-                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-[28px] p-4">
+                                        {/* Game Info Overlay - Only visible on hover */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-[28px] p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
                                             <h3 className="text-white font-bold text-lg mb-1 truncate">
                                                 {game.title}
                                             </h3>
