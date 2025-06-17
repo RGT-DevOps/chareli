@@ -25,7 +25,9 @@ export default function UserManagement() {
       max: 0
     },
     gameTitle: '',
-    gameCategory: ''
+    gameCategory: '',
+    sortByMaxTimePlayed: false,
+    country: ''
   });
 
   const { data: users, isLoading } = useUsersAnalytics(filters);
@@ -51,14 +53,16 @@ export default function UserManagement() {
         max: 0
       },
       gameTitle: '',
-      gameCategory: ''
+      gameCategory: '',
+      sortByMaxTimePlayed: false,
+      country: ''
     });
     setPage(1);
   };
 
   
 
-  // Filter users based on criteria
+  // Filter and sort users based on criteria
   const filteredUsers = users?.filter(user => {
     if (filters.registrationDates.startDate && new Date(user.createdAt) < new Date(filters.registrationDates.startDate)) return false;
     if (filters.registrationDates.endDate && new Date(user.createdAt) > new Date(filters.registrationDates.endDate)) return false;
@@ -67,7 +71,13 @@ export default function UserManagement() {
     if (filters.timePlayed.max && (user.analytics?.totalTimePlayed || 0) / 60 > filters.timePlayed.max) return false;
     if (filters.gameCategory && user.analytics?.mostPlayedGame?.gameId && !games?.find((g: GameAnalytics) => g.id === user.analytics?.mostPlayedGame?.gameId && g.category?.name === filters.gameCategory)) return false;
     if (filters.gameTitle && user.analytics?.mostPlayedGame?.gameTitle !== filters.gameTitle) return false;
+    if (filters.country && user.country !== filters.country) return false;
     return true;
+  })?.sort((a, b) => {
+    if (filters.sortByMaxTimePlayed) {
+      return (b.analytics?.totalTimePlayed || 0) - (a.analytics?.totalTimePlayed || 0);
+    }
+    return 0;
   });
 
 

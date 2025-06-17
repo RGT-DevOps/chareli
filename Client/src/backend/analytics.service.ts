@@ -294,6 +294,8 @@ export interface FilterState {
   };
   gameTitle: string;
   gameCategory: string;
+  sortByMaxTimePlayed: boolean;
+  country: string;
 }
 
 export const useUsersAnalytics = (filters?: FilterState) => {
@@ -309,6 +311,7 @@ export const useUsersAnalytics = (filters?: FilterState) => {
         if (filters.timePlayed.max) params.append('maxTimePlayed', String(filters.timePlayed.max * 60)); // Convert to seconds
         if (filters.gameTitle) params.append('gameTitle', filters.gameTitle);
         if (filters.gameCategory) params.append('gameCategory', filters.gameCategory);
+        if (filters.country) params.append('country', filters.country);
       }
       const url = `${BackendRoute.ADMIN_USERS_ANALYTICS}${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await backendService.get(url);

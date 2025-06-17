@@ -1,6 +1,20 @@
-import { Button } from "../ui/button"
+import { Button } from "../ui/button";
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
+import countryList from 'react-select-country-list'
+import Select from 'react-select'
+import type { SingleValue, CSSObjectWithLabel } from 'react-select'
+import { useMemo } from 'react'
+
+interface CountryOption {
+  label: string;
+  value: string;
+}
+
+interface GameOption {
+  label: string;
+  value: string;
+}
 import {
   Sheet,
   SheetClose,
@@ -23,6 +37,8 @@ interface FilterState {
   };
   gameTitle: string;
   gameCategory: string;
+  sortByMaxTimePlayed: boolean;
+  country: string;
 }
 
 interface UserManagementFilterSheetProps {
@@ -43,10 +59,17 @@ export function UserManagementFilterSheet({
   // Get unique categories from games
   const categories = [...new Set(games?.map(game => game.category?.name).filter(Boolean))];
   
-  // Get game titles
-  const titles = games?.map(game => game.title) || [];
+  // Get game titles and transform them into options
+  const gameOptions = useMemo(() => 
+    (games?.map(game => game.title) || [])
+      .map(title => ({ label: title, value: title })),
+    [games]
+  );
 
-  const handleChange = (field: keyof FilterState, value: any) => {
+  // Create memoized countries list
+  const countries = useMemo(() => countryList().getData(), []);
+
+  const handleChange = (field: keyof FilterState, value: unknown) => {
     onFiltersChange({
       ...filters,
       [field]: value
@@ -149,17 +172,106 @@ export function UserManagementFilterSheet({
           {/* Game Title */}
           <div className="flex flex-col space-y-2">
             <Label className="text-lg">Game Title</Label>
-            <select 
-              value={filters.gameTitle}
-              onChange={(e) => handleChange('gameTitle', e.target.value)}
-              className="bg-[#F1F5F9] border border-[#CBD5E0] h-14 px-3 text-gray-400 font-thin font-pincuk text-xl tracking-wider rounded dark:bg-[#121C2D]"
-            >
-              <option value="">All Games</option>
-              {titles.map((title) => (
-                <option key={title} value={title}>{title}</option>
-              ))}
-            </select>
+            <Select<GameOption>
+              options={gameOptions}
+              value={gameOptions.find(game => game.value === filters.gameTitle)}
+              onChange={(option: SingleValue<GameOption>) => handleChange('gameTitle', option ? option.value : '')}
+              className="bg-[#F1F5F9] text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]"
+              classNamePrefix="react-select"
+              placeholder="Select a game..."
+              isClearable
+              styles={{
+                control: (base: CSSObjectWithLabel) => ({
+                  ...base,
+                  height: '42px',
+                  borderColor: '#CBD5E0',
+                  backgroundColor: '#F1F5F9 dark:bg-[#121C2D]',
+                  '&:hover': {
+                    borderColor: '#CBD5E0'
+                  }
+                }),
+                menu: (base: CSSObjectWithLabel) => ({
+                  ...base,
+                  backgroundColor: '#F1F5F9',
+                  '.dark &': {
+                    backgroundColor: '#121C2D'
+                  }
+                }),
+                option: (base: CSSObjectWithLabel, { isFocused }: { isFocused: boolean }) => ({
+                  ...base,
+                  backgroundColor: isFocused ? '#E2E8F0' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: '#E2E8F0'
+                  },
+                  '.dark &': {
+                    backgroundColor: isFocused ? '#1E293B' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: '#1E293B '
+                    }
+                  }
+                })
+              }}
+            />
           </div>
+          {/* Select country */}
+          <div className="flex flex-col space-y-2">
+            <Label className="text-lg">Select Country</Label>
+            <Select<CountryOption>
+              options={countries}
+              value={countries.find(country => country.value === filters.country)}
+              onChange={(option: SingleValue<CountryOption>) => handleChange('country', option ? option.value : '')}
+              className="bg-[#F1F5F9] text-gray-400 font-thin font-pincuk text-xl tracking-wider dark:bg-[#121C2D]"
+              classNamePrefix="react-select"
+              placeholder="Select a country..."
+              isClearable
+              styles={{
+                control: (base: CSSObjectWithLabel) => ({
+                  ...base,
+                  height: '42px',
+                  borderColor: '#CBD5E0',
+                  backgroundColor: '#F1F5F9 dark:bg-[#121C2D]',
+                  '&:hover': {
+                    borderColor: '#CBD5E0'
+                  }
+                }),
+                menu: (base: CSSObjectWithLabel) => ({
+                  ...base,
+                  backgroundColor: '#F1F5F9',
+                  '.dark &': {
+                    backgroundColor: '#121C2D'
+                  }
+                }),
+                option: (base: CSSObjectWithLabel, { isFocused }: { isFocused: boolean }) => ({
+                  ...base,
+                  backgroundColor: isFocused ? '#E2E8F0' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: '#E2E8F0'
+                  },
+                  '.dark &': {
+                    backgroundColor: isFocused ? '#1E293B' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: '#1E293B'
+                    }
+                  }
+                })
+              }}
+            />
+          </div>
+
+          {/* Sort by Max Time Played */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="sortByMaxTimePlayed"
+              className="w-4 h-4"
+              checked={filters.sortByMaxTimePlayed}
+              onChange={(e) => handleChange('sortByMaxTimePlayed', e.target.checked)}
+            />
+            <Label htmlFor="sortByMaxTimePlayed" className="text-lg">Sort by Max Time Played</Label>
+          </div>
+          
+         
+
         </div>
 
         <div className="flex gap-3 justify-end px-2 mb-4"> 
