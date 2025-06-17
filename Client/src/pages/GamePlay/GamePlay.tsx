@@ -314,8 +314,8 @@ export default function GamePlay() {
                             navigate(`/gameplay/${similarGame.id}`);
                           }}
                         />
-                        {/* Game Info Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-[14px] p-4">
+                        {/* Game Info Overlay - Only visible on hover */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-[14px] p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
                           <h3 className="text-white font-bold text-lg mb-1 truncate">
                             {similarGame.title}
                           </h3>
