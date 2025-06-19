@@ -76,7 +76,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                                               allCategories.find(cat => cat.id === selectedCategory)?.name || "this category"}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[150px]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[150px]">
                             {games.map((game: any, index: number) => {
                                 // Alternate between different spans for subtle height variations
                                 const spans = [1, 1.3, 1.1]; // More subtle height differences
@@ -90,17 +90,19 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                                         style={{ gridRow: `span ${Math.round(rowSpan * 2)}` }}
                                         onClick={() => handleGamePlay(game.id)}
                                     >
-                                        <div className="relative h-full overflow-hidden rounded-[20px]">
-                                            <img 
-                                                src={game.thumbnailFile?.s3Key} 
-                                                alt={game.title}
-                                                loading="lazy"
-                                                className="w-full h-full object-cover border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)]"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <span className="absolute bottom-3 left-4 text-white font-bold text-xl drop-shadow-lg">
-                                                    {game.title}
-                                                </span>
+                                        <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0px_20px_#D946EF,0_0px_10px_rgba(217,70,239,0.8)]">
+                                            <div className="w-full h-full rounded-[16px] overflow-hidden">
+                                                <img 
+                                                    src={game.thumbnailFile?.s3Key} 
+                                                    alt={game.title}
+                                                    loading="lazy"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent group-hover:opacity-100 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 rounded-[16px]">
+                                                    <span className="absolute bottom-3 left-4 text-white font-bold text-xl drop-shadow-lg">
+                                                        {game.title}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AppRoutes from "./routing/routes";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "sonner";
+import { useEffect } from "react";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -16,6 +17,20 @@ const queryClient = new QueryClient({
 });
 
 const App: React.FC = () => {
+  useEffect(() => {
+    function updateTheme() {
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+
+    updateTheme();
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
