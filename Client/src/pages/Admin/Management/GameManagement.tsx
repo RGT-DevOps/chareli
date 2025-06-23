@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
+import ReOrderModal from "../../../components/modals/AdminModals/ReOrderModal";
 import { Card } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { DeleteConfirmationModal } from "../../../components/modals/DeleteConfirmationModal";
@@ -36,6 +37,13 @@ export default function GameManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [reOrderModalOpen, setReOrderModalOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<{
+    id: string;
+    title: string;
+    category?: { id: string; name: string } | null;
+    thumbnailFile?: { url: string } | null;
+  } | null>(null);
   const queryClient = useQueryClient();
   const { data: gamesWithAnalytics, isLoading } = useGamesAnalytics();
   const deleteGame = useDeleteGame();
@@ -116,7 +124,7 @@ export default function GameManagement() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-3 text-center">
+                <td colSpan={5} className="px-4 py-3 text-center cursor-pointer">
                   Loading...
                 </td>
               </tr>
@@ -143,9 +151,18 @@ export default function GameManagement() {
                 <tr
                   key={game.id}
                   className={cn(
-                    "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition",
+                    "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition cursor-pointer",
                     idx % 2 === 0 ? "dark:bg-[#18192b]" : "dark:bg-[#23243a]"
                   )}
+                  onClick={() => {
+                    setSelectedGame({
+                      id: game.id,
+                      title: game.title,
+                      category: game.category,
+                      thumbnailFile: game.thumbnailFile,
+                    });
+                    setReOrderModalOpen(true);
+                  }}
                 >
                   <td className="px-4 py-3 flex items-center gap-3">
                     <GameThumbnail
@@ -256,6 +273,14 @@ export default function GameManagement() {
         onConfirm={handleDelete}
         isDeleting={deleteGame.isPending}
       />
+      {reOrderModalOpen && selectedGame && (
+        <div className="relative">
+          <ReOrderModal
+            onOpenChange={setReOrderModalOpen}
+            game={selectedGame}
+          />
+        </div>
+      )}
     </div>
   );
 }
