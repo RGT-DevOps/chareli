@@ -58,6 +58,7 @@ export default function GameManagement() {
     title: string;
     category?: { id: string; name: string } | null;
     thumbnailFile?: { url: string } | null;
+    position?: string | number;
   } | null>(null);
   const [reorderOpen, setReorderOpen] = useState(false);
   const [reorderHistoryOpen, setReorderHistoryOpen] = useState(false);
@@ -238,6 +239,7 @@ export default function GameManagement() {
                         title: game.title,
                         category: game.category,
                         thumbnailFile: game.thumbnailFile,
+                        position: game.position
                       });
                       setReOrderModalOpen(true);
                     }
@@ -409,7 +411,7 @@ export default function GameManagement() {
           </table>
           {/* Pagination for history table */}
           {gameData?.length > 0 && (
-            <div className="flex justify-between items-center px-4 py-3 bg-[#F1F5F9] dark:bg-[#18192b] rounded-b-xl ">
+            <div className="flex justify-between items-center px-4 py-3 bg-[#F1F5F9] dark:bg-[#18192b] rounded-b-xl">
               <span className="text-sm">
                 Showing {gameData.length} history records
               </span>
