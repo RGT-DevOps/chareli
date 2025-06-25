@@ -1,8 +1,8 @@
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { useGames } from "../../backend/games.service";
 import { useCategories } from "../../backend/category.service";
+import { useGameClickHandler } from "../../hooks/useGameClickHandler";
 import { useState } from "react";
 import GamesSkeleton from "./GamesSkeleton";
 
@@ -13,7 +13,6 @@ interface AllGamesSectionProps {
 }
 
 const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { data: categoriesData, isLoading: categoriesLoading } =
     useCategories();
@@ -45,17 +44,12 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
   ];
 
   const games: any = gamesData || [];
-
-  const handleGamePlay = (gameId: string) => {
-    navigate(`/gameplay/${gameId}`);
-  };
+  const { handleGameClick } = useGameClickHandler();
 
   return (
     <div className="p-4">
       <div>
-        <h1 className="text-[#D946EF] text-3xl mb-4 font-boogaloo">
-          All Games
-        </h1>
+        <h1 className="text-[#D946EF] text-3xl mb-4 font-worksans">All Games</h1>
       </div>
       {/* filtering tabs */}
       <div className="flex gap-3 mb-8 flex-wrap">
@@ -114,7 +108,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                     key={game.id}
                     className="relative group cursor-pointer"
                     style={{ gridRow: `span ${Math.round(rowSpan * 2)}` }}
-                    onClick={() => handleGamePlay(game.id)}
+                    onClick={() => handleGameClick(game.id)}
                   >
                     <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0px_20px_#D946EF,0_0px_10px_rgba(217,70,239,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
@@ -125,7 +119,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent group-hover:opacity-100 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 rounded-[16px]">
-                          <span className="absolute bottom-3 left-4 text-white font-bold text-xl drop-shadow-lg">
+                          <span className="absolute bottom-3 left-4 text-white font-semibold text-base drop-shadow-lg text-shadow-black/55 text-shadow-lg">
                             {game.title}
                           </span>
                         </div>

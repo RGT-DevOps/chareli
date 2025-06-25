@@ -24,6 +24,7 @@ interface FormValues {
   description: string;
   config: number;
   categoryId: string;
+  position?: number;
   thumbnailFile?: File;
   gameFile?: File;
 }
@@ -89,6 +90,10 @@ export function CreateGameSheet({
       formData.append("config", String(values.config));
       formData.append("categoryId", values.categoryId);
 
+      if (values.position) {
+        formData.append("position", String(values.position));
+      }
+
       if (values.thumbnailFile) {
         formData.append("thumbnailFile", values.thumbnailFile);
       }
@@ -126,7 +131,7 @@ export function CreateGameSheet({
       setShowProgress(false);
       setProgress(0);
       setCurrentStep("");
-      toast.error("Failed to create game");
+      // toast.error("Failed to create game");
       console.error("Error creating game:", error);
     } finally {
       setSubmitting(false);
@@ -145,9 +150,9 @@ export function CreateGameSheet({
       }}
     >
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent className="font-boogaloo dark:bg-[#0F1621] max-w-xl w-full overflow-y-auto">
+      <SheetContent className="font-dmmono dark:bg-[#0F1621] max-w-xl w-full overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="text-2xl font-bold tracking-wider mt-6 mb-2">
+          <SheetTitle className="text-xl font-medium tracking-wider mt-6 mb-2">
             Create New Game
           </SheetTitle>
           <div className="border border-b-gray-200 mb-2"></div>
@@ -160,54 +165,83 @@ export function CreateGameSheet({
         >
           {({ setFieldValue, isSubmitting, isValid, dirty }) => (
             <Form className="grid grid-cols-1 gap-6 pl-4 pr-4">
-              {/* Thumbnail Upload */}
-              <div>
-                <Label className="text-lg mb-2 block">Add Thumbnail icon</Label>
-                <div className="flex items-center gap-4">
-                  <label className="w-40 h-38 flex flex-col items-center justify-center border border-[#CBD5E0] rounded-lg cursor-pointer hover:border-[#D946EF] transition">
-                    {thumbnailPreview ? (
-                      <img
-                        src={thumbnailPreview}
-                        alt="thumbnail preview"
-                        className="w-full h-full object-cover rounded-lg"
+              {/* Thumbnail Upload and Order Number */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Thumbnail Upload */}
+                <div>
+                  <Label className="text-base mb-2 block">
+                    Add Thumbnail icon
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <label className="w-40 h-38 flex flex-col items-center justify-center border border-[#CBD5E0] rounded-lg cursor-pointer hover:border-[#D946EF] transition">
+                      {thumbnailPreview ? (
+                        <img
+                          src={thumbnailPreview}
+                          alt="thumbnail preview"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <img
+                          src={uploadImg}
+                          alt="upload"
+                          className="dark:text-white"
+                        />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFieldValue("thumbnailFile", file);
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setThumbnailPreview(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
                       />
-                    ) : (
-                      <img
-                        src={uploadImg}
-                        alt="upload"
-                        className="dark:text-white"
-                      />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setFieldValue("thumbnailFile", file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setThumbnailPreview(reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
+                    </label>
+                  </div>
+                  <ErrorMessage
+                    name="thumbnailFile"
+                    component="div"
+                    className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
+                  />
                 </div>
-                <ErrorMessage
-                  name="thumbnailFile"
-                  component="div"
-                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
-                />
+
+                {/* Order Number */}
+                <div>
+                  <Label
+                    htmlFor="position"
+                    className="text-base mb-2 block dark:text-white"
+                  >
+                    Order Number
+                  </Label>
+                  <Field
+                    as={Input}
+                    type="number"
+                    id="position"
+                    name="position"
+                    min="1"
+                    className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#D946EF] focus:outline-none font-worksans tracking-wider text-sm"
+                    placeholder="#234"
+                  />
+                  <ErrorMessage
+                    name="position"
+                    component="div"
+                    className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
+                  />
+                </div>
               </div>
 
               {/* Title Input */}
               <div>
                 <Label
                   htmlFor="title"
-                  className="text-lg mb-2 block dark:text-white"
+                  className="text-base mb-2 block dark:text-white"
                 >
                   Title
                 </Label>
@@ -215,13 +249,13 @@ export function CreateGameSheet({
                   as={Input}
                   id="title"
                   name="title"
-                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#D946EF] focus:outline-none font-pincuk tracking-wider text-sm"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#D946EF] focus:outline-none font-worksans tracking-wider text-sm"
                   placeholder="Enter game title"
                 />
                 <ErrorMessage
                   name="title"
                   component="div"
-                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
+                  className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
                 />
               </div>
 
@@ -229,7 +263,7 @@ export function CreateGameSheet({
               <div>
                 <Label
                   htmlFor="description"
-                  className="text-lg mb-2 block dark:text-white"
+                  className="text-base mb-2 block dark:text-white"
                 >
                   Short Description
                 </Label>
@@ -237,19 +271,19 @@ export function CreateGameSheet({
                   as="textarea"
                   id="description"
                   name="description"
-                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-pincuk text-xl tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none resize-none"
+                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none resize-none"
                   placeholder="Description"
                 />
                 <ErrorMessage
                   name="description"
                   component="div"
-                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
+                  className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
                 />
               </div>
 
               {/* Game Upload */}
               <div>
-                <Label className="text-lg mb-2 block">Game Upload .zip</Label>
+                <Label className="text-base mb-2 block">Game Upload .zip</Label>
                 <div className="flex items-center gap-4">
                   <label className="w-40 h-38 flex flex-col items-center justify-center border border-[#CBD5E0] rounded-lg cursor-pointer hover:border-[#D946EF] transition">
                     <img src={uploadImg} alt="upload" />
@@ -267,7 +301,7 @@ export function CreateGameSheet({
                     />
                   </label>
                   {gameFileName && (
-                    <span className=" font-pincuk text-xl tracking-wider text-gray-600 dark:text-gray-300">
+                    <span className=" font-worksans text-xl tracking-wider text-gray-600 dark:text-gray-300">
                       {gameFileName}
                     </span>
                   )}
@@ -275,7 +309,7 @@ export function CreateGameSheet({
                 <ErrorMessage
                   name="gameFile"
                   component="div"
-                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
+                  className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
                 />
               </div>
 
@@ -283,7 +317,7 @@ export function CreateGameSheet({
               <div>
                 <Label
                   htmlFor="categoryId"
-                  className="text-lg mb-2 block dark:text-white"
+                  className="text-base mb-2 block dark:text-white"
                 >
                   Game Category
                 </Label>
@@ -291,9 +325,9 @@ export function CreateGameSheet({
                   as="select"
                   id="categoryId"
                   name="categoryId"
-                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-pincuk text-xl tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-worksans tracking-wider  text-gray-700 text-sm focus:border-[#D946EF] focus:outline-none"
                 >
-                  <option value="">Select category</option>
+                  <option value="" className="text-sm">Select category</option>
                   {categories?.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -303,7 +337,7 @@ export function CreateGameSheet({
                 <ErrorMessage
                   name="categoryId"
                   component="div"
-                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
+                  className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
                 />
               </div>
 
@@ -311,7 +345,7 @@ export function CreateGameSheet({
               <div>
                 <Label
                   htmlFor="config"
-                  className="text-lg mb-2 block dark:text-white"
+                  className="text-base mb-2 block dark:text-white"
                 >
                   Game Config
                 </Label>
@@ -321,13 +355,13 @@ export function CreateGameSheet({
                   id="config"
                   name="config"
                   min="0"
-                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-pincuk text-xl tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 font-worksans text-sm tracking-wider  text-gray-700 focus:border-[#D946EF] focus:outline-none"
                   placeholder="Enter config number"
                 />
                 <ErrorMessage
                   name="config"
                   component="div"
-                  className="text-red-500  mt-1 font-pincuk text-xl tracking-wider"
+                  className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
                 />
               </div>
 
