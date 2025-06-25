@@ -7,7 +7,7 @@ import StatsCard from "./StatsCard";
 import PieChart from '../../../components/charts/piechart';
 import { useState } from 'react';
 import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
-import { useUsersAnalytics } from '../../../backend/analytics.service';
+import { useDashboardAnalytics } from '../../../backend/analytics.service';
 import AdminKeepPlayingModal from '../../../components/modals/AdminKeepPlayingModal';
 import { MostPlayedGames } from './MostPlayedGames';
 import { RecentUserActivity } from './RecentUserActivity';
@@ -30,7 +30,7 @@ export default function Home() {
         <div className="col-span-1 md:col-span-2 lg:col-span-4 my-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
             <div className="justify-between items-center flex p-3">
-              <p className="text-3xl dark:text-[#D946EF]">Dynamic Popup System</p>
+              <p className="text-2xl dark:text-[#D946EF]">Dynamic Popup System</p>
               <PopUpSheet>
                 <Button className="bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200">
                   Create New Pop-up
@@ -45,7 +45,7 @@ export default function Home() {
                   onClick={handleShowPopup}
                   className="w-32 bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200"
                 >
-                  Show Pop-up Now
+                  Pop-up Preview
                 </Button>
               </div>
             </Card>
@@ -56,7 +56,7 @@ export default function Home() {
         <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
             <div className="justify-between items-center flex p-3">
-              <p className="text-3xl">Click insights</p>
+              <p className="text-2xl">Click insights</p>
             </div>
             {/* inner card */}
             <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
@@ -97,19 +97,21 @@ export default function Home() {
 // Separate component for signup click insights
 function SignupClickInsights() {
   const { data: signupAnalytics, isLoading: analyticsLoading } = useSignupAnalyticsData();
-  const { data: usersWithAnalytics, isLoading: usersLoading } = useUsersAnalytics();
+  // const { data: usersWithAnalytics, isLoading: usersLoading } = useUsersAnalytics();
+  const { data: dashboardAnalytics, isLoading: usersLoading } = useDashboardAnalytics();
   
   if (analyticsLoading || usersLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
   
-  if (!signupAnalytics || !usersWithAnalytics) {
+  if (!signupAnalytics || !dashboardAnalytics) {
     return <div className="text-center py-4">No data available</div>;
   }
 
   // Total registered users is the verified count
-  const verifiedCount = usersWithAnalytics.length;
-  const didntRegisterCount = signupAnalytics.totalClicks - verifiedCount;
+  // Defaulting to one because Super Admin is created behind the system as part of all users 
+  const verifiedCount = dashboardAnalytics?.totalRegisteredUsers?.current;
+  const didntRegisterCount = (signupAnalytics.totalClicks) - verifiedCount;
 
   const chartData = [
     { name: "Didn't register", value: didntRegisterCount, fill: "#F3C7FA" },

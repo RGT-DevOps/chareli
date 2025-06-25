@@ -144,7 +144,15 @@ export class S3Service {
     const deleteCommand = new DeleteObjectsCommand(deleteParams);
     await this.s3Client.send(deleteCommand);
 
-    if (listedObjects.IsTruncated) await this.deleteFolder(prefix);
+  getBaseUrl(): string {
+    console.log('Getting S3 base URL');
+    const baseUrl = config.s3.endpoint 
+      ? `${config.s3.endpoint}/${this.bucket}`
+      : `https://${this.bucket}.s3.${config.s3.region}.amazonaws.com`;
+    
+    console.log(`S3 base URL: ${baseUrl}`);
+    return baseUrl;
+
   }
 }
 

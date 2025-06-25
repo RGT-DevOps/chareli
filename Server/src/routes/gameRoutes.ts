@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAllGames,
   getGameById,
+  getGameByPosition,
   createGame,
   getGameSessionCookies,
   updateGame,
@@ -31,9 +32,16 @@ import {
 
 const router = Router();
 
+<<<<<<< development
+// All game routes require authentication and admin privileges
+router.get('/', validateQuery(gameQuerySchema), getAllGames);
+router.get('/position/:position', getGameByPosition);
+router.get('/:id', validateParams(gameIdParamSchema), getGameById);
+=======
 // GET routes that need AWS access for thumbnails/game files - use Universal CloudFront middleware
 router.get('/', optionalAuthenticate, setUniversalCloudFrontCookies, validateQuery(gameQuerySchema), getAllGames);
 router.get('/:id', optionalAuthenticate, setUniversalCloudFrontCookies, validateParams(gameIdParamSchema), getGameById);
+>>>>>>> feat/signedcookies
 
 router.use(authenticate);
 router.use(isAdmin);

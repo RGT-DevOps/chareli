@@ -4,8 +4,10 @@ import { Role, RoleType } from '../entities/Role';
 import { Invitation } from '../entities/Invitation';
 import { Otp, OtpType } from '../entities/Otp';
 import { SystemConfig } from '../entities/SystemConfig';
+import { SignupAnalytics } from '../entities/SignupAnalytics';
 import config from '../config/config';
 import logger from '../utils/logger';
+import { getFrontendUrl } from '../utils/main';
 import { otpService } from './otp.service';
 import { emailService } from './email.service';
 import * as bcrypt from 'bcrypt';
@@ -18,6 +20,7 @@ const userRepository = AppDataSource.getRepository(User);
 const roleRepository = AppDataSource.getRepository(Role);
 const invitationRepository = AppDataSource.getRepository(Invitation);
 const systemConfigRepository = AppDataSource.getRepository(SystemConfig);
+const signupAnalyticsRepository = AppDataSource.getRepository(SignupAnalytics);
 
 export interface TokenPayload {
   userId: string;
@@ -174,7 +177,7 @@ export class AuthService {
 
     const user = await userRepository.findOne({
       where: isEmail ? { email: identifier } : { phoneNumber: identifier },
-      select: ['id', 'email', 'password', 'firstName', 'lastName', 'phoneNumber', 'isActive', 'isVerified', 'hasCompletedFirstLogin', 'roleId'],
+      select: ['id', 'email', 'password', 'firstName', 'lastName', 'phoneNumber', 'isActive', 'isVerified', 'hasCompletedFirstLogin', 'roleId', 'country'],
       relations: ['role']
     });
 
@@ -200,87 +203,48 @@ export class AuthService {
     return user;
   }
 
-  /**
-   * Determine OTP delivery method based on authentication settings configuration
-   */
+
   async determineOtpDeliveryMethod(user: User): Promise<OtpType> {
     try {
-      // Get authentication settings from system config
       const authConfig = await systemConfigRepository.findOne({
         where: { key: 'authentication_settings' }
       });
 
       if (!authConfig?.value?.settings) {
-        // Fallback to default behavior if no config found
         logger.info('No authentication settings found, using default OTP behavior');
-        return this.getDefaultOtpType(user);
+        return OtpType.NONE;
       }
 
       const { email, sms, both } = authConfig.value.settings;
 
-      // Check which authentication method is enabled
       if (both?.enabled) {
-        // Both is enabled, check the OTP delivery method preference
         const otpDeliveryMethod = both.otpDeliveryMethod || 'none';
         
         switch (otpDeliveryMethod) {
           case 'email':
-            if (!user.email) {
-              throw new Error('User does not have an email address for OTP verification');
-            }
             return OtpType.EMAIL;
-          
           case 'sms':
-            if (!user.phoneNumber) {
-              throw new Error('User does not have a phone number for OTP verification');
-            }
             return OtpType.SMS;
-          
           case 'none':
-            // No OTP required when "none" is selected
-            throw new Error('OTP verification is disabled for this authentication method');
-          
+            return OtpType.NONE;
           default:
-            // Fallback to default behavior
-            return this.getDefaultOtpType(user);
+            return OtpType.NONE;
         }
       } else if (email?.enabled) {
-        // Email authentication is enabled
-        if (!user.email) {
-          throw new Error('User does not have an email address for OTP verification');
-        }
         return OtpType.EMAIL;
       } else if (sms?.enabled) {
-        // SMS authentication is enabled
-        if (!user.phoneNumber) {
-          throw new Error('User does not have a phone number for OTP verification');
-        }
         return OtpType.SMS;
       } else {
-        // No authentication method enabled, use default
-        return this.getDefaultOtpType(user);
+        return OtpType.NONE;
       }
     } catch (error) {
       logger.error('Error determining OTP delivery method:', error);
-      // Fallback to default behavior on error
-      return this.getDefaultOtpType(user);
+      return OtpType.NONE
     }
   }
 
-  /**
-   * Get default OTP type based on user's available contact information
-   */
-  private getDefaultOtpType(user: User): OtpType {
-    if (user.email && user.phoneNumber) {
-      return OtpType.BOTH;
-    } else if (user.email) {
-      return OtpType.EMAIL;
-    } else if (user.phoneNumber) {
-      return OtpType.SMS;
-    } else {
-      throw new Error('User does not have any contact information for OTP verification');
-    }
-  }
+  
+
 
   async sendOtp(user: User, type: OtpType): Promise<OtpResult> {
     const otp = await otpService.generateOtp(user.id, type);
@@ -291,8 +255,6 @@ export class AuthService {
       message = `OTP sent to your email address (${user.email}).`;
     } else if (type === OtpType.SMS) {
       message = `OTP sent to your phone number (${user.phoneNumber}).`;
-    } else if (type === OtpType.BOTH) {
-      message = `OTP sent to both your email (${user.email}) and phone (${user.phoneNumber}).`;
     }
 
     return { success, actualType: type, message };
@@ -438,8 +400,7 @@ export class AuthService {
     await invitationRepository.save(invitation);
 
     // Generate invitation link - point to frontend route
-    // const frontendUrl = 'https://dev.chareli.reallygreattech.com';
-    const frontendUrl = config.env === 'development' ? 'http://localhost:5173' : '';
+    const frontendUrl = getFrontendUrl();
     const invitationLink = `${frontendUrl}/register-invitation/${token}`;
 
     // Send invitation email
@@ -524,8 +485,7 @@ export class AuthService {
     await userRepository.save(user);
 
     // Generate reset link - point to frontend route instead of API endpoint
-    const frontendUrl = config.env === 'development' ? 'http://localhost:5173' : '';
-    // const frontendUrl = 'https://dev.chareli.reallygreattech.com';
+    const frontendUrl = getFrontendUrl();
     const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
 
     try {
@@ -621,6 +581,16 @@ export class AuthService {
 
       await userRepository.save(superadmin);
       logger.info(`Superadmin account created with email: ${config.superadmin.email}`);
+
+      // Create signup analytics entry for the new superadmin
+      const signupAnalytics = signupAnalyticsRepository.create({
+        ipAddress: '127.0.0.1',
+        deviceType: 'server',
+        type: 'signup-modal'
+      });
+
+      await signupAnalyticsRepository.save(signupAnalytics);
+      logger.info('Created signup analytics entry for new superadmin');
     } catch (error) {
       logger.error('Failed to initialize superadmin account:', error);
     }

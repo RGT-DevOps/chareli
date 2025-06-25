@@ -10,6 +10,7 @@ import { otpService } from '../services/otp.service';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { getCountryFromIP, extractClientIP } from '../utils/ipUtils';
+import logger from '../utils/logger';
 
 // Section: Core Authentication
 // This controller handles core authentication functions like registration, login, and OTP verification
@@ -247,16 +248,11 @@ export const login = async (
 
     const user = await authService.login(identifier, password);
 
-    // Check if user has completed first login - if yes, skip OTP and login directly
     if (user.hasCompletedFirstLogin) {
-      // Generate tokens immediately for returning users
       const tokens = await authService.generateTokens(user);
-      
-      // Update lastLoggedIn timestamp
       user.lastLoggedIn = new Date();
       await userRepository.save(user);
       
-      // Create analytics entry for login
       const loginAnalytics = new Analytics();
       loginAnalytics.userId = user.id;
       loginAnalytics.activityType = 'Logged in';
@@ -277,10 +273,38 @@ export const login = async (
       return;
     }
 
-    // For first-time login, require OTP verification
+    // For first-time login, check if OTP is required based on admin configuration
     try {
-      // Use the new reusable function to determine OTP delivery method based on configuration
       const otpType = await authService.determineOtpDeliveryMethod(user);
+    
+      if (otpType === OtpType.NONE) {
+        const tokens = await authService.generateTokens(user);
+        user.lastLoggedIn = new Date();
+        user.hasCompletedFirstLogin = true;
+        await userRepository.save(user);
+        
+        // Create analytics entry for login
+        const loginAnalytics = new Analytics();
+        loginAnalytics.userId = user.id;
+        loginAnalytics.activityType = 'Logged in';
+        await analyticsRepository.save(loginAnalytics);
+
+        res.status(200).json({
+          success: true,
+          message: 'Login successful.',
+          data: {
+            userId: user.id,
+            requiresOtp: false,
+            tokens,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            role: user?.role.name
+          }
+        });
+        return;
+      }
+      
+      // OTP is required - send OTP
       const otpResult = await authService.sendOtp(user, otpType);
       res.status(200).json({
         success: true,
@@ -295,11 +319,71 @@ export const login = async (
       });
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('does not have a phone number or email address')) {
-          return next(ApiError.badRequest('User does not have any contact information (phone number or email address) for OTP verification'));
-        } else if (error.message.includes('does not have an email address or phone number')) {
-          return next(ApiError.badRequest('User does not have any contact information (email address or phone number) for OTP verification'));
+        // Check if it's a configuration error (user missing required contact info)
+        if (error.message.includes('We couldn’t send a verification')) {
+          
+          logger.error('OTP Configuration Error:', error.message);
+          
+          res.status(200).json({
+            success: false,
+            message: "Your account needs additional verification information. Please contact support for assistance.",
+            data: {
+              userId: user.id,
+              email: user.email,
+              phoneNumber: user.phoneNumber
+            },
+            debug: {
+              error: error.message,
+              type: 'CONFIGURATION',
+              timestamp: new Date().toISOString()
+            }
+          });
+          return;
         }
+        
+        // Check if it's a service error (Twilio, email service, etc.)
+        if (error.message.includes('Twilio') || 
+            error.message.includes('SMTP') || 
+            error.message.includes('email service') ||
+            error.message.includes('SMS service')) {
+          
+          logger.error('OTP Service Error:', error.message);
+          
+          res.status(200).json({
+            success: false,
+            message: "We're experiencing technical difficulties with our verification system. Please try again in a few minutes.",
+            data: {
+              userId: user.id,
+              email: user.email,
+              phoneNumber: user.phoneNumber
+            },
+            debug: {
+              error: error.message,
+              type: 'SERVICE',
+              timestamp: new Date().toISOString()
+            }
+          });
+          return;
+        }
+        
+        // Generic OTP error
+        logger.error('OTP Error:', error.message);
+        
+        res.status(200).json({
+          success: false,
+          message: "Verification system temporarily unavailable. Please contact support if this continues.",
+          data: {
+            userId: user.id,
+            email: user.email,
+            phoneNumber: user.phoneNumber
+          },
+          debug: {
+            error: error.message,
+            type: 'UNKNOWN',
+            timestamp: new Date().toISOString()
+          }
+        });
+        return;
       }
       throw error;
     }

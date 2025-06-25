@@ -235,6 +235,7 @@ export interface GameAnalytics {
   title: string;
   description?: string;
   overview?: string;
+  position?: string;
   code?: string;
   thumbnailFile?: {
     id: string;
@@ -294,6 +295,7 @@ export interface FilterState {
   };
   gameTitle: string;
   gameCategory: string;
+  country: string;
   sortByMaxTimePlayed: boolean;
 }
 

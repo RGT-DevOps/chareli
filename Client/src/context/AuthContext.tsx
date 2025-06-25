@@ -15,7 +15,7 @@ interface LoginResponse {
   phoneNumber?: string;
   requiresOtp: boolean;
   role: string;
-  otpType?: 'EMAIL' | 'SMS' | 'BOTH';
+  otpType?: 'EMAIL' | 'SMS' | 'NONE';
   message: string;
   tokens?: {
     accessToken: string;
@@ -129,9 +129,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       role
     } = response.data;
 
-
-    //forto display mesage from backend
     const message = (response as any)?.message
+
+    console.log(response.data, "login response")
 
     // If tokens are provided (no OTP case), save them and refresh user
     if (tokens) {
