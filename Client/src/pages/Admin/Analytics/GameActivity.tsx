@@ -33,6 +33,7 @@ export default function GameActivity() {
                 <TableHead>Game</TableHead>
                 <TableHead>Total Plays</TableHead>
                 <TableHead>Average Play Time</TableHead>
+                <TableHead>Most Played At</TableHead>
                 <TableHead>Game Status</TableHead>
                 <TableHead>Popularity</TableHead>
               </TableRow>
@@ -66,6 +67,7 @@ export default function GameActivity() {
                 <TableHead>Game</TableHead>
                 <TableHead>Total Plays</TableHead>
                 <TableHead>Average Play Time</TableHead>
+                <TableHead>Most Played At</TableHead>
                 <TableHead>Game Status</TableHead>
                 <TableHead>Popularity</TableHead>
               </TableRow>
@@ -106,6 +108,7 @@ export default function GameActivity() {
               <TableHead>Game</TableHead>
               <TableHead>Total Plays</TableHead>
               <TableHead>Average Play Time</TableHead>
+              <TableHead>Most Played At</TableHead>
               <TableHead>Game Status</TableHead>
               <TableHead>Popularity</TableHead>
             </TableRow>
