@@ -40,7 +40,7 @@ class SESProvider implements EmailProvider {
 
   constructor() {
     this.sesClient = new SESClient({
-      region: '',
+      region: process.env.SES_REGION,
       credentials: {
         accessKeyId: '',
         secretAccessKey: '',

@@ -86,7 +86,8 @@ const config: Config = {
   jwt: {
     secret: process.env.JWT_SECRET || 'your_jwt_secret_key_here',
     expiresIn: process.env.JWT_EXPIRATION || '1h',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your_refresh_token_secret_here',
+    refreshSecret:
+      process.env.JWT_REFRESH_SECRET || 'your_refresh_token_secret_here',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
   superadmin: {
@@ -105,20 +106,27 @@ const config: Config = {
     password: process.env.EMAIL_PASSWORD || '',
   },
   ses: {
-    region: process.env.AWS_REGION || 'eu-central-1',
+    region: process.env.SES_REGION || 'eu-central-1',
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    fromEmail: process.env.AWS_SES_FROM_EMAIL || 'no-reply@dev.chareli.reallygreattech.com',
+    fromEmail:
+      process.env.AWS_SES_FROM_EMAIL ||
+      'no-reply@dev.chareli.reallygreattech.com',
   },
   otp: {
     expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || '5', 10),
-    invitationExpiryDays: parseInt(process.env.INVITATION_EXPIRY_DAYS || '7', 10),
+    invitationExpiryDays: parseInt(
+      process.env.INVITATION_EXPIRY_DAYS || '7',
+      10
+    ),
   },
   sentry: {
     dsn: process.env.SENTRY_DSN || '',
     environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.2'),
-    enabled: process.env.NODE_ENV === 'production'
+    tracesSampleRate: parseFloat(
+      process.env.SENTRY_TRACES_SAMPLE_RATE || '0.2'
+    ),
+    enabled: process.env.NODE_ENV === 'production',
   },
   s3: {
     region: process.env.AWS_REGION || 'us-east-1',
@@ -127,7 +135,10 @@ const config: Config = {
     bucket: process.env.AWS_S3_BUCKET || 'chareli-bucket',
     endpoint: process.env.AWS_S3_ENDPOINT,
     forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true',
-    signedUrlExpiration: parseInt(process.env.AWS_SIGNED_URL_EXPIRATION || '3600', 10),
+    signedUrlExpiration: parseInt(
+      process.env.AWS_SIGNED_URL_EXPIRATION || '3600',
+      10
+    ),
   },
   cloudfront: {
     distributionDomain: process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN || '',
@@ -139,7 +150,7 @@ const config: Config = {
     authToken: process.env.TWILIO_AUTH_TOKEN || '',
     fromNumber: process.env.TWILIO_FROM_NUMBER || '',
     enabled: process.env.USE_TWILIO === 'true',
-  }
+  },
 };
 
 export default config;
