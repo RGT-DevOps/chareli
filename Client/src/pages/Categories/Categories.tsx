@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useCategories } from "../../backend/category.service";
 import { useGames } from "../../backend/games.service";
+import { useGameClickHandler } from "../../hooks/useGameClickHandler";
 import GamesSkeleton from "../../components/single/GamesSkeleton";
 import type { Category } from "../../backend/types";
 
@@ -11,7 +11,6 @@ import emptyGameImg from "../../assets/empty-game.png";
 const secondary = ["Recently Added", "Popular", "Recommended for you"];
 
 export default function Categories() {
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSecondary, setSelectedSecondary] = useState<string | null>(
     null
@@ -43,6 +42,7 @@ export default function Categories() {
 
   const categories = (categoriesData || []) as Category[];
   const games: any = gamesData || [];
+  const { handleGameClick } = useGameClickHandler();
 
   return (
     <div className="flex flex-col lg:flex-row min-h-[calc(100vh-80px)] bg-white dark:bg-[#0f1221]">
@@ -177,7 +177,7 @@ export default function Categories() {
               <ul className="flex flex-col gap-1">
                 <li>
                   <button
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-2xl rounded-lg font-bold tracking-widest transition
+                    className={`w-full flex items-center gap-2 px-4 py-2 text-lg rounded-lg font-bold tracking-widest transition
                       ${
                         !selectedCategory && !selectedSecondary
                           ? "bg-[#D946EF] text-white dark:text-white tracking-wider"
@@ -195,7 +195,7 @@ export default function Categories() {
                 {categories.map((cat) => (
                   <li key={cat.id}>
                     <button
-                      className={`w-full text-left text-2xl px-4 py-2 rounded-lg font-semibold transition
+                      className={`w-full text-left text-lg px-4 py-2 rounded-lg font-semibold transition
                         ${
                           selectedCategory === cat.id
                             ? "bg-[#D946EF] text-white shadow dark:text-white tracking-wider"
@@ -219,7 +219,7 @@ export default function Categories() {
                 {secondary.map((sec) => (
                   <li key={sec}>
                     <button
-                      className={`w-full text-left text-2xl px-4 py-2 rounded-lg font-semibold text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#D946EF] dark:text-white tracking-wider transition dark:hover:text-[#D946EF] ${
+                      className={`w-full text-left text-lg px-4 py-2 rounded-lg font-semibold text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#D946EF] dark:text-white tracking-wider transition dark:hover:text-[#D946EF] ${
                         selectedSecondary === sec
                           ? "bg-[#D946EF] text-white"
                           : ""
@@ -249,7 +249,7 @@ export default function Categories() {
         ) : (
           <div className="flex flex-col">
             {games.length === 0 ? (
-              <div className="text-center py-8 min-h-[60vh] flex flex-col items-center justify-center gap-4 text-[#C026D3] text-2xl lg:text-4xl">
+              <div className="text-center py-8 min-h-[60vh] flex flex-col items-center justify-center gap-4 text-[#C026D3] text-lg lg:text-lg">
                 <img
                   src={emptyGameImg}
                   alt="No games"
@@ -274,7 +274,7 @@ export default function Categories() {
                       key={game.id}
                       className="relative group cursor-pointer"
                       style={{ gridRow: `span ${Math.round(rowSpan * 2)}` }}
-                      onClick={() => navigate(`/gameplay/${game.id}`)}
+                      onClick={() => handleGameClick(game.id)}
                     >
                       <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0px_20px_#D946EF,0_0px_10px_rgba(217,70,239,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
@@ -285,7 +285,7 @@ export default function Categories() {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent group-hover:opacity-100 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 rounded-[16px]">
-                          <span className="absolute bottom-3 left-4 text-white font-bold text-xl drop-shadow-lg">
+                          <span className="absolute bottom-3 left-4 text-white font-bold text-lg drop-shadow-lg">
                             {game.title}
                           </span>
                         </div>
