@@ -123,7 +123,7 @@ export default function GameManagement() {
   return (
     <div className="p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-[#D946EF] text-2xl sm:text-3xl font-dmmono">
+        <h1 className="text-[#D946EF] text-2xl sm:text-3xl font-worksans">
           All Games
         </h1>
         <div className="flex flex-wrap gap-3 justify-end">
@@ -134,7 +134,7 @@ export default function GameManagement() {
             >
               <Button
                 variant="outline"
-                className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-2 sm:py-[14px] text-sm sm:text-base h-[48px]"
+                className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-2 sm:py-[14px] text-sm sm:text-base h-[48px] font-dmmono"
               >
                 Filter Games
                 <RiEqualizer2Line size={24} className="sm:size-8" />
@@ -147,7 +147,7 @@ export default function GameManagement() {
             >
               <Button
                 variant="outline"
-                className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-2 sm:py-[14px] text-sm sm:text-base h-[48px]"
+                className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-2 sm:py-[14px] text-sm sm:text-base h-[48px] font-dmmono"
               >
                 Filter History
                 <RiEqualizer2Line size={24} className="sm:size-8" />
@@ -155,7 +155,7 @@ export default function GameManagement() {
             </HistoryFilterSheet>
           )}
           <Button
-            className={`text-[#0F1621] font-normal text-sm sm:text-base px-[16px] py-[14px] h-[48px] bg-[#F8FAFC] hover:bg-[#F8FAFC] border-[#E2E8F0] dark:border-none border-1 ${
+            className={`text-[#0F1621] font-normal text-sm sm:text-base px-[16px] py-[14px] h-[48px] bg-[#F8FAFC] hover:bg-[#F8FAFC] border-[#E2E8F0] dark:border-none border-1 font-dmmono ${
               reorderOpen ? "bg-[#94A3B7] hover:bg-[#94A3B7]" : ""
             }`}
             onClick={() => {
@@ -173,7 +173,7 @@ export default function GameManagement() {
           </Button>
           {reorderOpen && (
             <Button
-              className={`font-normal text-sm sm:text-base px-[16px] py-[14px] h-[48px] bg-white hover:bg-[#F8FAFC]  text-black border-[#E2E8F0] border-1 dark:border-none ${
+              className={`font-normal text-sm sm:text-base px-[16px] py-[14px] h-[48px] bg-white hover:bg-[#F8FAFC]  text-black border-[#E2E8F0] border-1 dark:border-none font-dmmono ${
                 reorderHistoryOpen
                   ? "bg-[#86198F] hover:bg-[#86198F] text-white"
                   : ""
@@ -185,7 +185,7 @@ export default function GameManagement() {
           )}
           {!reorderOpen && (
             <CreateGameSheet>
-              <Button className="bg-[#D946EF] text-white font-bold hover:bg-[#c026d3] tracking-wider py-2 sm:py-[14px] text-sm sm:text-base h-[48px]">
+              <Button className="bg-[#D946EF] text-white hover:bg-[#c026d3] tracking-wider py-2 sm:py-[14px] text-sm sm:text-base h-[48px] font-dmmono">
                 Create New Game
               </Button>
             </CreateGameSheet>
@@ -199,15 +199,15 @@ export default function GameManagement() {
       )}
       {!reorderHistoryOpen ? (
         <Card className="p-0 overflow-x-auto shadow-none border border-none bg-[#F1F5F9] dark:bg-[#18192b]">
-          <table className="min-w-full bg-transparent">
+          <table className="min-w-full bg-transparent font-worksans">
             <thead>
-              <tr className="dark:bg-[#18192b] text-xl tracking-wide font-light">
-                <th className="px-4 py-3 text-left">Game</th>
-                <th className="px-4 py-3 text-left">Category</th>
-                <th className="px-4 py-3 text-left">Minutes played</th>
-                <th className="px-4 py-3 text-left">Position</th>
-                <th className="px-4 py-3 text-left">Game Status</th>
-                <th className="px-4 py-3 text-left">Action</th>
+              <tr className="dark:bg-[#18192b] text-base sm:text-lg tracking-wide">
+                <th className="px-4 py-3 text-left font-normal">Game</th>
+                <th className="px-4 py-3 text-left font-normal">Category</th>
+                <th className="px-4 py-3 text-left font-normal">Minutes played</th>
+                <th className="px-4 py-3 text-left font-normal">Position</th>
+                <th className="px-4 py-3 text-left font-normal">Game Status</th>
+                <th className="px-4 py-3 text-left font-normal">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -245,7 +245,7 @@ export default function GameManagement() {
                   <tr
                     key={game.id}
                     className={cn(
-                      "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition cursor-pointer",
+                      "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition  text-sm cursor-pointer",
                       idx % 2 === 0 ? "dark:bg-[#18192b]" : "dark:bg-[#23243a]"
                     )}
                     onClick={() => {
@@ -266,27 +266,27 @@ export default function GameManagement() {
                         src={(game.thumbnailFile as any)?.url || ""}
                         alt={game.title}
                       />
-                      <span className="text-lg font-light">{game.title}</span>
+                      <span className="font-light">{game.title}</span>
                     </td>
-                    <td className="px-4 py-3 font-worksans text-xl tracking-wider">
+                    <td className="px-4 py-3  tracking-wider">
                       {game.category?.name || "-"}
                     </td>
-                    <td className="px-4 py-3 font-worksans text-xl tracking-wider">
+                    <td className="px-4 py-3  tracking-wider">
                       {game.analytics?.totalPlayTime != null
                         ? formatTime(game.analytics.totalPlayTime || 0)
                         : "-"}
                     </td>
-                    <td className="px-4 py-3 font-worksans text-xl tracking-wider">
+                    <td className="px-4 py-3  tracking-wider">
                       {`#${game.position ?? "-"}`}
                     </td>
                     <td className="px-4 py-3">
                       {game.status === "active" ? (
-                        <span className="inline-flex items-center gap-2 p-1 rounded bg-[#419E6A] text-white font-worksans text-lg tracking-wider">
+                        <span className="inline-flex items-center gap-2 p-1 rounded bg-[#419E6A] text-white  tracking-wider">
                           <span className="w-2 h-2 bg-white rounded-full inline-block"></span>
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-2  p-1 rounded bg-[#CBD5E0] text-[#22223B] font-worksans text-lg tracking-wider">
+                        <span className="inline-flex items-center gap-2  p-1 rounded bg-[#CBD5E0] text-[#22223B]  tracking-wider">
                           <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
                           Inactive
                         </span>
@@ -363,13 +363,17 @@ export default function GameManagement() {
         <Card className="p-0 overflow-x-auto shadow-none border border-none bg-[#F1F5F9] dark:bg-[#18192b]">
           <table className="min-w-full bg-transparent">
             <thead>
-              <tr className="dark:bg-[#18192b] text-xl tracking-wide font-light">
-                <th className="px-4 py-3 text-left">Game</th>
-                <th className="px-4 py-3 text-left">Order number</th>
-                <th className="px-4 py-3 text-left">Number of Clicks</th>
+              <tr className="dark:bg-[#18192b] text-base tracking-wide">
+                <th className="px-4 py-3 text-left font-normal text-base sm:text-lg">Game</th>
+                <th className="px-4 py-3 text-left font-normal text-base sm:text-lg">
+                  Order number
+                </th>
+                <th className="px-4 py-3 text-left font-normal text-base sm:text-lg">
+                  Number of Clicks
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="font-worksans">
               {isLoading ? (
                 <tr>
                   <td colSpan={3} className="px-4 py-3 text-center">
@@ -410,14 +414,14 @@ export default function GameManagement() {
                         src={game.game?.thumbnailFile?.s3Key ?? ""}
                         alt={game.game?.title ?? ""}
                       />
-                      <span className="text-lg font-light">
+                      <span className=" font-light text-sm">
                         {game?.game?.title}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-worksans text-xl tracking-wider">
+                    <td className="px-4 py-3 text-sm tracking-wider">
                       {`#${game?.position ?? "-"}`}
                     </td>
-                    <td className="px-4 py-3 font-worksans text-xl tracking-wider">
+                    <td className="px-4 py-3 text-sm tracking-wider">
                       {game?.clickCount ?? "-"}
                     </td>
                   </tr>
