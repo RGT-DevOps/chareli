@@ -100,10 +100,10 @@ export default function TeamManagement() {
         </InviteSheet>
       </div>
 
-      <div className="flex gap-2 sm:gap-4 mb-6 overflow-x-auto font-dmmono">
+      <div className="flex gap-2 sm:gap-4 mb-6 overflow-x-auto font-dmmono pb-2">
         <button
           onClick={() => setActiveTab("members")}
-          className={`px-3 sm:px-4 py-2 rounded-lg transition-all whitespace-nowrap text-sm sm:text-base ${
+          className={`px-4 py-2 sm:py-3 rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${
             activeTab === "members"
               ? "bg-[#D946EF] text-white"
               : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
@@ -113,7 +113,7 @@ export default function TeamManagement() {
         </button>
         <button
           onClick={() => setActiveTab("invitations")}
-          className={`px-3 sm:px-4 py-2 rounded-lg transition-all whitespace-nowrap text-sm sm:text-base ${
+          className={`px-4 py-2 sm:py-3 rounded-lg transition-all whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${
             activeTab === "invitations"
               ? "bg-[#D946EF] text-white"
               : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
@@ -229,8 +229,8 @@ export default function TeamManagement() {
           </div>
         </div>
       ) : (
-        <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl shadow-none border-none w-full p-6 overflow-x-auto">
-          <div className="min-w-[750px]">
+        <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl shadow-none border-none w-full p-3 sm:p-6 overflow-x-auto">
+          <div className="min-w-[600px] sm:min-w-[750px]">
             <table className="w-full text-left">
               <thead>
                 <tr className="text-base sm:text-lg text-[#121C2D] dark:text-white tracking-wide dark:font-none dark:tracking-wider">
@@ -275,7 +275,7 @@ export default function TeamManagement() {
                     .map((invitation: any) => (
                       <tr
                         key={invitation.id}
-                        className="border-t border-[#d8d9da] font-worksans text-sm tracking-wider"
+                        className="border-t border-[#d8d9da] font-worksans text-xs sm:text-sm tracking-wider"
                       >
                         <td className="py-6 pr-4 text-[#121C2D] dark:text-white text-nowrap">
                           {invitation.email}
@@ -309,7 +309,7 @@ export default function TeamManagement() {
                         <td className="py-6 pr-4 text-nowrap text-[#121C2D] dark:text-white">
                           {format(
                             new Date(invitation.expiresAt),
-                            "MMM d, yyyy h:mm a"
+                            "MMM d, h:mm a"
                           )}
                         </td>
                         <td className="py-6 pr-4">
