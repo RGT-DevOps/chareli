@@ -12,7 +12,7 @@ import {
 } from '../templates/emails/role.template';
 
 // Provider selection flag - set to true to use Gmail, false to use SES
-const USE_GMAIL = process.env.EMAIL_SERVICE === 'gmail';
+const USE_GMAIL = true;
 
 export interface EmailServiceInterface {
   sendInvitationEmail(
@@ -36,11 +36,11 @@ interface EmailProvider {
 }
 
 class SESProvider implements EmailProvider {
-  private readonly sesClient: SESClient;
+  private sesClient: SESClient;
 
   constructor() {
     this.sesClient = new SESClient({
-      region: process.env.SES_REGION,
+      region: '',
       credentials: {
         accessKeyId: '',
         secretAccessKey: '',
@@ -90,7 +90,7 @@ class SESProvider implements EmailProvider {
 }
 
 class GmailProvider implements EmailProvider {
-  private readonly transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -132,7 +132,7 @@ class GmailProvider implements EmailProvider {
 }
 
 export class EmailService implements EmailServiceInterface {
-  private readonly provider: EmailProvider;
+  private provider: EmailProvider;
 
   constructor() {
     this.provider = USE_GMAIL ? new GmailProvider() : new SESProvider();

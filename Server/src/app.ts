@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import routes from './routes';
 import { errorHandler } from './middlewares/errorHandler';
@@ -46,9 +45,6 @@ app.use((req, res, next) => {
 // Body parsing middleware
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-
-// Cookie parsing middleware
-app.use(cookieParser());
 
 // Input sanitization middleware
 app.use(sanitizeInput);

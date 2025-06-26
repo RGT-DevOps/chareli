@@ -4,19 +4,12 @@ import {
   getGameById,
   getGameByPosition,
   createGame,
-  getGameSessionCookies,
   updateGame,
   deleteGame,
   uploadGameFiles,
   uploadGameFilesForUpdate,
 } from '../controllers/gameController';
-import {
-  authenticate,
-  isAdmin,
-  optionalAuthenticate,
-  setCloudFrontCookies,
-  setUniversalCloudFrontCookies,
-} from '../middlewares/authMiddleware';
+import { authenticate, isAdmin } from '../middlewares/authMiddleware';
 import {
   validateBody,
   validateParams,
@@ -52,12 +45,5 @@ router.put(
   updateGame
 );
 router.delete('/:id', validateParams(gameIdParamSchema), deleteGame);
-
-router.post(
-  '/:id/session',
-  authenticate,
-  validateParams(gameIdParamSchema),
-  getGameSessionCookies
-);
 
 export default router;
