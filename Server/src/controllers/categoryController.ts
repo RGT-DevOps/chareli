@@ -63,28 +63,30 @@ export const getAllCategories = async (
 ): Promise<void> => {
   try {
     const { page = 1, limit = 10, search } = req.query;
-    
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
-    
+
     const queryBuilder = categoryRepository.createQueryBuilder('category');
-    
+
     // Apply search filter if provided
     if (search) {
-      queryBuilder.where('category.name ILIKE :search', { search: `%${search}%` });
+      queryBuilder.where('category.name ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
-    
+
     // Get total count for pagination
     const total = await queryBuilder.getCount();
-    
+
     // Apply pagination
     queryBuilder
       .skip((pageNumber - 1) * limitNumber)
       .take(limitNumber)
       .orderBy('category.name', 'ASC');
-    
+
     const categories = await queryBuilder.getMany();
-    
+
     res.status(200).json({
       success: true,
       count: categories.length,
@@ -135,12 +137,12 @@ export const getCategoryById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     const category = await categoryRepository.findOne({
       where: { id },
-      relations: ['games', 'games.thumbnailFile', 'games.gameFile']
+      relations: ['games', 'games.thumbnailFile', 'games.gameFile'],
     });
-    
+
     if (!category) {
       return next(ApiError.notFound(`Category with id ${id} not found`));
     }
@@ -148,28 +150,28 @@ export const getCategoryById = async (
     // Transform game URLs in the category
     const transformedCategory = {
       ...category,
-      games: await Promise.all(category.games.map(async game => {
-        const transformedGame: GameWithUrls = { ...game };
-        const baseUrl = s3Service.getBaseUrl();
-        if (game.thumbnailFile?.s3Key) {
-          transformedGame.thumbnailFile = {
-            ...game.thumbnailFile,
-            url: `${baseUrl}/${game.thumbnailFile.s3Key}`
-          } as FileWithUrl;
-        }
-        if (game.gameFile?.s3Key) {
-          transformedGame.gameFile = {
-            ...game.gameFile,
-            url: `${baseUrl}/${game.gameFile.s3Key}`
-          } as FileWithUrl;
-        }
-        return transformedGame;
-      }))
+      // games: await Promise.all(category.games.map(async game => {
+      //   const transformedGame: GameWithUrls = { ...game };
+      //   const baseUrl = s3Service.getBaseUrl();
+      //   if (game.thumbnailFile?.s3Key) {
+      //     transformedGame.thumbnailFile = {
+      //       ...game.thumbnailFile,
+      //       url: `${baseUrl}/${game.thumbnailFile.s3Key}`
+      //     } as FileWithUrl;
+      //   }
+      //   if (game.gameFile?.s3Key) {
+      //     transformedGame.gameFile = {
+      //       ...game.gameFile,
+      //       url: `${baseUrl}/${game.gameFile.s3Key}`
+      //     } as FileWithUrl;
+      //   }
+      //   return transformedGame;
+      // }))
     };
-    
+
     res.status(200).json({
       success: true,
-      data: transformedCategory,
+      data: category,
     });
   } catch (error) {
     next(error);
@@ -217,24 +219,26 @@ export const createCategory = async (
 ): Promise<void> => {
   try {
     const { name, description } = req.body;
-    
+
     // Check if category with the same name already exists
     const existingCategory = await categoryRepository.findOne({
-      where: { name }
+      where: { name },
     });
-    
+
     if (existingCategory) {
-      return next(ApiError.badRequest(`Category with name "${name}" already exists`));
+      return next(
+        ApiError.badRequest(`Category with name "${name}" already exists`)
+      );
     }
-    
+
     // Create new category
     const category = categoryRepository.create({
       name,
-      description
+      description,
     });
-    
+
     await categoryRepository.save(category);
-    
+
     res.status(201).json({
       success: true,
       data: category,
@@ -294,35 +298,37 @@ export const updateCategory = async (
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-    
+
     const category = await categoryRepository.findOne({
-      where: { id }
+      where: { id },
     });
-    
+
     if (!category) {
       return next(ApiError.notFound(`Category with id ${id} not found`));
     }
-    
+
     // Check if name is being updated and if it already exists
     if (name && name !== category.name) {
       const existingCategory = await categoryRepository.findOne({
-        where: { name }
+        where: { name },
       });
-      
+
       if (existingCategory && existingCategory.id !== id) {
-        return next(ApiError.badRequest(`Category with name "${name}" already exists`));
+        return next(
+          ApiError.badRequest(`Category with name "${name}" already exists`)
+        );
       }
-      
+
       category.name = name;
     }
-    
+
     // Update description if provided
     if (description !== undefined) {
       category.description = description;
     }
-    
+
     await categoryRepository.save(category);
-    
+
     res.status(200).json({
       success: true,
       data: category,
@@ -370,26 +376,30 @@ export const deleteCategory = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     const category = await categoryRepository.findOne({
       where: { id },
-      relations: ['games']
+      relations: ['games'],
     });
-    
+
     if (!category) {
       return next(ApiError.notFound(`Category with id ${id} not found`));
     }
-    
+
     // Check if category has associated games
     if (category.games && category.games.length > 0) {
-      return next(ApiError.badRequest(`Cannot delete category with ${category.games.length} associated games`));
+      return next(
+        ApiError.badRequest(
+          `Cannot delete category with ${category.games.length} associated games`
+        )
+      );
     }
-    
+
     await categoryRepository.remove(category);
-    
+
     res.status(200).json({
       success: true,
-      message: 'Category deleted successfully'
+      message: 'Category deleted successfully',
     });
   } catch (error) {
     next(error);
