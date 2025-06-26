@@ -33,6 +33,7 @@ export default function GameActivity() {
                 <TableHead>Game</TableHead>
                 <TableHead>Total Plays</TableHead>
                 <TableHead>Average Play Time</TableHead>
+                <TableHead>Most Played At</TableHead>
                 <TableHead>Game Status</TableHead>
                 <TableHead>Popularity</TableHead>
               </TableRow>
@@ -66,6 +67,7 @@ export default function GameActivity() {
                 <TableHead>Game</TableHead>
                 <TableHead>Total Plays</TableHead>
                 <TableHead>Average Play Time</TableHead>
+                <TableHead>Most Played At</TableHead>
                 <TableHead>Game Status</TableHead>
                 <TableHead>Popularity</TableHead>
               </TableRow>
@@ -114,6 +116,7 @@ export default function GameActivity() {
                 {" "}
                 <p className="pr-8">Average Play Time</p>
               </TableHead>
+              <TableHead>Most Played At</TableHead>
               <TableHead>
                 {" "}
                 <p className="pr-8">Game Status</p>
@@ -144,18 +147,21 @@ export default function GameActivity() {
                   <TableCell>
                     <div className="flex items-center gap-3 pr-12">
                       <GameThumbnail src={game.thumbnailUrl} alt={game.title} />
-                      <span className="font-dmmono">{game.title}</span>
+                      <span className="font-dmmono">{game.title ?? '-'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <p className="font-dmmono pr-8">
-                      {game.metrics.totalPlays}
+                      {game.metrics.totalPlays ?? '-'}
                     </p>
                   </TableCell>
                   <TableCell>
                     <p className="font-dmmono pr-8">
                       {game.metrics.averagePlayTime} min
                     </p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-dmmono">{game.metrics?.mostPlayedAt?.position ?? '-'}</p>
                   </TableCell>
                   <TableCell>
                     {game.status === "active" ? (
