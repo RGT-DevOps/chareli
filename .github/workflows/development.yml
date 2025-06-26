@@ -1,9 +1,9 @@
-name: Deploy to Test Environment (Chareli)
+name: Deploy to Dev Environment (Chareli)
 
 on:
   push:
     branches:
-      - feat/signedcookies
+      - development
 
 permissions:
   packages: write
@@ -11,16 +11,14 @@ permissions:
   id-token: write
 
 env:
-  AWS_REGION: us-east-1
-  ECR_REGISTRY: 330858616968.dkr.ecr.us-east-1.amazonaws.com
-  ECR_REPO_SERVER: chareli-server-testing
-  IMAGE_TAG_SERVER_COMMIT: server-testing-${{ github.sha }}
-  IMAGE_TAG_SERVER_FIXED: latest
+  AWS_REGION: eu-central-1
+  ECR_REGISTRY: 330858616968.dkr.ecr.eu-central-1.amazonaws.com
+  ECR_REPO_SERVER: chareli-dev-repo
+  IMAGE_TAG_SERVER_COMMIT: server-dev-${{ github.sha }}
+  IMAGE_TAG_SERVER_FIXED: server-dev
 
-  S3_BUCKET_CLIENT: chareli-react-app-testing-a2373fec
-  CLOUDFRONT_DISTRIBUTION_ID_CLIENT: E3HJ3WSBBU23AL
-
-  TEST_DISCORD_WEBHOOK: https://discordapp.com/api/webhooks/1383471955394433126/NP0eSZWI3usTVMdbnFbxDlc6sOEcmihbT3ioBs5ehLcy-PRyNZhcL8qw8MfjyNHI7Bbx
+  S3_BUCKET_CLIENT: chareli-react-app-dev-ea15b364
+  CLOUDFRONT_DISTRIBUTION_ID_CLIENT: ED93QD3A93Q1N
 
 jobs:
   build-and-test:
@@ -94,7 +92,7 @@ jobs:
     name: Deploy Backend to App Runner
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/signedcookies'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
 
     steps:
       - name: Checkout Code
@@ -103,7 +101,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::330858616968:role/chareli-testing-github-oidc-role
+          role-to-assume: arn:aws:iam::330858616968:role/chareli-dev-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Set up Docker BuildX
@@ -128,7 +126,7 @@ jobs:
     name: Deploy Frontend to S3 & Invalidate CloudFront
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/signedcookies'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
 
     steps:
       # Checkout code is not strictly needed here if the artifact contains everything for deployment
@@ -145,7 +143,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::330858616968:role/chareli-testing-github-oidc-role
+          role-to-assume: arn:aws:iam::330858616968:role/chareli-dev-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy Frontend to S3
@@ -162,7 +160,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/feat/signedcookies' }}
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/development' }}
 
     steps:
       - name: Generate Build Status
@@ -200,10 +198,10 @@ jobs:
         if: always()
         uses: appleboy/discord-action@v1.2.0
         with:
-          webhook_url: ${{ env.TEST_DISCORD_WEBHOOK }}
-          username: Chareli Testing Pipeline Bot
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: Chareli Dev Pipeline Bot
           message: |
-            🚀 **Chareli Testing Deployment Summary**
+            🚀 **Chareli Dev Deployment Summary**
 
             🔀 Branch: `${{ github.ref_name }}`
             📄 Commit: `${{ github.sha }}` by `${{ github.actor }}`
