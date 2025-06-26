@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import logger from '../utils/logger';
 
 // Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, '../../.env') });
@@ -73,73 +74,101 @@ interface Config {
   };
 }
 
+function getEnv(key: string, defaultValue?: string): string {
+  const value = process.env[key];
+  if (value) {
+    return value;
+  }
+  if (defaultValue !== undefined) {
+    return defaultValue;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    logger.error(`FATAL: Environment variable ${key} is not set`);
+    process.exit(1);
+  }
+
+  logger.warn(`Environment variable ${key} is not set using empty string.`);
+
+  return '';
+}
+
 const config: Config = {
-  env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '5000', 10),
+  env: getEnv('NODE_ENV', 'development'),
+  port: parseInt(getEnv('PORT', '5000'), 10),
   database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_DATABASE || 'chareli_db',
+    host: getEnv('DB_HOST', 'localhost'),
+    port: parseInt(getEnv('DB_PORT', '5432'), 10),
+    username: getEnv('DB_USERNAME', 'postgres'),
+    password: getEnv('DB_PASSWORD', 'postgres'),
+    database: getEnv('DB_DATABASE', 'chareli_db'),
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'your_jwt_secret_key_here',
-    expiresIn: process.env.JWT_EXPIRATION || '1h',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your_refresh_token_secret_here',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
+    secret: getEnv('JWT_SECRET', 'your_jwt_secret_key_here'),
+    expiresIn: getEnv('JWT_EXPIRATION', '1h'),
+    refreshSecret: getEnv(
+      'JWT_REFRESH_SECRET',
+      'your_refresh_token_secret_here'
+    ),
+    refreshExpiresIn: getEnv('JWT_REFRESH_EXPIRATION', '7d'),
   },
   superadmin: {
-    email: process.env.SUPERADMIN_EMAIL || 'admin@example.com',
-    password: process.env.SUPERADMIN_PASSWORD || 'Admin123!',
+    email: getEnv('SUPERADMIN_EMAIL', 'admin@example.com'),
+    password: getEnv('SUPERADMIN_PASSWORD', 'Admin123!'),
   },
   smsService: {
-    region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    senderName: process.env.AWS_SNS_SENDER_NAME || 'Chareli',
+    region: getEnv('AWS_REGION', 'us-east-1'),
+    accessKeyId: getEnv('AWS_ACCESS_KEY_ID', ''),
+    secretAccessKey: getEnv('AWS_SECRET_ACCESS_KEY', ''),
+    senderName: getEnv('AWS_SNS_SENDER_NAME', 'Chareli'),
   },
   email: {
-    service: process.env.EMAIL_SERVICE || '',
-    user: process.env.EMAIL_USER || '',
-    password: process.env.EMAIL_PASSWORD || '',
+    service: getEnv('EMAIL_SERVICE', ''),
+    user: getEnv('EMAIL_USER', ''),
+    password: getEnv('EMAIL_PASSWORD', ''),
   },
   ses: {
-    region: process.env.AWS_REGION || 'eu-central-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    fromEmail: process.env.AWS_SES_FROM_EMAIL || 'no-reply@dev.chareli.reallygreattech.com',
+    region: getEnv('SES_REGION', 'eu-central-1'),
+    accessKeyId: getEnv('AWS_ACCESS_KEY_ID', ''),
+    secretAccessKey: getEnv('AWS_SECRET_ACCESS_KEY', ''),
+    fromEmail: getEnv(
+      'AWS_SES_FROM_EMAIL',
+      'no-reply@dev.chareli.reallygreattech.com'
+    ),
   },
   otp: {
-    expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || '5', 10),
-    invitationExpiryDays: parseInt(process.env.INVITATION_EXPIRY_DAYS || '7', 10),
+    expiryMinutes: parseInt(getEnv('OTP_EXPIRY_MINUTES', '5'), 10),
+    invitationExpiryDays: parseInt(getEnv('INVITATION_EXPIRY_DAYS', '7'), 10),
   },
   sentry: {
-    dsn: process.env.SENTRY_DSN || '',
-    environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.2'),
-    enabled: process.env.NODE_ENV === 'production'
+    dsn: getEnv('SENTRY_DSN', ''),
+    environment: getEnv('NODE_ENV', 'development'),
+    tracesSampleRate: parseFloat(getEnv('SENTRY_TRACES_SAMPLE_RATE', '0.2')),
+    enabled: getEnv('NODE_ENV', 'development') === 'production',
   },
   s3: {
-    region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    bucket: process.env.AWS_S3_BUCKET || 'chareli-bucket',
+    region: getEnv('AWS_REGION', 'us-east-1'),
+    accessKeyId: getEnv('AWS_ACCESS_KEY_ID', ''),
+    secretAccessKey: getEnv('AWS_SECRET_ACCESS_KEY', ''),
+    bucket: getEnv('AWS_S3_BUCKET', 'chareli-bucket'),
     endpoint: process.env.AWS_S3_ENDPOINT,
-    forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true',
-    signedUrlExpiration: parseInt(process.env.AWS_SIGNED_URL_EXPIRATION || '3600', 10),
+    forcePathStyle: getEnv('AWS_S3_FORCE_PATH_STYLE', 'false') === 'true',
+    signedUrlExpiration: parseInt(
+      getEnv('AWS_SIGNED_URL_EXPIRATION', '3600'),
+      10
+    ),
   },
   cloudfront: {
-    distributionDomain: process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN || '',
-    keyPairId: process.env.CLOUDFRONT_KEY_PAIR_ID || '',
+    distributionDomain: getEnv('CLOUDFRONT_DISTRIBUTION_DOMAIN', ''),
+    keyPairId: getEnv('CLOUDFRONT_KEY_PAIR_ID', ''),
     cookieExpiration: 86400, // 1 day in seconds
   },
   twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
-    authToken: process.env.TWILIO_AUTH_TOKEN || '',
-    fromNumber: process.env.TWILIO_FROM_NUMBER || '',
-    enabled: process.env.USE_TWILIO === 'true',
-  }
+    accountSid: getEnv('TWILIO_ACCOUNT_SID', ''),
+    authToken: getEnv('TWILIO_AUTH_TOKEN', ''),
+    fromNumber: getEnv('TWILIO_FROM_NUMBER', ''),
+    enabled: getEnv('USE_TWILIO', 'false') === 'true',
+  },
 };
 
 export default config;

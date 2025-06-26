@@ -56,12 +56,20 @@ const systemConfigRepository = AppDataSource.getRepository(SystemConfig);
  *         description: Internal server error
  */
 export const registerPlayer = async (
-  req: Request, 
-  res: Response, 
+  req: Request,
+  res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phoneNumber, isAdult = true, hasAcceptedTerms = true } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phoneNumber,
+      isAdult = true,
+      hasAcceptedTerms = true,
+    } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password || !phoneNumber) {
@@ -70,7 +78,10 @@ export const registerPlayer = async (
 
     // Get IP address
     const forwarded = req.headers['x-forwarded-for'];
-    const ipAddress = extractClientIP(forwarded, req.socket.remoteAddress || req.ip || '');
+    const ipAddress = extractClientIP(
+      forwarded,
+      req.socket.remoteAddress || req.ip || ''
+    );
 
     // Get country from IP
     const country = await getCountryFromIP(ipAddress);
@@ -99,8 +110,8 @@ export const registerPlayer = async (
       data: {
         userId: user.id,
         email: user.email,
-        phoneNumber: user.phoneNumber
-      }
+        phoneNumber: user.phoneNumber,
+      },
     });
   } catch (error) {
     next(error instanceof Error ? ApiError.badRequest(error.message) : error);
@@ -151,13 +162,20 @@ export const registerPlayer = async (
  *         description: Internal server error
  */
 export const registerFromInvitation = async (
-  req: Request, 
-  res: Response, 
+  req: Request,
+  res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { token } = req.params;
-    const { firstName, lastName, password, phoneNumber, isAdult = true, hasAcceptedTerms = true } = req.body;
+    const {
+      firstName,
+      lastName,
+      password,
+      phoneNumber,
+      isAdult = true,
+      hasAcceptedTerms = true,
+    } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !password || !phoneNumber) {
@@ -166,7 +184,10 @@ export const registerFromInvitation = async (
 
     // Get IP address
     const forwarded = req.headers['x-forwarded-for'];
-    const ipAddress = extractClientIP(forwarded, req.socket.remoteAddress || req.ip || '');
+    const ipAddress = extractClientIP(
+      forwarded,
+      req.socket.remoteAddress || req.ip || ''
+    );
 
     // Get country from IP
     const country = await getCountryFromIP(ipAddress);
@@ -197,8 +218,8 @@ export const registerFromInvitation = async (
       data: {
         userId: user.id,
         email: user.email,
-        phoneNumber: user.phoneNumber
-      }
+        phoneNumber: user.phoneNumber,
+      },
     });
   } catch (error) {
     next(error instanceof Error ? ApiError.badRequest(error.message) : error);
@@ -243,7 +264,11 @@ export const login = async (
     const { identifier, password } = req.body;
 
     if (!identifier || !password) {
-      return next(ApiError.badRequest('Identifier (email or phone) and password are required'));
+      return next(
+        ApiError.badRequest(
+          'Identifier (email or phone) and password are required'
+        )
+      );
     }
 
     const user = await authService.login(identifier, password);
@@ -252,7 +277,7 @@ export const login = async (
       const tokens = await authService.generateTokens(user);
       user.lastLoggedIn = new Date();
       await userRepository.save(user);
-      
+
       const loginAnalytics = new Analytics();
       loginAnalytics.userId = user.id;
       loginAnalytics.activityType = 'Logged in';
@@ -267,8 +292,8 @@ export const login = async (
           tokens,
           email: user.email,
           phoneNumber: user.phoneNumber,
-          role: user?.role.name
-        }
+          role: user?.role.name,
+        },
       });
       return;
     }
@@ -276,13 +301,13 @@ export const login = async (
     // For first-time login, check if OTP is required based on admin configuration
     try {
       const otpType = await authService.determineOtpDeliveryMethod(user);
-    
+
       if (otpType === OtpType.NONE) {
-        const tokens = await authService.generateTokens(user);
+        const tokens = authService.generateTokens(user);
         user.lastLoggedIn = new Date();
         user.hasCompletedFirstLogin = true;
         await userRepository.save(user);
-        
+
         // Create analytics entry for login
         const loginAnalytics = new Analytics();
         loginAnalytics.userId = user.id;
@@ -298,12 +323,12 @@ export const login = async (
             tokens,
             email: user.email,
             phoneNumber: user.phoneNumber,
-            role: user?.role.name
-          }
+            role: user?.role.name,
+          },
         });
         return;
       }
-      
+
       // OTP is required - send OTP
       const otpResult = await authService.sendOtp(user, otpType);
       res.status(200).json({
@@ -314,74 +339,77 @@ export const login = async (
           requiresOtp: true,
           otpType: otpResult.actualType,
           email: user.email,
-          phoneNumber: user.phoneNumber
-        }
+          phoneNumber: user.phoneNumber,
+        },
       });
     } catch (error) {
       if (error instanceof Error) {
         // Check if it's a configuration error (user missing required contact info)
         if (error.message.includes('We couldn’t send a verification')) {
-          
           logger.error('OTP Configuration Error:', error.message);
-          
+
           res.status(200).json({
             success: false,
-            message: "Your account needs additional verification information. Please contact support for assistance.",
+            message:
+              'Your account needs additional verification information. Please contact support for assistance.',
             data: {
               userId: user.id,
               email: user.email,
-              phoneNumber: user.phoneNumber
+              phoneNumber: user.phoneNumber,
             },
             debug: {
               error: error.message,
               type: 'CONFIGURATION',
-              timestamp: new Date().toISOString()
-            }
+              timestamp: new Date().toISOString(),
+            },
           });
           return;
         }
-        
+
         // Check if it's a service error (Twilio, email service, etc.)
-        if (error.message.includes('Twilio') || 
-            error.message.includes('SMTP') || 
-            error.message.includes('email service') ||
-            error.message.includes('SMS service')) {
-          
+        if (
+          error.message.includes('Twilio') ||
+          error.message.includes('SMTP') ||
+          error.message.includes('email service') ||
+          error.message.includes('SMS service')
+        ) {
           logger.error('OTP Service Error:', error.message);
-          
+
           res.status(200).json({
             success: false,
-            message: "We're experiencing technical difficulties with our verification system. Please try again in a few minutes.",
+            message:
+              "We're experiencing technical difficulties with our verification system. Please try again in a few minutes.",
             data: {
               userId: user.id,
               email: user.email,
-              phoneNumber: user.phoneNumber
+              phoneNumber: user.phoneNumber,
             },
             debug: {
               error: error.message,
               type: 'SERVICE',
-              timestamp: new Date().toISOString()
-            }
+              timestamp: new Date().toISOString(),
+            },
           });
           return;
         }
-        
+
         // Generic OTP error
         logger.error('OTP Error:', error.message);
-        
+
         res.status(200).json({
           success: false,
-          message: "Verification system temporarily unavailable. Please contact support if this continues.",
+          message:
+            'Verification system temporarily unavailable. Please contact support if this continues.',
           data: {
             userId: user.id,
             email: user.email,
-            phoneNumber: user.phoneNumber
+            phoneNumber: user.phoneNumber,
           },
           debug: {
             error: error.message,
             type: 'UNKNOWN',
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
         return;
       }
@@ -435,7 +463,7 @@ export const verifyOtp = async (
 
     // Verify OTP and generate tokens
     const tokens = await authService.verifyOtp(userId, otp);
-    
+
     // Update user after successful OTP verification
     const user = await userRepository.findOne({ where: { id: userId } });
     if (user) {
@@ -443,7 +471,7 @@ export const verifyOtp = async (
       // Mark user as having completed first login
       user.hasCompletedFirstLogin = true;
       await userRepository.save(user);
-      
+
       // Create analytics entry for login
       const loginAnalytics = new Analytics();
       loginAnalytics.userId = user.id;
@@ -454,7 +482,7 @@ export const verifyOtp = async (
     res.status(200).json({
       success: true,
       message: 'OTP verified successfully',
-      data: tokens
+      data: tokens,
     });
   } catch (error) {
     next(error instanceof Error ? ApiError.badRequest(error.message) : error);
@@ -507,7 +535,7 @@ export const refreshToken = async (
     res.status(200).json({
       success: true,
       message: 'Token refreshed successfully',
-      data: tokens
+      data: tokens,
     });
   } catch (error) {
     next(error instanceof Error ? ApiError.unauthorized(error.message) : error);
@@ -546,7 +574,7 @@ export const forgotPassword = async (
 ): Promise<void> => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return next(ApiError.badRequest('Email is required'));
     }
@@ -557,7 +585,8 @@ export const forgotPassword = async (
     // Always return success to prevent email enumeration
     res.status(200).json({
       success: true,
-      message: 'If your email exists in our system, you will receive a password reset link shortly.'
+      message:
+        'If your email exists in our system, you will receive a password reset link shortly.',
     });
   } catch (error) {
     // Log the error but don't expose it to the client
@@ -600,7 +629,7 @@ export const verifyResetToken = async (
 
     res.status(200).json({
       success: true,
-      message: 'Token is valid'
+      message: 'Token is valid',
     });
   } catch (error) {
     next(ApiError.badRequest('Invalid or expired reset token'));
@@ -673,19 +702,20 @@ export const forgotPasswordPhone = async (
 ): Promise<void> => {
   try {
     const { phoneNumber } = req.body;
-    
+
     if (!phoneNumber) {
       return next(ApiError.badRequest('Phone number is required'));
     }
 
     // Find user by phone number
     const user = await userRepository.findOne({ where: { phoneNumber } });
-    
+
     // Always return success to prevent phone number enumeration
     if (!user) {
       res.status(200).json({
         success: true,
-        message: 'If your phone number exists in our system, you will receive a reset code shortly.'
+        message:
+          'If your phone number exists in our system, you will receive a reset code shortly.',
       });
       return;
     }
@@ -698,8 +728,8 @@ export const forgotPasswordPhone = async (
       success: true,
       message: 'Reset code sent to your phone number.',
       data: {
-        userId: user.id
-      }
+        userId: user.id,
+      },
     });
   } catch (error) {
     next(ApiError.internal('An error occurred while processing your request'));
@@ -779,7 +809,8 @@ export const resetPassword = async (
 
     res.status(200).json({
       success: true,
-      message: 'Password reset successful. You can now log in with your new password.'
+      message:
+        'Password reset successful. You can now log in with your new password.',
     });
   } catch (error) {
     next(error instanceof Error ? ApiError.badRequest(error.message) : error);
@@ -840,8 +871,8 @@ export const requestOtp = async (
       message: otpResult.message,
       data: {
         userId: user.id,
-        actualType: otpResult.actualType
-      }
+        actualType: otpResult.actualType,
+      },
     });
   } catch (error) {
     next(error instanceof Error ? ApiError.badRequest(error.message) : error);

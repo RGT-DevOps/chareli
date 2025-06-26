@@ -1,23 +1,23 @@
-import { useState, useEffect, useRef } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { Card } from "../../components/ui/card";
-import { LuExpand, LuX } from "react-icons/lu";
-import KeepPlayingModal from "../../components/modals/KeepPlayingModal";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useGameById } from "../../backend/games.service";
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { Card } from '../../components/ui/card';
+import { LuExpand, LuX } from 'react-icons/lu';
+import KeepPlayingModal from '../../components/modals/KeepPlayingModal';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useGameById } from '../../backend/games.service';
 import {
   useCreateAnalytics,
   useUpdateAnalytics,
-} from "../../backend/analytics.service";
-import type { SimilarGame } from "../../backend/types";
-import GameLoadingScreen from "../../components/single/GameLoadingScreen";
+} from '../../backend/analytics.service';
+import type { SimilarGame } from '../../backend/types';
+import GameLoadingScreen from '../../components/single/GameLoadingScreen';
 
 export default function GamePlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-  const { data: game, isLoading, error } = useGameById(gameId || "");
+  const { data: game, isLoading, error } = useGameById(gameId || '');
   const { mutate: createAnalytics } = useCreateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
 
@@ -51,9 +51,9 @@ export default function GamePlay() {
     if (game && !isAuthenticated && game.config > 0 && !isGameLoading) {
       setIsModalOpen(false);
       setTimeRemaining(game.config * 60);
-      
+
       timer = setInterval(() => {
-        setTimeRemaining(prev => {
+        setTimeRemaining((prev) => {
           if (prev === null || prev <= 0) {
             clearInterval(timer);
             setIsModalOpen(true);
@@ -78,7 +78,7 @@ export default function GamePlay() {
       createAnalytics(
         {
           gameId: game.id,
-          activityType: "game_session",
+          activityType: 'game_session',
           startTime: new Date(),
         },
         {
@@ -96,10 +96,10 @@ export default function GamePlay() {
   // Function to update end time
   const updateEndTime = async () => {
     if (!analyticsIdRef.current) return;
-    
+
     try {
       const endTime = new Date();
-      await updateAnalytics({
+      updateAnalytics({
         id: analyticsIdRef.current,
         endTime,
       });
@@ -138,138 +138,108 @@ export default function GamePlay() {
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       if (analyticsIdRef.current) {
         updateEndTime();
       }
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
 
-      const iframe = document.querySelector<HTMLIFrameElement>("#gameIframe");
+      const iframe = document.querySelector<HTMLIFrameElement>('#gameIframe');
       if (iframe) {
-        iframe.src = "about:blank";
+        iframe.src = 'about:blank';
       }
     };
   }, []);
 
+  const gameUrl = game?.gameFile?.s3Key
+    ? `${import.meta.env.VITE_GAMES_CDN_URL}/${game.gameFile.s3Key}`
+    : '';
   // Handle game loading progress
   const handleLoadProgress = (progress: number) => {
     setLoadProgress(progress);
   };
 
-  return (
-    <div>
-      {isLoading ? (
-        <div className="flex items-center justify-center h-[80vh]">
-          <span className="text-xl">Loading game...</span>
-        </div>
-      ) : error ? (
-        <div className="flex items-center justify-center h-[80vh]">
-          <span className="text-xl text-red-500">
-            {error instanceof Error ? error.message : "Error loading game"}
-          </span>
-        </div>
-      ) : game?.gameFile?.s3Key ? (
-        <>
-          <div className={expanded ? "fixed inset-0 z-40 bg-black" : "relative"}>
-            <div
-              className={`relative ${
-                expanded
-                  ? "h-screen w-full"
-                  : "w-full"
-              } overflow-hidden`}
-              // style={{ background: "#18181b" }}
-            >
-              {isGameLoading && (
-                <GameLoadingScreen
-                  game={game}
-                  onProgress={handleLoadProgress}
-                  progress={loadProgress}
-                />
-              )}
-              <iframe
-                src={`${game.gameFile.s3Key}`}
-                className={`w-full`}
-                style={{ 
-                  display: "block", 
-                  // background: "transparent",
-                  height: expanded ? "calc(100% - 60px)" : "100vh",
-                  border: "none"
-                }}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                title={game.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                scrolling="no"
-                onLoad={() => {
-                  setLoadProgress(100);
-                }}
+  // Extract ternary logic into independent variables
+  let content: React.ReactNode;
+
+  if (isLoading) {
+    content = (
+      <div className="flex items-center justify-center h-[80vh]">
+        <span className="text-xl">Loading game...</span>
+      </div>
+    );
+  } else if (error) {
+    content = (
+      <div className="flex items-center justify-center h-[80vh]">
+        <span className="text-xl text-red-500">
+          {error instanceof Error ? error.message : 'Error loading game'}
+        </span>
+      </div>
+    );
+  } else if (gameUrl) {
+    content = (
+      <>
+        <div className={expanded ? 'fixed inset-0 z-40 bg-black' : 'relative'}>
+          <div
+            className={`relative ${
+              expanded ? 'h-screen w-full' : 'w-full'
+            } overflow-hidden`}
+          >
+            {isGameLoading && (
+              <GameLoadingScreen
+                game={game}
+                onProgress={handleLoadProgress}
+                progress={loadProgress}
               />
-              <KeepPlayingModal
-                open={isModalOpen}
-                openSignUpModal={handleOpenSignUpModal}
-                isGameLoading={isGameLoading}
-              />
-              {expanded && (
-                <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-6 py-2 bg-[#2d0036] border-t border-purple-400 z-50">
-                  <span className="text-white text-sm font-semibold">
-                    {game.title}
-                  </span>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <span role="img" aria-label="smile" className="text-xl">
-                        😍
-                      </span>
-                      <span role="img" aria-label="smile" className="text-xl">
-                        🥲
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        className="text-white hover:text-purple-400 transition-colors"
-                        onClick={() => setExpanded((e) => !e)}
-                        title={expanded ? "Exit Fullscreen" : "Expand"}
-                      >
-                        <LuExpand className="w-5 h-5" />
-                      </button>
-                      <button
-                        className="text-white hover:text-purple-400 transition-colors"
-                        onClick={() => {
-                          if (analyticsIdRef.current) {
-                            updateEndTime();
-                          }
-                          navigate(-1);
-                        }}
-                        title="Close Game"
-                      >
-                        <LuX className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            {!expanded && (
-              <div className="flex items-center justify-between px-6 py-2 bg-[#2d0036] border-t border-purple-400 rounded-b-2xl">
+            )}
+            <iframe
+              id="gameIframe"
+              src={gameUrl}
+              className={`w-full`}
+              style={{
+                display: 'block',
+                height: expanded ? 'calc(100% - 60px)' : '100vh',
+                border: 'none',
+              }}
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              title={game.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              onLoad={() => {
+                setLoadProgress(100);
+              }}
+            />
+            <KeepPlayingModal
+              open={isModalOpen}
+              openSignUpModal={handleOpenSignUpModal}
+              isGameLoading={isGameLoading}
+            />
+            {expanded && (
+              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-6 py-2 bg-[#2d0036] border-t border-purple-400 z-50">
                 <span className="text-white text-sm font-semibold">
                   {game.title}
                 </span>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
-                    <span role="img" aria-label="smile" className="text-xl">
-                      😍
-                    </span>
-                    <span role="img" aria-label="smile" className="text-xl">
-                      🥲
-                    </span>
+                    <img
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Ctext y='32' font-size='32'%3E%F0%9F%98%8D%3C/text%3E%3C/svg%3E"
+                      alt="smiling face with heart-eyes"
+                      className="text-xl w-6 h-6"
+                    />
+                    <img
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Ctext y='32' font-size='32'%3E%F0%9F%A5%B2%3C/text%3E%3C/svg%3E"
+                      alt="smiling face with tear"
+                      className="text-xl w-6 h-6"
+                    />
                   </div>
                   <div className="flex items-center space-x-3">
                     <button
                       className="text-white hover:text-purple-400 transition-colors"
                       onClick={() => setExpanded((e) => !e)}
-                      title={expanded ? "Exit Fullscreen" : "Expand"}
+                      title={expanded ? 'Exit Fullscreen' : 'Expand'}
                     >
                       <LuExpand className="w-5 h-5" />
                     </button>
@@ -290,59 +260,120 @@ export default function GamePlay() {
               </div>
             )}
           </div>
+          {!expanded && (
+            <div className="flex items-center justify-between px-6 py-2 bg-[#2d0036] border-t border-purple-400 rounded-b-2xl">
+              <span className="text-white text-sm font-semibold">
+                {game.title}
+              </span>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <img
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Ctext y='32' font-size='32'%3E%F0%9F%98%8D%3C/text%3E%3C/svg%3E"
+                    alt="smiling face with heart-eyes"
+                    className="text-xl w-6 h-6"
+                  />
+                  <img
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Ctext y='32' font-size='32'%3E%F0%9F%A5%B2%3C/text%3E%3C/svg%3E"
+                    alt="smiling face with tear"
+                    className="text-xl w-6 h-6"
+                  />
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    className="text-white hover:text-purple-400 transition-colors"
+                    onClick={() => setExpanded((e) => !e)}
+                    title={expanded ? 'Exit Fullscreen' : 'Expand'}
+                  >
+                    <LuExpand className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="text-white hover:text-purple-400 transition-colors"
+                    onClick={() => {
+                      if (analyticsIdRef.current) {
+                        updateEndTime();
+                      }
+                      navigate(-1);
+                    }}
+                    title="Close Game"
+                  >
+                    <LuX className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
-          {/* Similar Games section */}
-          {!expanded && game.similarGames && game.similarGames.length > 0 && (
-            <div className="dark:bg-[#18181b] p-2">
-              <h2 className="text-2xl font-semibold dark:text-white text-[#18181b] mb-4 px-4">
-                Similar Games
-              </h2>
-              <Card className="border-hidden shadow-none p-0 bg-transparent">
-                <div className="grid gap-[8px] w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
-                  {game.similarGames.map((similarGame: SimilarGame) => (
-                    <div key={similarGame.id} className="relative p-[10px] group cursor-pointer w-full max-w-[360px]">
-                      <div className="relative">
-                        <img
-                          src={similarGame.thumbnailFile?.s3Key}
-                          alt={similarGame.title}
-                          loading="lazy"
-                          className="w-full h-[290px] min-h-[290px] max-h-[290px] object-cover rounded-[18px] border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)]"
-                          onClick={() => {
+        {/* Similar Games section */}
+        {!expanded && game.similarGames && game.similarGames.length > 0 && (
+          <div className="dark:bg-[#18181b] p-2">
+            <h2 className="text-2xl font-semibold dark:text-white text-[#18181b] mb-4 px-4">
+              Similar Games
+            </h2>
+            <Card className="border-hidden shadow-none p-0 bg-transparent">
+              <div className="grid gap-[8px] w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
+                {game.similarGames.map((similarGame: SimilarGame) => (
+                  <div
+                    key={similarGame.id}
+                    className="relative p-[10px] group cursor-pointer w-full max-w-[360px]"
+                  >
+                    <div className="relative">
+                      <button
+                        type="button"
+                        tabIndex={0}
+                        className="w-full h-[290px] min-h-[290px] max-h-[290px] object-cover rounded-[18px] border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none"
+                        style={{
+                          background: `url(${similarGame.thumbnailFile?.s3Key}) center center / cover no-repeat`,
+                        }}
+                        onClick={() => {
+                          if (analyticsIdRef.current) {
+                            updateEndTime();
+                          }
+                          navigate(`/gameplay/${similarGame.id}`);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
                             if (analyticsIdRef.current) {
                               updateEndTime();
                             }
                             navigate(`/gameplay/${similarGame.id}`);
-                          }}
-                        />
-                        {/* Game Info Overlay - Only visible on hover */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-[14px] p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
-                          <h3 className="text-white font-bold text-lg mb-1 truncate">
-                            {similarGame.title}
-                          </h3>
-                          {similarGame.description && (
-                            <p className="text-gray-200 text-sm leading-tight">
-                              {similarGame.description.length > 80 
-                                ? `${similarGame.description.substring(0, 80)}...` 
-                                : similarGame.description
-                              }
-                            </p>
-                          )}
-                        </div>
+                          }
+                        }}
+                        aria-label={`Play ${similarGame.title}`}
+                      >
+                        <span className="sr-only">{`Play ${similarGame.title}`}</span>
+                      </button>
+                      {/* Game Info Overlay - Only visible on hover */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-b-[14px] p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                        <h3 className="text-white font-bold text-lg mb-1 truncate">
+                          {similarGame.title}
+                        </h3>
+                        {similarGame.description && (
+                          <p className="text-gray-200 text-sm leading-tight">
+                            {similarGame.description.length > 80
+                              ? `${similarGame.description.substring(0, 80)}...`
+                              : similarGame.description}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="flex items-center justify-center h-[80vh]">
-          <span className="text-xl">
-            Game not found or no game file available
-          </span>
-        </div>
-      )}
-    </div>
-  );
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+      </>
+    );
+  } else {
+    content = (
+      <div className="flex items-center justify-center h-[80vh]">
+        <span className="text-xl">
+          Game not found or no game file available
+        </span>
+      </div>
+    );
+  }
+
+  return <div>{content}</div>;
 }

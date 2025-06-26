@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import config from '../config/config';
 import { AppDataSource } from '../config/database';
 import { Game, GameStatus } from '../entities/Games';
 import { GamePositionHistory } from '../entities/GamePositionHistory';
@@ -10,12 +11,14 @@ import { RoleType } from '../entities/Role';
 import { Not } from 'typeorm';
 import { s3Service } from '../services/s3.service';
 import { zipService } from '../services/zip.service';
+import { cloudFrontService } from '../services/cloudfront.service';
 import multer from 'multer';
 import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const gameRepository = AppDataSource.getRepository(Game);
-const gamePositionHistoryRepository = AppDataSource.getRepository(GamePositionHistory);
+const gamePositionHistoryRepository =
+  AppDataSource.getRepository(GamePositionHistory);
 const categoryRepository = AppDataSource.getRepository(Category);
 const fileRepository = AppDataSource.getRepository(File);
 
@@ -25,52 +28,70 @@ const getMaxPosition = async (): Promise<number> => {
     .createQueryBuilder('game')
     .select('MAX(game.position)', 'maxPosition')
     .getRawOne();
-  
+
   return result?.maxPosition || 0;
 };
 
 // Helper function to create or update position history record
-const createOrUpdatePositionHistoryRecord = async (gameId: string, position: number, queryRunner?: any): Promise<void> => {
-  const repository = queryRunner ? queryRunner.manager.getRepository(GamePositionHistory) : gamePositionHistoryRepository;
-  
+const createOrUpdatePositionHistoryRecord = async (
+  gameId: string,
+  position: number,
+  queryRunner?: any
+): Promise<void> => {
+  const repository = queryRunner
+    ? queryRunner.manager.getRepository(GamePositionHistory)
+    : gamePositionHistoryRepository;
+
   // Check if record already exists for this game and position
   let historyRecord = await repository.findOne({
-    where: { gameId, position }
+    where: { gameId, position },
   });
-  
+
   if (!historyRecord) {
     // Create new record if it doesn't exist
     historyRecord = repository.create({
       gameId,
       position,
-      clickCount: 0
+      clickCount: 0,
     });
     await repository.save(historyRecord);
   }
 };
 
-const assignPositionForNewGame = async (requestedPosition?: number, queryRunner?: any): Promise<number> => {
-  const repository = queryRunner ? queryRunner.manager.getRepository(Game) : gameRepository;
-  
+const assignPositionForNewGame = async (
+  requestedPosition?: number,
+  queryRunner?: any
+): Promise<number> => {
+  const repository = queryRunner
+    ? queryRunner.manager.getRepository(Game)
+    : gameRepository;
+
   if (requestedPosition) {
     const totalGames = await repository.count();
     if (requestedPosition > totalGames + 1) {
-      throw new ApiError(400, `Position cannot be greater than ${totalGames + 1}`);
+      throw new ApiError(
+        400,
+        `Position cannot be greater than ${totalGames + 1}`
+      );
     }
-    
+
     const existingGame = await repository.findOne({
-      where: { position: requestedPosition }
+      where: { position: requestedPosition },
     });
-    
+
     if (existingGame) {
       const maxPosition = await getMaxPosition();
       existingGame.position = maxPosition + 1;
       await repository.save(existingGame);
-      
+
       // Create or update position history for existing game at new position
-      await createOrUpdatePositionHistoryRecord(existingGame.id, maxPosition + 1, queryRunner);
+      await createOrUpdatePositionHistoryRecord(
+        existingGame.id,
+        maxPosition + 1,
+        queryRunner
+      );
     }
-    
+
     return requestedPosition;
   } else {
     // Auto-assign to next available position
@@ -78,8 +99,6 @@ const assignPositionForNewGame = async (requestedPosition?: number, queryRunner?
     return maxPosition + 1;
   }
 };
-
-
 
 /**
  * @swagger
@@ -143,20 +162,21 @@ export const getAllGames = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      categoryId, 
-      status, 
+    const {
+      page = 1,
+      limit = 10,
+      categoryId,
+      status,
       search,
       createdById,
-      filter
+      filter,
     } = req.query;
-    
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
-    
-    let queryBuilder = gameRepository.createQueryBuilder('game')
+
+    let queryBuilder = gameRepository
+      .createQueryBuilder('game')
       .leftJoinAndSelect('game.category', 'category')
       .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
       .leftJoinAndSelect('game.gameFile', 'gameFile')
@@ -167,9 +187,12 @@ export const getAllGames = async (
       // Get games from the last 7 days
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      queryBuilder.andWhere('game.createdAt >= :sevenDaysAgo', { sevenDaysAgo });
+      queryBuilder.andWhere('game.createdAt >= :sevenDaysAgo', {
+        sevenDaysAgo,
+      });
     } else if (filter === 'popular') {
-      queryBuilder = gameRepository.createQueryBuilder('game')
+      queryBuilder = gameRepository
+        .createQueryBuilder('game')
         .leftJoinAndSelect('game.category', 'category')
         .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
         .leftJoinAndSelect('game.gameFile', 'gameFile')
@@ -178,7 +201,7 @@ export const getAllGames = async (
         .addSelect([
           'COUNT(DISTINCT a.userId) as playerCount',
           'SUM(a.duration) as totalPlayTime',
-          'COUNT(a.id) as sessionCount'
+          'COUNT(a.id) as sessionCount',
         ])
         .groupBy('game.id')
         .addGroupBy('category.id')
@@ -190,8 +213,7 @@ export const getAllGames = async (
         .addOrderBy('sessionCount', 'DESC');
     } else if (filter === 'recommended' && req.user?.userId) {
       // First find user's most played category
-      const userTopCategory = await AppDataSource
-        .getRepository(Analytics)
+      const userTopCategory = await AppDataSource.getRepository(Analytics)
         .createQueryBuilder('analytics')
         .select('g.categoryId', 'categoryId')
         .innerJoin('games', 'g', 'analytics.gameId = g.id')
@@ -203,65 +225,68 @@ export const getAllGames = async (
 
       if (userTopCategory) {
         queryBuilder
-          .where('game.categoryId = :topCategoryId', { topCategoryId: userTopCategory.categoryId })
-          .andWhere('game.id NOT IN ' +
-            AppDataSource.createQueryBuilder()
-              .select('DISTINCT a.gameId')
-              .from('analytics', 'a')
-              .where('a.userId = :userId', { userId: req.user.userId })
-              .getQuery()
+          .where('game.categoryId = :topCategoryId', {
+            topCategoryId: userTopCategory.categoryId,
+          })
+          .andWhere(
+            'game.id NOT IN ' +
+              AppDataSource.createQueryBuilder()
+                .select('DISTINCT a.gameId')
+                .from('analytics', 'a')
+                .where('a.userId = :userId', { userId: req.user.userId })
+                .getQuery()
           )
           .setParameter('userId', req.user.userId)
           .orderBy('game.createdAt', 'DESC');
       }
     }
-    
+
     // Apply standard filters
     if (categoryId) {
       queryBuilder.andWhere('game.categoryId = :categoryId', { categoryId });
     }
-    
+
     if (status) {
       queryBuilder.andWhere('game.status = :status', { status });
     }
-    
+
     if (createdById) {
       queryBuilder.andWhere('game.createdById = :createdById', { createdById });
     }
-    
+
     if (search) {
       queryBuilder.andWhere(
         '(game.title ILIKE :search OR game.description ILIKE :search)',
         { search: `%${search}%` }
       );
     }
-    
+
     // Get total count for pagination
     const total = await queryBuilder.getCount();
-    
+
     // Apply pagination and order by position
     queryBuilder
       .skip((pageNumber - 1) * limitNumber)
       .take(limitNumber)
       .orderBy('game.position', 'ASC')
-      .addOrderBy('game.createdAt', 'DESC'); 
-    
+      .addOrderBy('game.createdAt', 'DESC');
+
     const games = await queryBuilder.getMany();
 
-    // Transform game file and thumbnail URLs to direct S3 URLs
-    games.forEach(game => {
-      if (game.gameFile) {
-        const s3Key = game.gameFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-      }
-      if (game.thumbnailFile) {
-        const s3Key = game.thumbnailFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-      }
-    });
-    
+    // Transform game file and thumbnail URLs to direct S3 URLs (Now that we are using CloudFront, we must stop doing this. The frontend needs the raw path/key to construct the CloudFront URL.)
+    // games.forEach((game) => {
+    //   if (game.gameFile) {
+    //     const s3Key = game.gameFile.s3Key;
+    //     const baseUrl = s3Service.getBaseUrl();
+    //     game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+    //   }
+    //   if (game.thumbnailFile) {
+    //     const s3Key = game.thumbnailFile.s3Key;
+    //     const baseUrl = s3Service.getBaseUrl();
+    //     game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+    //   }
+    // });
+
     res.status(200).json({
       success: true,
       count: games.length,
@@ -343,65 +368,65 @@ export const getGameById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     // Get the requested game with its relations
     const game = await gameRepository.findOne({
       where: { id },
-      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
+      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy'],
     });
-    
+
     if (!game) {
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
-    
+
     // Transform game file and thumbnail URLs to direct S3 URLs
-    if (game.gameFile) {
-      const s3Key = game.gameFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-    }
-    if (game.thumbnailFile) {
-      const s3Key = game.thumbnailFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-    }
+    // if (game.gameFile) {
+    //   const s3Key = game.gameFile.s3Key;
+    //   const baseUrl = s3Service.getBaseUrl();
+    //   game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+    // }
+    // if (game.thumbnailFile) {
+    //   const s3Key = game.thumbnailFile.s3Key;
+    //   const baseUrl = s3Service.getBaseUrl();
+    //   game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+    // }
 
     // Find similar games (same category, different ID, active status)
     let similarGames: Game[] = [];
-    
+
     if (game.categoryId) {
       similarGames = await gameRepository.find({
         where: {
           categoryId: game.categoryId,
           id: Not(id), // Exclude the current game
-          status: GameStatus.ACTIVE
+          status: GameStatus.ACTIVE,
         },
         relations: ['thumbnailFile', 'gameFile'],
         take: 5, // Limit to 5 similar games
-        order: { createdAt: 'DESC' } // Get the newest games first
+        order: { createdAt: 'DESC' }, // Get the newest games first
       });
 
       // Transform similar games' file and thumbnail URLs to direct S3 URLs
-      similarGames.forEach(similarGame => {
-        if (similarGame.gameFile) {
-          const s3Key = similarGame.gameFile.s3Key;
-          const baseUrl = s3Service.getBaseUrl();
-          similarGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-        }
-        if (similarGame.thumbnailFile) {
-          const s3Key = similarGame.thumbnailFile.s3Key;
-          const baseUrl = s3Service.getBaseUrl();
-          similarGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-        }
-      });
+      // similarGames.forEach((similarGame) => {
+      //   if (similarGame.gameFile) {
+      //     const s3Key = similarGame.gameFile.s3Key;
+      //     const baseUrl = s3Service.getBaseUrl();
+      //     similarGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      //   }
+      //   if (similarGame.thumbnailFile) {
+      //     const s3Key = similarGame.thumbnailFile.s3Key;
+      //     const baseUrl = s3Service.getBaseUrl();
+      //     similarGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      //   }
+      // });
     }
-      
+
     res.status(200).json({
       success: true,
       data: {
         ...game,
-        similarGames: similarGames
-      }
+        similarGames: similarGames,
+      },
     });
   } catch (error) {
     next(error);
@@ -469,19 +494,19 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: Infinity, // No size limit for game files
-  }
+  },
 });
 
 // Middleware to handle file uploads
 export const uploadGameFiles = upload.fields([
   { name: 'thumbnailFile', maxCount: 1 },
-  { name: 'gameFile', maxCount: 1 }
+  { name: 'gameFile', maxCount: 1 },
 ]);
 
 // Middleware to handle file uploads for updates
 export const uploadGameFilesForUpdate = upload.fields([
   { name: 'thumbnailFile', maxCount: 1 },
-  { name: 'gameFile', maxCount: 1 }
+  { name: 'gameFile', maxCount: 1 },
 ]);
 
 export const createGame = async (
@@ -495,19 +520,19 @@ export const createGame = async (
   await queryRunner.startTransaction();
 
   try {
-    const { 
-      title, 
-      description, 
-      categoryId, 
+    const {
+      title,
+      description,
+      categoryId,
       status = GameStatus.ACTIVE,
       config = 0,
-      position
+      position,
     } = req.body;
-    
+
     if (!title) {
       return next(ApiError.badRequest('Game title is required'));
     }
-    
+
     if (position) {
       const requestedPosition = parseInt(position);
       if (requestedPosition < 1) {
@@ -515,27 +540,39 @@ export const createGame = async (
       }
       const totalGames = await gameRepository.count();
       if (requestedPosition > totalGames + 1) {
-        return next(ApiError.badRequest(`Position cannot be greater than ${totalGames + 1} (total number of games)`));
+        return next(
+          ApiError.badRequest(
+            `Position cannot be greater than ${
+              totalGames + 1
+            } (total number of games)`
+          )
+        );
       }
     }
-    
+
     // Get files from request
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    
-    if (!files || !files.thumbnailFile || !files.thumbnailFile[0] || !files.gameFile || !files.gameFile[0]) {
+
+    if (
+      !files ||
+      !files.thumbnailFile ||
+      !files.thumbnailFile[0] ||
+      !files.gameFile ||
+      !files.gameFile[0]
+    ) {
       return next(ApiError.badRequest('Thumbnail and game files are required'));
     }
-    
+
     const thumbnailFile = files.thumbnailFile[0];
     const gameFile = files.gameFile[0];
-    
+
     try {
       // Check if category exists if provided
       if (categoryId) {
         const category = await queryRunner.manager.findOne(Category, {
-          where: { id: categoryId }
+          where: { id: categoryId },
         });
-        
+
         if (!category) {
           throw new ApiError(400, `Category with id ${categoryId} not found`);
         }
@@ -544,7 +581,7 @@ export const createGame = async (
       // Process game zip file first to validate it
       logger.info('Processing game zip file...');
       const processedZip = await zipService.processGameZip(gameFile.buffer);
-      
+
       if (processedZip.error) {
         throw new ApiError(400, processedZip.error);
       }
@@ -570,7 +607,7 @@ export const createGame = async (
       logger.info('Creating file records in the database...');
       const thumbnailFileRecord = fileRepository.create({
         s3Key: thumbnailUploadResult.key,
-        type: 'thumbnail'
+        type: 'thumbnail',
       });
 
       if (!processedZip.indexPath) {
@@ -580,14 +617,17 @@ export const createGame = async (
       const indexPath = processedZip.indexPath.replace(/\\/g, '/');
       const gameFileRecord = fileRepository.create({
         s3Key: `${s3GamePath}/${indexPath}`,
-        type: 'game_file'
+        type: 'game_file',
       });
 
       await queryRunner.manager.save([thumbnailFileRecord, gameFileRecord]);
 
       // Assign position for the new game
       logger.info('Assigning position for new game...');
-      const assignedPosition = await assignPositionForNewGame(position ? parseInt(position) : undefined, queryRunner);
+      const assignedPosition = await assignPositionForNewGame(
+        position ? parseInt(position) : undefined,
+        queryRunner
+      );
 
       // Create new game with file IDs and position using transaction
       logger.info('Creating game record...');
@@ -600,14 +640,18 @@ export const createGame = async (
         status,
         config,
         position: assignedPosition,
-        createdById: req.user?.userId
+        createdById: req.user?.userId,
       });
 
       await queryRunner.manager.save(game);
 
       // Create initial position history record
       logger.info('Creating initial position history record...');
-      await createOrUpdatePositionHistoryRecord(game.id, assignedPosition, queryRunner);
+      await createOrUpdatePositionHistoryRecord(
+        game.id,
+        assignedPosition,
+        queryRunner
+      );
 
       // Commit transaction
       await queryRunner.commitTransaction();
@@ -615,7 +659,7 @@ export const createGame = async (
       // Fetch the game with relations to return
       const savedGame = await gameRepository.findOne({
         where: { id: game.id },
-        relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
+        relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy'],
       });
 
       if (!savedGame) {
@@ -725,45 +769,43 @@ export const updateGame = async (
 
   try {
     const { id } = req.params;
-    const { 
-      title, 
-      description, 
-      categoryId, 
-      status,
-      config,
-      position
-    } = req.body;
-    
+    const { title, description, categoryId, status, config, position } =
+      req.body;
+
     const game = await queryRunner.manager.findOne(Game, {
-      where: { id }
+      where: { id },
     });
-    
+
     if (!game) {
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
-    
+
     // Validate position early if provided (before any expensive operations)
     if (position !== undefined && position !== game.position) {
       const newPosition = parseInt(position);
-      
+
       if (newPosition < 1) {
         return next(ApiError.badRequest('Position must be a positive integer'));
       }
-      
+
       // Validate that position doesn't exceed total number of games
       const totalGames = await queryRunner.manager.count(Game);
       if (newPosition > totalGames) {
-        return next(ApiError.badRequest(`Position cannot be greater than ${totalGames} (total number of games)`));
+        return next(
+          ApiError.badRequest(
+            `Position cannot be greater than ${totalGames} (total number of games)`
+          )
+        );
       }
     }
-    
+
     // Handle file uploads if provided
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    
+
     // Handle thumbnail file upload
     if (files?.thumbnailFile && files.thumbnailFile[0]) {
       const thumbnailFile = files.thumbnailFile[0];
-      
+
       // Upload to S3
       logger.info('Uploading new thumbnail file to S3...');
       const thumbnailUploadResult = await s3Service.uploadFile(
@@ -772,28 +814,28 @@ export const updateGame = async (
         thumbnailFile.mimetype,
         'thumbnails'
       );
-      
+
       // Create file record
       logger.info('Creating new thumbnail file record...');
       const thumbnailFileRecord = fileRepository.create({
         s3Key: thumbnailUploadResult.key,
-        type: 'thumbnail'
+        type: 'thumbnail',
       });
-      
+
       await fileRepository.save(thumbnailFileRecord);
-      
+
       // Update game with new file ID
       game.thumbnailFileId = thumbnailFileRecord.id;
     }
-    
+
     // Handle game file upload
     if (files?.gameFile && files.gameFile[0]) {
       const gameFile = files.gameFile[0];
-      
+
       // Process game zip file first to validate it
       logger.info('Processing game zip file...');
       const processedZip = await zipService.processGameZip(gameFile.buffer);
-      
+
       if (processedZip.error) {
         throw new ApiError(400, processedZip.error);
       }
@@ -815,96 +857,110 @@ export const updateGame = async (
       const indexPath = processedZip.indexPath.replace(/\\/g, '/');
       const gameFileRecord = fileRepository.create({
         s3Key: `${s3GamePath}/${indexPath}`,
-        type: 'game_file'
+        type: 'game_file',
       });
-      
+
       await queryRunner.manager.save(gameFileRecord);
-      
+
       // Update game with new file ID
       game.gameFileId = gameFileRecord.id;
     }
-    
+
     // Check if category exists if provided
     if (categoryId && categoryId !== game.categoryId) {
       const category = await categoryRepository.findOne({
-        where: { id: categoryId }
+        where: { id: categoryId },
       });
-      
+
       if (!category) {
-        return next(ApiError.badRequest(`Category with id ${categoryId} not found`));
+        return next(
+          ApiError.badRequest(`Category with id ${categoryId} not found`)
+        );
       }
-      
+
       game.categoryId = categoryId;
     }
-    
+
     // Handle position update if provided
     if (position !== undefined && position !== game.position) {
       const newPosition = parseInt(position);
-      
+
       // Check if target position is occupied
       const gameAtTargetPosition = await queryRunner.manager.findOne(Game, {
-        where: { position: newPosition }
+        where: { position: newPosition },
       });
-      
+
       if (gameAtTargetPosition) {
         // Swap positions
         const currentPosition = game.position;
-        
+
         // Update positions
         game.position = newPosition;
         gameAtTargetPosition.position = currentPosition;
-        
+
         await queryRunner.manager.save(gameAtTargetPosition);
-        
+
         // Create or update position history for both games
-        await createOrUpdatePositionHistoryRecord(game.id, newPosition, queryRunner);
-        await createOrUpdatePositionHistoryRecord(gameAtTargetPosition.id, currentPosition, queryRunner);
+        await createOrUpdatePositionHistoryRecord(
+          game.id,
+          newPosition,
+          queryRunner
+        );
+        await createOrUpdatePositionHistoryRecord(
+          gameAtTargetPosition.id,
+          currentPosition,
+          queryRunner
+        );
       } else {
         // Position is free, just move there
         game.position = newPosition;
-        
+
         // Create or update position history
-        await createOrUpdatePositionHistoryRecord(game.id, newPosition, queryRunner);
+        await createOrUpdatePositionHistoryRecord(
+          game.id,
+          newPosition,
+          queryRunner
+        );
       }
     }
-    
+
     // Update basic game properties
     if (title) game.title = title;
     if (description !== undefined) game.description = description;
     if (status) game.status = status as GameStatus;
     if (config !== undefined) game.config = config;
-    
+
     await queryRunner.manager.save(game);
 
     // Commit transaction
     await queryRunner.commitTransaction();
-    
+
     // Fetch the updated game with relations to return
-      const updatedGame = await gameRepository.findOne({
-        where: { id },
-        relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
-      });
+    const updatedGame = await gameRepository.findOne({
+      where: { id },
+      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy'],
+    });
 
-      if (!updatedGame) {
-        return next(ApiError.notFound(`Game with id ${id} not found`));
-      }
+    if (!updatedGame) {
+      return next(ApiError.notFound(`Game with id ${id} not found`));
+    }
 
-      // Transform game file and thumbnail URLs to direct S3 URLs
-      if (updatedGame.gameFile) {
-        const s3Key = updatedGame.gameFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        updatedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-      }
-      if (updatedGame.thumbnailFile) {
-        const s3Key = updatedGame.thumbnailFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        updatedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-      }
-    
-      res.status(200).json({
-        success: true,
-        data: updatedGame,
-      });
+    // Transform game file and thumbnail URLs to direct S3 URLs
+    if (updatedGame.gameFile) {
+      const s3Key = updatedGame.gameFile.s3Key;
+      const baseUrl = s3Service.getBaseUrl();
+      updatedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+    }
+    if (updatedGame.thumbnailFile) {
+      const s3Key = updatedGame.thumbnailFile.s3Key;
+      const baseUrl = s3Service.getBaseUrl();
+      updatedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedGame,
+    });
   } catch (error) {
     // Rollback transaction on error
     await queryRunner.rollbackTransaction();
@@ -951,15 +1007,15 @@ export const deleteGame = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     const game = await gameRepository.findOne({
-      where: { id }
+      where: { id },
     });
-    
+
     if (!game) {
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
-    
+
     // Check if user has permission to delete
     // Only super admins can delete games created by other admins
     if (
@@ -971,19 +1027,23 @@ export const deleteGame = async (
         .leftJoinAndSelect('game.createdBy', 'user')
         .leftJoinAndSelect('user.role', 'role')
         .where('game.id = :id', { id })
-        .andWhere('role.name IN (:...roles)', { roles: [RoleType.ADMIN, RoleType.SUPERADMIN] })
+        .andWhere('role.name IN (:...roles)', {
+          roles: [RoleType.ADMIN, RoleType.SUPERADMIN],
+        })
         .getOne();
-      
+
       if (createdByAdmin) {
-        return next(ApiError.forbidden('You do not have permission to delete this game'));
+        return next(
+          ApiError.forbidden('You do not have permission to delete this game')
+        );
       }
     }
-    
+
     await gameRepository.remove(game);
-    
+
     res.status(200).json({
       success: true,
-      message: 'Game deleted successfully'
+      message: 'Game deleted successfully',
     });
   } catch (error) {
     next(error);
@@ -1026,23 +1086,25 @@ export const getGameByPosition = async (
 ): Promise<void> => {
   try {
     const { position } = req.params;
-    
+
     const positionNumber = parseInt(position);
-    
+
     if (isNaN(positionNumber) || positionNumber < 1) {
       return next(ApiError.badRequest('Position must be a positive integer'));
     }
-    
+
     // Get the game at the specified position
     const game = await gameRepository.findOne({
       where: { position: positionNumber },
-      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
+      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy'],
     });
-    
+
     if (!game) {
-      return next(ApiError.notFound(`No game found at position ${positionNumber}`));
+      return next(
+        ApiError.notFound(`No game found at position ${positionNumber}`)
+      );
     }
-    
+
     // Transform game file and thumbnail URLs to direct S3 URLs
     if (game.gameFile) {
       const s3Key = game.gameFile.s3Key;
@@ -1054,11 +1116,65 @@ export const getGameByPosition = async (
       const baseUrl = s3Service.getBaseUrl();
       game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
     }
-    
+
     res.status(200).json({
       success: true,
-      data: game
+      data: game,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @swagger
+ * /games/{id}/access:
+ *   post:
+ *     summary: Grant game access by setting signed cookies
+ *     description: Authenticates a user and sets CloudFront signed cookies to allow access to private game files.
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID of the game to access
+ *     responses:
+ *       200:
+ *         description: Access cookies set successfully.
+ *       401:
+ *         description: Unauthorized.
+ *       500:
+ *         description: Internal server error.
+ */
+export const grantGameAccess = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const signedCookieHeaders =
+      await cloudFrontService.getSignedCookieHeaders();
+    const rootDomain = '.chareli.reallygreattech.com';
+
+    // Set each cookie on the response
+    for (const [key, value] of Object.entries(signedCookieHeaders)) {
+      res.cookie(key, value, {
+        // CRITICAL: The domain must be the root domain (with a leading dot)
+        // so the browser sends the cookie to subdomains like games.chareli...
+        domain: rootDomain,
+        path: '/',
+        httpOnly: true,
+        secure: config.env === 'production',
+        sameSite: 'lax',
+      });
+    }
+
+    res.status(200).json({ success: true, message: 'Game access granted.' });
   } catch (error) {
     next(error);
   }

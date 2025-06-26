@@ -1,10 +1,10 @@
-import { 
-  S3Client, 
-  PutObjectCommand, 
-  DeleteObjectCommand, 
-  GetObjectCommand, 
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
-  S3ServiceException 
+  S3ServiceException,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../config/config';
@@ -19,12 +19,15 @@ class S3Error extends Error {
   public operation: string;
   public key?: string;
 
-  constructor(message: string, options: {
-    code?: string;
-    originalError?: Error;
-    operation: string;
-    key?: string;
-  }) {
+  constructor(
+    message: string,
+    options: {
+      code?: string;
+      originalError?: Error;
+      operation: string;
+      key?: string;
+    }
+  ) {
     super(message);
     this.name = 'S3Error';
     this.code = options.code;
@@ -42,13 +45,29 @@ export interface S3UploadResult {
 }
 
 export interface S3ServiceInterface {
-  uploadFile(file: Buffer, originalname: string, contentType: string, folder?: string): Promise<S3UploadResult>;
-  uploadFiles(files: Array<{ buffer: Buffer, originalname: string, contentType: string }>, folder?: string): Promise<S3UploadResult[]>;
+  uploadFile(
+    file: Buffer,
+    originalname: string,
+    contentType: string,
+    folder?: string
+  ): Promise<S3UploadResult>;
+  uploadFiles(
+    files: Array<{ buffer: Buffer; originalname: string; contentType: string }>,
+    folder?: string
+  ): Promise<S3UploadResult[]>;
   uploadDirectory(dirPath: string, s3Prefix: string): Promise<void>;
   deleteFile(key: string): Promise<boolean>;
   getFile(key: string): Promise<Buffer>;
-  getSignedUrl(key: string, operation: 'get' | 'put', expiresIn?: number): Promise<string>;
-  generatePresignedPost(key: string, contentType: string, expiresIn?: number): Promise<{ url: string, fields: Record<string, string> }>;
+  getSignedUrl(
+    key: string,
+    operation: 'get' | 'put',
+    expiresIn?: number
+  ): Promise<string>;
+  generatePresignedPost(
+    key: string,
+    contentType: string,
+    expiresIn?: number
+  ): Promise<{ url: string; fields: Record<string, string> }>;
 }
 
 export class S3Service implements S3ServiceInterface {
@@ -57,19 +76,23 @@ export class S3Service implements S3ServiceInterface {
 
   constructor() {
     this.s3Client = new S3Client({
-      region: "eu-central-1",
+      region: 'eu-central-1',
       credentials: {
-        accessKeyId: "AKIAU2CFV3CEC25FE4J2",
-        secretAccessKey: "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",
+        accessKeyId: config.s3.accessKeyId,
+        secretAccessKey: config.s3.secretAccessKey,
       },
       endpoint: config.s3.endpoint,
-      forcePathStyle: config.s3.forcePathStyle
+      forcePathStyle: config.s3.forcePathStyle,
     });
-    this.bucket = "chareli-games-dev-ea15b364";
+    this.bucket = config.s3.bucket;
   }
 
-  
-  async uploadFile(file: Buffer, originalname: string, contentType: string, folder?: string): Promise<S3UploadResult> {
+  async uploadFile(
+    file: Buffer,
+    originalname: string,
+    contentType: string,
+    folder?: string
+  ): Promise<S3UploadResult> {
     try {
       // For game files, preserve the original path structure
       let key;
@@ -80,71 +103,67 @@ export class S3Service implements S3ServiceInterface {
         // For other files (like thumbnails), use the old naming
         const fileId = uuidv4();
         const extension = path.extname(originalname);
-        const filename = path.basename(originalname, extension).replace(/\s+/g, '-').toLowerCase();
-        key = folder 
+        const filename = path
+          .basename(originalname, extension)
+          .replace(/\s+/g, '-')
+          .toLowerCase();
+        key = folder
           ? `${folder}/${fileId}-${filename}${extension}`
           : `${fileId}-${filename}${extension}`;
       }
-      
+
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: file,
-        ContentType: contentType
+        ContentType: contentType,
       });
-      
+
       await this.s3Client.send(command);
-      
+
       // Generate URL
-      const url = config.s3.endpoint 
+      const url = config.s3.endpoint
         ? `${config.s3.endpoint}/${this.bucket}/${key}`
         : `https://${this.bucket}.s3.${config.s3.region}.amazonaws.com/${key}`;
-      
+
       return {
         key,
         url,
         contentType,
-        size: file.length
+        size: file.length,
       };
     } catch (error) {
       logger.error('Error uploading file to S3:', {
         error,
         originalname,
         folder,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
-        throw new S3Error(
-          `S3 upload failed: ${error.message}`, 
-          {
-            code: error.$metadata.httpStatusCode?.toString() || error.name,
-            originalError: error,
-            operation: 'uploadFile',
-            key: folder ? `${folder}/${originalname}` : originalname
-          }
-        );
+        throw new S3Error(`S3 upload failed: ${error.message}`, {
+          code: error.$metadata.httpStatusCode?.toString() || error.name,
+          originalError: error,
+          operation: 'uploadFile',
+          key: folder ? `${folder}/${originalname}` : originalname,
+        });
       }
 
-      throw new S3Error(
-        'Failed to upload file to S3',
-        {
-          originalError: error as Error,
-          operation: 'uploadFile',
-          key: folder ? `${folder}/${originalname}` : originalname
-        }
-      );
+      throw new S3Error('Failed to upload file to S3', {
+        originalError: error as Error,
+        operation: 'uploadFile',
+        key: folder ? `${folder}/${originalname}` : originalname,
+      });
     }
   }
 
-  
   async uploadDirectory(dirPath: string, s3Prefix: string): Promise<void> {
     try {
       const files = await fs.readdir(dirPath, { withFileTypes: true });
-      
+
       for (const file of files) {
         const fullPath = path.join(dirPath, file.name);
-        
+
         if (file.isDirectory()) {
           // Recursively upload subdirectories
           await this.uploadDirectory(
@@ -155,11 +174,11 @@ export class S3Service implements S3ServiceInterface {
           // Upload file
           const fileContent = await fs.readFile(fullPath);
           const s3Key = path.join(s3Prefix, file.name).replace(/\\/g, '/');
-          
+
           // Determine content type based on file extension
           const ext = path.extname(file.name).toLowerCase();
           let contentType = 'application/octet-stream';
-          
+
           switch (ext) {
             case '.html':
               contentType = 'text/html';
@@ -187,14 +206,14 @@ export class S3Service implements S3ServiceInterface {
               contentType = 'image/svg+xml';
               break;
           }
-          
+
           const command = new PutObjectCommand({
             Bucket: this.bucket,
             Key: s3Key,
             Body: fileContent,
-            ContentType: contentType
+            ContentType: contentType,
           });
-          
+
           await this.s3Client.send(command);
         }
       }
@@ -203,67 +222,63 @@ export class S3Service implements S3ServiceInterface {
         error,
         dirPath,
         s3Prefix,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
-        throw new S3Error(
-          `S3 directory upload failed: ${error.message}`,
-          {
-            code: error.$metadata.httpStatusCode?.toString() || error.name,
-            originalError: error,
-            operation: 'uploadDirectory',
-            key: s3Prefix
-          }
-        );
+        throw new S3Error(`S3 directory upload failed: ${error.message}`, {
+          code: error.$metadata.httpStatusCode?.toString() || error.name,
+          originalError: error,
+          operation: 'uploadDirectory',
+          key: s3Prefix,
+        });
       }
 
-      throw new S3Error(
-        'Failed to upload directory to S3',
-        {
-          originalError: error as Error,
-          operation: 'uploadDirectory',
-          key: s3Prefix
-        }
-      );
+      throw new S3Error('Failed to upload directory to S3', {
+        originalError: error as Error,
+        operation: 'uploadDirectory',
+        key: s3Prefix,
+      });
     }
   }
 
-  async uploadFiles(files: Array<{ buffer: Buffer, originalname: string, contentType: string }>, folder?: string): Promise<S3UploadResult[]> {
+  async uploadFiles(
+    files: Array<{ buffer: Buffer; originalname: string; contentType: string }>,
+    folder?: string
+  ): Promise<S3UploadResult[]> {
     try {
-      const uploadPromises = files.map(file => 
-        this.uploadFile(file.buffer, file.originalname, file.contentType, folder)
+      const uploadPromises = files.map((file) =>
+        this.uploadFile(
+          file.buffer,
+          file.originalname,
+          file.contentType,
+          folder
+        )
       );
-      
+
       return Promise.all(uploadPromises);
     } catch (error) {
       logger.error('Error uploading multiple files to S3:', {
         error,
         filesCount: files.length,
         folder,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
-        throw new S3Error(
-          `S3 batch upload failed: ${error.message}`,
-          {
-            code: error.$metadata.httpStatusCode?.toString() || error.name,
-            originalError: error,
-            operation: 'uploadFiles',
-            key: folder
-          }
-        );
+        throw new S3Error(`S3 batch upload failed: ${error.message}`, {
+          code: error.$metadata.httpStatusCode?.toString() || error.name,
+          originalError: error,
+          operation: 'uploadFiles',
+          key: folder,
+        });
       }
 
-      throw new S3Error(
-        'Failed to upload multiple files to S3',
-        {
-          originalError: error as Error,
-          operation: 'uploadFiles',
-          key: folder
-        }
-      );
+      throw new S3Error('Failed to upload multiple files to S3', {
+        originalError: error as Error,
+        operation: 'uploadFiles',
+        key: folder,
+      });
     }
   }
 
@@ -271,51 +286,44 @@ export class S3Service implements S3ServiceInterface {
     try {
       const command = new DeleteObjectCommand({
         Bucket: this.bucket,
-        Key: key
+        Key: key,
       });
-      
+
       await this.s3Client.send(command);
       return true;
     } catch (error) {
       logger.error('Error deleting file from S3:', {
         error,
         key,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
-        throw new S3Error(
-          `S3 delete failed: ${error.message}`,
-          {
-            code: error.$metadata.httpStatusCode?.toString() || error.name,
-            originalError: error,
-            operation: 'deleteFile',
-            key
-          }
-        );
+        throw new S3Error(`S3 delete failed: ${error.message}`, {
+          code: error.$metadata.httpStatusCode?.toString() || error.name,
+          originalError: error,
+          operation: 'deleteFile',
+          key,
+        });
       }
 
-      throw new S3Error(
-        'Failed to delete file from S3',
-        {
-          originalError: error as Error,
-          operation: 'deleteFile',
-          key
-        }
-      );
+      throw new S3Error('Failed to delete file from S3', {
+        originalError: error as Error,
+        operation: 'deleteFile',
+        key,
+      });
     }
   }
-
 
   async getFile(key: string): Promise<Buffer> {
     try {
       const command = new GetObjectCommand({
         Bucket: this.bucket,
-        Key: key
+        Key: key,
       });
-      
+
       const response = await this.s3Client.send(command);
-      
+
       // Convert stream to buffer
       const chunks: Buffer[] = [];
       if (response.Body) {
@@ -324,106 +332,100 @@ export class S3Service implements S3ServiceInterface {
           chunks.push(Buffer.from(chunk));
         }
       }
-      
+
       return Buffer.concat(chunks);
     } catch (error) {
       logger.error('Error getting file from S3:', {
         error,
         key,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
-        throw new S3Error(
-          `S3 get failed: ${error.message}`,
-          {
-            code: error.$metadata.httpStatusCode?.toString() || error.name,
-            originalError: error,
-            operation: 'getFile',
-            key
-          }
-        );
+        throw new S3Error(`S3 get failed: ${error.message}`, {
+          code: error.$metadata.httpStatusCode?.toString() || error.name,
+          originalError: error,
+          operation: 'getFile',
+          key,
+        });
       }
 
-      throw new S3Error(
-        'Failed to get file from S3',
-        {
-          originalError: error as Error,
-          operation: 'getFile',
-          key
-        }
-      );
+      throw new S3Error('Failed to get file from S3', {
+        originalError: error as Error,
+        operation: 'getFile',
+        key,
+      });
     }
   }
 
-
-  async getSignedUrl(key: string, operation: 'get' | 'put', expiresIn: number = config.s3.signedUrlExpiration): Promise<string> {
+  async getSignedUrl(
+    key: string,
+    operation: 'get' | 'put',
+    expiresIn: number = config.s3.signedUrlExpiration
+  ): Promise<string> {
     try {
       let command;
-      
+
       if (operation === 'get') {
         command = new GetObjectCommand({
           Bucket: this.bucket,
-          Key: key
+          Key: key,
         });
       } else {
         command = new PutObjectCommand({
           Bucket: this.bucket,
-          Key: key
+          Key: key,
         });
       }
-      
+
       return getSignedUrl(this.s3Client, command, { expiresIn });
     } catch (error) {
       logger.error('Error generating signed URL:', {
         error,
         key,
         operation,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
-        throw new S3Error(
-          `Failed to generate signed URL: ${error.message}`,
-          {
-            code: error.$metadata.httpStatusCode?.toString() || error.name,
-            originalError: error,
-            operation: 'getSignedUrl',
-            key
-          }
-        );
+        throw new S3Error(`Failed to generate signed URL: ${error.message}`, {
+          code: error.$metadata.httpStatusCode?.toString() || error.name,
+          originalError: error,
+          operation: 'getSignedUrl',
+          key,
+        });
       }
 
-      throw new S3Error(
-        'Failed to generate signed URL',
-        {
-          originalError: error as Error,
-          operation: 'getSignedUrl',
-          key
-        }
-      );
+      throw new S3Error('Failed to generate signed URL', {
+        originalError: error as Error,
+        operation: 'getSignedUrl',
+        key,
+      });
     }
   }
 
-
-  async generatePresignedPost(key: string, contentType: string, expiresIn: number = config.s3.signedUrlExpiration): Promise<{ url: string, fields: Record<string, string> }> {
+  async generatePresignedPost(
+    key: string,
+    contentType: string,
+    expiresIn: number = config.s3.signedUrlExpiration
+  ): Promise<{ url: string; fields: Record<string, string> }> {
     try {
       // For simplicity, we'll just return a signed PUT URL
       // In a real implementation, you would use the createPresignedPost method from @aws-sdk/s3-presigned-post
       const url = await this.getSignedUrl(key, 'put', expiresIn);
-      
+
       return {
         url,
         fields: {
-          'Content-Type': contentType
-        }
+          'Content-Type': contentType,
+        },
       };
     } catch (error) {
       logger.error('Error generating presigned post:', {
         error,
         key,
         contentType,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
       if (error instanceof S3ServiceException) {
@@ -433,19 +435,16 @@ export class S3Service implements S3ServiceInterface {
             code: error.$metadata.httpStatusCode?.toString() || error.name,
             originalError: error,
             operation: 'generatePresignedPost',
-            key
+            key,
           }
         );
       }
 
-      throw new S3Error(
-        'Failed to generate presigned post',
-        {
-          originalError: error as Error,
-          operation: 'generatePresignedPost',
-          key
-        }
-      );
+      throw new S3Error('Failed to generate presigned post', {
+        originalError: error as Error,
+        operation: 'generatePresignedPost',
+        key,
+      });
     }
   }
 
@@ -453,47 +452,46 @@ export class S3Service implements S3ServiceInterface {
     try {
       const command = new HeadObjectCommand({
         Bucket: this.bucket,
-        Key: key
+        Key: key,
       });
-      
+
       await this.s3Client.send(command);
       return true;
     } catch (error) {
-      if (error instanceof S3ServiceException && error.$metadata.httpStatusCode === 404) {
+      if (
+        error instanceof S3ServiceException &&
+        error.$metadata.httpStatusCode === 404
+      ) {
         return false;
       }
-      
+
       logger.error('Error checking if file exists in S3:', {
         error,
         key,
-        bucket: this.bucket
+        bucket: this.bucket,
       });
 
-      throw new S3Error(
-        'Failed to check if file exists in S3',
-        {
-          code: error instanceof S3ServiceException ? 
-            error.$metadata.httpStatusCode?.toString() || error.name : 
-            undefined,
-          originalError: error as Error,
-          operation: 'fileExists',
-          key
-        }
-      );
+      throw new S3Error('Failed to check if file exists in S3', {
+        code:
+          error instanceof S3ServiceException
+            ? error.$metadata.httpStatusCode?.toString() || error.name
+            : undefined,
+        originalError: error as Error,
+        operation: 'fileExists',
+        key,
+      });
     }
   }
 
-
   getBaseUrl(): string {
     console.log('Getting S3 base URL');
-    const baseUrl = config.s3.endpoint 
+    const baseUrl = config.s3.endpoint
       ? `${config.s3.endpoint}/${this.bucket}`
       : `https://${this.bucket}.s3.${config.s3.region}.amazonaws.com`;
-    
+
     console.log(`S3 base URL: ${baseUrl}`);
     return baseUrl;
   }
 }
-
 
 export const s3Service = new S3Service();

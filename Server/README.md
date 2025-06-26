@@ -114,7 +114,7 @@ This project uses Winston for logging with the following features:
 
 - **Multiple Log Levels**: error, warn, info, http, debug
 - **Console Logging**: Colorized logs in development
-- **File Logging**: 
+- **File Logging**:
   - `logs/all.log`: Contains all logs
   - `logs/error.log`: Contains only error logs
 - **HTTP Request Logging**: Logs all HTTP requests with method, URL, status code, and response time
@@ -175,9 +175,11 @@ http://localhost:5000/api-docs
 ## API Endpoints
 
 ### Health Check
+
 - `GET /api/health` - Check if the API is running
 
 ### User Endpoints
+
 - `GET /api/users` - Get all users
 - `GET /api/users/:id` - Get user by ID
 - `POST /api/users` - Create a new user
@@ -185,6 +187,7 @@ http://localhost:5000/api-docs
 - `DELETE /api/users/:id` - Delete a user
 
 ### Game Endpoints
+
 - `GET /api/games` - Get all games (with CloudFront URLs and cookies)
 - `GET /api/games/:id` - Get game by ID (with CloudFront URLs and cookies)
 - `POST /api/games` - Create a new game
@@ -223,7 +226,7 @@ AWS_SIGNED_URL_EXPIRATION=3600
 # CloudFront Configuration (optional, for secure file access with cookies)
 CLOUDFRONT_DISTRIBUTION_DOMAIN=your-cloudfront-domain.cloudfront.net
 CLOUDFRONT_KEY_PAIR_ID=your_cloudfront_key_pair_id
-CLOUDFRONT_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nYour_CloudFront_Private_Key_Here\n-----END RSA PRIVATE KEY-----
+CLOUDFRONT_PRIVATE_KEY= copy and paste the full private key
 
 # Email service configuration
 EMAIL_SERVICE=gmail
@@ -243,6 +246,7 @@ The application uses a clean file storage architecture:
 - **Dynamic URLs**: CloudFront URLs generated from S3 keys when needed
 
 This approach provides:
+
 - **Flexibility**: Easy to switch between S3 and CloudFront
 - **Clean Database**: No hardcoded URLs in database
 - **Security**: Cookie-based file access control

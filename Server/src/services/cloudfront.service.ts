@@ -1,140 +1,114 @@
-import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { getSignedCookies } from '@aws-sdk/cloudfront-signer';
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from '@aws-sdk/client-secrets-manager';
 import config from '../config/config';
 import logger from '../utils/logger';
 
-export interface CloudFrontServiceInterface {
-  transformS3UrlToCloudFront(s3Url: string): Promise<string>;
-  transformS3KeyToCloudFront(s3Key: string): Promise<string>;
-}
-
-export class CloudFrontService implements CloudFrontServiceInterface {
-  private distributionDomain: string;
-  private keyPairId: string;
-  private privateKey: string;
-
-  private secretsManager: SecretsManagerClient;
+export class CloudFrontService {
+  private readonly keyPairId: string;
+  private readonly distributionDomain: string;
+  private readonly secretsManager: SecretsManagerClient;
+  private privateKeyPromise: Promise<string>;
 
   constructor() {
     this.distributionDomain = config.cloudfront.distributionDomain;
     this.keyPairId = config.cloudfront.keyPairId;
-    this.privateKey = '';
-    this.secretsManager = new SecretsManagerClient({ 
-      region: 'eu-central-1'
+    this.secretsManager = new SecretsManagerClient({
+      region: config.s3.region,
     });
-    // this.init().catch(error => {
-    //   logger.error('Failed to initialize CloudFront service:', error);
-    // });
+
+    this.privateKeyPromise = this.fetchPrivateKey();
   }
 
-//  private async init() {
-//   try {
-//     const command = new GetSecretValueCommand({
-//       SecretId: ""
-//     });
-//     const response = await this.secretsManager.send(command);
+  private async fetchPrivateKey(): Promise<string> {
+    const secretArn = process.env.CLOUDFRONT_PRIVATE_KEY_SECRET_ARN;
 
-//     this.privateKey = response.SecretString || '';
-//     if (!this.privateKey) {
-//       throw new Error('Failed to retrieve CloudFront private key from Secrets Manager');
-//     }
-//   } catch (error) {
-//     logger.error('Error fetching CloudFront private key from Secrets Manager:', error);
-//     throw error;
-//   }
-// }
+    if (!secretArn) {
+      logger.error(
+        'CLOUDFRONT_PRIVATE_KEY_SECRET_ARN environment variable is not set'
+      );
+      throw new Error('Cloudfront private key secret ARN is not configured.');
+    }
 
-  
-  async transformS3KeyToCloudFront(s3Key: string): Promise<string> {
     try {
-      if (!this.distributionDomain || !this.keyPairId || !this.privateKey) {
-        logger.warn('CloudFront configuration not complete, generating S3 URL');
-        const bucketName = config.s3.bucket;
-        return config.s3.endpoint 
-          ? `${config.s3.endpoint}/${bucketName}/${s3Key}`
-          : `https://${bucketName}.s3.${config.s3.region}.amazonaws.com/${s3Key}`;
+      const command = new GetSecretValueCommand({ SecretId: secretArn });
+      const response = await this.secretsManager.send(command);
+
+      if (!response.SecretString) {
+        throw new Error('Private key not found in Secrets Manager');
       }
-
-      // Normalize and encode the S3 key for CloudFront
-      const normalizedS3Key = s3Key
-        .startsWith('/') ? s3Key.substring(1) : s3Key;
-      
-      // Ensure the path is properly encoded
-      const encodedKey = encodeURIComponent(normalizedS3Key) 
-        .replace(/%2F/g, '/'); // Keep forward slashes for readability
-      
-      const cloudfrontUrl = `https://${this.distributionDomain}/${encodedKey}`;
-      
-      // Generate signed URL
-      try {
-        const now = new Date();
-        const expiryTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        expiryTime.setMilliseconds(0);
-
-        const signedUrl = getSignedUrl({
-          url: cloudfrontUrl,
-          keyPairId: this.keyPairId,
-          privateKey: this.privateKey,
-          dateLessThan: expiryTime
-        });
-
-        return signedUrl;
-      } catch (error: any) {
-        throw error;
-      }
+      logger.info(
+        'Successfully fetched CloudFront private key from Secrets Manager'
+      );
+      return response.SecretString;
     } catch (error) {
-      logger.error('Error transforming S3 key to CloudFront:', error);
-      // Fallback to S3 URL
-      const bucketName = config.s3.bucket;
-      const fallbackUrl = config.s3.endpoint 
-        ? `${config.s3.endpoint}/${bucketName}/${s3Key}`
-        : `https://${bucketName}.s3.${config.s3.region}.amazonaws.com/${s3Key}`;
-      logger.warn(`Returning S3 URL as fallback: ${fallbackUrl}`);
-      return fallbackUrl;
+      logger.error('Failed to fetch CloudFront private key.', error);
+      throw error;
     }
   }
 
-  
-  async transformS3UrlToCloudFront(s3Url: string): Promise<string> {
-    try {
-      if (!this.distributionDomain) {
-        logger.warn('CloudFront distribution domain not configured, returning S3 URL');
-        return s3Url;
-      }
+  /**
+   * Generates the three Set-Cookie headers required for accessing private CloudFront content.
+   * @returns An object containing the Set-Cookie headers.
+   */
 
-      // Extract the S3 key from the URL
-      let s3Key = '';
-      const bucketName = config.s3.bucket;
-      
-      if (s3Url.includes(`${bucketName}.s3.`)) {
-        // Format: https://bucket.s3.region.amazonaws.com/key
-        const parts = s3Url.split(`${bucketName}.s3.`)[1];
-        s3Key = parts.split('/').slice(1).join('/');
-      } else if (s3Url.includes(`s3.`) && s3Url.includes(`/${bucketName}/`)) {
-        // Format: https://s3.region.amazonaws.com/bucket/key
-        const parts = s3Url.split(`/${bucketName}/`);
-        s3Key = parts[1];
-      } else if (s3Url.includes(`/${bucketName}/`)) {
-        // Format: https://endpoint/bucket/key (custom endpoint)
-        const parts = s3Url.split(`/${bucketName}/`);
-        s3Key = parts[1];
-      } else {
-        throw new Error('Unable to parse S3 URL format');
-      }
-
-      if (!s3Key) {
-        throw new Error('Could not extract S3 key from URL');
-      }
-
-      // Use the key transformation method
-      return await this.transformS3KeyToCloudFront(s3Key);
-    } catch (error) {
-      // logger.error('Error transforming S3 URL to CloudFront:', error);
-      // logger.warn(`Returning original S3 URL as fallback: ${s3Url}`);
-      return s3Url; // Return original URL as fallback
+  public async getSignedCookieHeaders(): Promise<Record<string, string>> {
+    if (!this.distributionDomain || !this.keyPairId) {
+      logger.warn(
+        'CloudFront signing is not fully configured. Skipping cookie generation'
+      );
+      return {};
     }
+
+    const privateKey = await this.privateKeyPromise;
+    if (!privateKey) {
+      throw new Error(
+        'CloudFront private key is not available. Service may not have initialized correctly'
+      );
+    }
+
+    const policy = JSON.stringify({
+      Statement: [
+        {
+          Resource: `https://${this.distributionDomain}/games/*`,
+          Condition: {
+            // Cookie is valid for 1 day.
+            DateLessThan: {
+              'AWS:EpochTime': Math.floor(
+                (Date.now() + 24 * 60 * 60 * 1000) / 1000
+              ),
+            },
+          },
+        },
+      ],
+    });
+
+    const signedCookies = getSignedCookies({
+      policy,
+      privateKey,
+      keyPairId: this.keyPairId,
+    });
+
+    const policyCookie = signedCookies['CloudFront-Policy'];
+    const signatureCookie = signedCookies['CloudFront-Signature'];
+    const keyPairIdCookie = signedCookies['CloudFront-Key-Pair-Id'];
+
+    if (!policyCookie || !signatureCookie || !keyPairIdCookie) {
+      logger.error(
+        'Failed to generate all required CloudFront signed cookies.',
+        { signedCookies }
+      );
+      throw new Error('Could not generate a complete set of signed cookies.');
+    }
+
+    return {
+      'CloudFront-Policy': policyCookie,
+      'CloudFront-Signature': signatureCookie,
+      'CloudFront-Key-Pair-Id': keyPairIdCookie,
+    };
   }
 }
 
-// Singleton instance
 export const cloudFrontService = new CloudFrontService();
