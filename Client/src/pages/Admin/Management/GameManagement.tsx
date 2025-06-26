@@ -202,12 +202,12 @@ export default function GameManagement() {
           <table className="min-w-full bg-transparent font-worksans">
             <thead>
               <tr className="dark:bg-[#18192b] text-base sm:text-lg tracking-wide">
-                <th className="px-4 py-3 text-left font-normal">Game</th>
-                <th className="px-4 py-3 text-left font-normal">Category</th>
-                <th className="px-4 py-3 text-left font-normal">Minutes played</th>
-                <th className="px-4 py-3 text-left font-normal">Position</th>
-                <th className="px-4 py-3 text-left font-normal">Game Status</th>
-                <th className="px-4 py-3 text-left font-normal">Action</th>
+                <th className="px-4 py-3 text-left font-normal text-nowrap">Game</th>
+                <th className="px-4 py-3 text-left font-normal text-nowrap">Category</th>
+                <th className="px-4 py-3 text-left font-normal text-nowrap">Minutes played</th>
+                <th className="px-4 py-3 text-left font-normal text-nowrap">Position</th>
+                <th className="px-4 py-3 text-left font-normal text-nowrap">Game Status</th>
+                <th className="px-4 py-3 text-left font-normal text-nowrap">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -245,7 +245,7 @@ export default function GameManagement() {
                   <tr
                     key={game.id}
                     className={cn(
-                      "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition  text-sm cursor-pointer",
+                      "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition  text-sm cursor-pointer space-x-12",
                       idx % 2 === 0 ? "dark:bg-[#18192b]" : "dark:bg-[#23243a]"
                     )}
                     onClick={() => {
@@ -266,27 +266,27 @@ export default function GameManagement() {
                         src={(game.thumbnailFile as any)?.url || ""}
                         alt={game.title}
                       />
-                      <span className="font-light">{game.title}</span>
+                      <span className="font-light text-nowrap">{game.title}</span>
                     </td>
-                    <td className="px-4 py-3  tracking-wider">
+                    <td className="px-4 py-3  tracking-wider text-nowrap">
                       {game.category?.name || "-"}
                     </td>
-                    <td className="px-4 py-3  tracking-wider">
+                    <td className="px-4 py-3  tracking-wider text-nowrap">
                       {game.analytics?.totalPlayTime != null
                         ? formatTime(game.analytics.totalPlayTime || 0)
                         : "-"}
                     </td>
-                    <td className="px-4 py-3  tracking-wider">
+                    <td className="px-4 py-3  tracking-wider text-nowrap">
                       {`#${game.position ?? "-"}`}
                     </td>
                     <td className="px-4 py-3">
                       {game.status === "active" ? (
-                        <span className="inline-flex items-center gap-2 p-1 rounded bg-[#419E6A] text-white  tracking-wider">
+                        <span className="inline-flex items-center gap-2 p-1 rounded bg-[#419E6A] text-white  tracking-wider text-nowrap">
                           <span className="w-2 h-2 bg-white rounded-full inline-block"></span>
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-2  p-1 rounded bg-[#CBD5E0] text-[#22223B]  tracking-wider">
+                        <span className="inline-flex items-center gap-2  p-1 rounded bg-[#CBD5E0] text-[#22223B]  tracking-wider text-nowrap">
                           <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>
                           Inactive
                         </span>
