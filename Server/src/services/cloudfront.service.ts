@@ -23,13 +23,13 @@ export class CloudFrontService {
   }
 
   private async fetchPrivateKey(): Promise<string> {
-    const secretArn = process.env.CLOUDFRONT_PRIVATE_KEY_SECRET_ARN;
+    const secretArn = process.env.CLOUDFRONT_PRIVATE_KEY_SECRET_NAME;
 
     if (!secretArn) {
       logger.error(
-        'CLOUDFRONT_PRIVATE_KEY_SECRET_ARN environment variable is not set'
+        'CLOUDFRONT_PRIVATE_KEY_SECRET_NAME environment variable is not set'
       );
-      throw new Error('Cloudfront private key secret ARN is not configured.');
+      throw new Error('Cloudfront private key secret name is not configured.');
     }
 
     try {
