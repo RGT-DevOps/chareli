@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/node';
 import { Express, Request, Response, NextFunction } from 'express';
 import config from './config';
 import logger from '../utils/logger';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 /**
  * Initialize Sentry for error monitoring and performance tracking
@@ -19,12 +20,18 @@ export const initializeSentry = (app: Express): void => {
     return;
   }
 
-  logger.info(`Initializing Sentry in ${config.sentry.environment} environment`);
-  
+  logger.info(
+    `Initializing Sentry in ${config.sentry.environment} environment`
+  );
+
   Sentry.init({
     dsn: config.sentry.dsn,
+    integrations: [nodeProfilingIntegration()],
     environment: config.sentry.environment,
     tracesSampleRate: config.sentry.tracesSampleRate,
+    profileSessionSampleRate: 1.0,
+    profileLifecycle: 'trace',
+    sendDefaultPii: true,
     beforeSend(event) {
       if (config.env === 'production') {
         return event;
@@ -67,7 +74,8 @@ export const sentryErrorHandler = () => {
     // @ts-ignore - Ignore TypeScript errors for Sentry API
     return Sentry.Handlers.errorHandler();
   }
-  return (err: Error, _req: Request, _res: Response, next: NextFunction) => next(err);
+  return (err: Error, _req: Request, _res: Response, next: NextFunction) =>
+    next(err);
 };
 
 /**
@@ -86,7 +94,10 @@ export const captureException = (error: Error): string => {
  * @param message Message to capture
  * @param level Severity level
  */
-export const captureMessage = (message: string, level?: Sentry.SeverityLevel): string => {
+export const captureMessage = (
+  message: string,
+  level?: Sentry.SeverityLevel
+): string => {
   if (config.env === 'production') {
     return Sentry.captureMessage(message, level);
   }
@@ -108,7 +119,10 @@ export const setUser = (user: Sentry.User | null): void => {
  * @param name Context name
  * @param context Context data
  */
-export const setContext = (name: string, context: Record<string, unknown>): void => {
+export const setContext = (
+  name: string,
+  context: Record<string, unknown>
+): void => {
   if (config.env === 'production') {
     Sentry.setContext(name, context);
   }

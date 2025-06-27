@@ -147,28 +147,6 @@ export const getCategoryById = async (
       return next(ApiError.notFound(`Category with id ${id} not found`));
     }
 
-    // Transform game URLs in the category
-    const transformedCategory = {
-      ...category,
-      // games: await Promise.all(category.games.map(async game => {
-      //   const transformedGame: GameWithUrls = { ...game };
-      //   const baseUrl = s3Service.getBaseUrl();
-      //   if (game.thumbnailFile?.s3Key) {
-      //     transformedGame.thumbnailFile = {
-      //       ...game.thumbnailFile,
-      //       url: `${baseUrl}/${game.thumbnailFile.s3Key}`
-      //     } as FileWithUrl;
-      //   }
-      //   if (game.gameFile?.s3Key) {
-      //     transformedGame.gameFile = {
-      //       ...game.gameFile,
-      //       url: `${baseUrl}/${game.gameFile.s3Key}`
-      //     } as FileWithUrl;
-      //   }
-      //   return transformedGame;
-      // }))
-    };
-
     res.status(200).json({
       success: true,
       data: category,
