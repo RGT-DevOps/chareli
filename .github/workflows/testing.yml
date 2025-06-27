@@ -134,7 +134,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container_name: ${{ env.CONTAINER_NAME }}
+          container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy Amazon ECS task definition
@@ -178,7 +178,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/feat/signedcookies' }}
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/test/new-infra' }}
 
     steps:
       - name: Generate Build Status
