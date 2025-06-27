@@ -15,7 +15,7 @@ env:
   ECR_REGISTRY: 330858616968.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPO_SERVER: chareli-server-testing
   ECS_SERVICE: chareli-service-testing
-  ECS_CLUSTER: chareli-cluster-testing
+  ECS_CLUSTER: chareli-ecs-cluster-testing
   ECS_TASK_DEFINITION: ./task-def.json
   CONTAINER_NAME: chareli-ecs-backend-testing-server
   IMAGE_TAG_SERVER_COMMIT: server-testing-${{ github.sha }}
