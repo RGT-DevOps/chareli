@@ -469,7 +469,7 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
 
               <div>
                 <Label htmlFor="config" className="mt-8 text-base">
-                  Free Game Time
+                  Free Game Time (mins)
                 </Label>
                 <Field
                   as={Input}
