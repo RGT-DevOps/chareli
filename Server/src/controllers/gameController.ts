@@ -22,6 +22,38 @@ const gamePositionHistoryRepository =
 const categoryRepository = AppDataSource.getRepository(Category);
 const fileRepository = AppDataSource.getRepository(File);
 
+// HELPER FUNCTION TO TRANSFORM FILE URLS
+// This centralizes the logic for adding the 'url' property.
+const transformGameFiles = (game: Game | any): any => {
+  const transformedGame = { ...game };
+
+  // Construct the public URL for the thumbnail
+  if (transformedGame.thumbnailFile?.s3Key) {
+    transformedGame.thumbnailFile = {
+      ...transformedGame.thumbnailFile,
+      url: `${s3Service.getBaseUrl()}/${transformedGame.thumbnailFile.s3Key}`,
+    };
+  }
+
+  // Also transform thumbnails for similar games if they exist
+  if (transformedGame.similarGames) {
+    transformedGame.similarGames.forEach((similarGame: any) => {
+      if (similarGame.thumbnailFile?.s3Key) {
+        similarGame.thumbnailFile = {
+          ...similarGame.thumbnailFile,
+          url: `${s3Service.getBaseUrl()}/${similarGame.thumbnailFile.s3Key}`,
+        };
+      }
+    });
+  }
+
+  // NOTE: We do not construct a URL for the `gameFile` itself because it's meant
+  // to be private and accessed via CloudFront signed cookies, not a direct URL.
+  // The frontend will construct the CloudFront URL for the game iframe.
+
+  return transformedGame;
+};
+
 // Helper function to get the maximum position
 const getMaxPosition = async (): Promise<number> => {
   const result = await gameRepository
@@ -273,19 +305,9 @@ export const getAllGames = async (
 
     const games = await queryBuilder.getMany();
 
-    // Transform game file and thumbnail URLs to direct S3 URLs (Now that we are using CloudFront, we must stop doing this. The frontend needs the raw path/key to construct the CloudFront URL.)
-    // games.forEach((game) => {
-    //   if (game.gameFile) {
-    //     const s3Key = game.gameFile.s3Key;
-    //     const baseUrl = s3Service.getBaseUrl();
-    //     game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-    //   }
-    //   if (game.thumbnailFile) {
-    //     const s3Key = game.thumbnailFile.s3Key;
-    //     const baseUrl = s3Service.getBaseUrl();
-    //     game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-    //   }
-    // });
+    // After fetching the games, transform their thumbnail URLs
+    const transformedGames = games.map(transformGameFiles);
+    console.log(transformedGames);
 
     res.status(200).json({
       success: true,
@@ -294,7 +316,7 @@ export const getAllGames = async (
       page: pageNumber,
       limit: limitNumber,
       totalPages: Math.ceil(total / limitNumber),
-      data: games,
+      data: transformedGames,
     });
   } catch (error) {
     next(error);
@@ -379,18 +401,6 @@ export const getGameById = async (
       return next(ApiError.notFound(`Game with id ${id} not found`));
     }
 
-    // Transform game file and thumbnail URLs to direct S3 URLs
-    // if (game.gameFile) {
-    //   const s3Key = game.gameFile.s3Key;
-    //   const baseUrl = s3Service.getBaseUrl();
-    //   game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-    // }
-    // if (game.thumbnailFile) {
-    //   const s3Key = game.thumbnailFile.s3Key;
-    //   const baseUrl = s3Service.getBaseUrl();
-    //   game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-    // }
-
     // Find similar games (same category, different ID, active status)
     let similarGames: Game[] = [];
 
@@ -405,28 +415,17 @@ export const getGameById = async (
         take: 5, // Limit to 5 similar games
         order: { createdAt: 'DESC' }, // Get the newest games first
       });
-
-      // Transform similar games' file and thumbnail URLs to direct S3 URLs
-      // similarGames.forEach((similarGame) => {
-      //   if (similarGame.gameFile) {
-      //     const s3Key = similarGame.gameFile.s3Key;
-      //     const baseUrl = s3Service.getBaseUrl();
-      //     similarGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-      //   }
-      //   if (similarGame.thumbnailFile) {
-      //     const s3Key = similarGame.thumbnailFile.s3Key;
-      //     const baseUrl = s3Service.getBaseUrl();
-      //     similarGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-      //   }
-      // });
     }
+
+    // Use the helper to transform the main game and its similar games
+    const transformedData = transformGameFiles({
+      ...game,
+      similarGames: similarGames,
+    });
 
     res.status(200).json({
       success: true,
-      data: {
-        ...game,
-        similarGames: similarGames,
-      },
+      data: transformedData,
     });
   } catch (error) {
     next(error);
@@ -667,20 +666,21 @@ export const createGame = async (
       }
 
       // Transform game file and thumbnail URLs to direct S3 URLs
-      if (savedGame.gameFile) {
-        const s3Key = savedGame.gameFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        savedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-      }
-      if (savedGame.thumbnailFile) {
-        const s3Key = savedGame.thumbnailFile.s3Key;
-        const baseUrl = s3Service.getBaseUrl();
-        savedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-      }
+      // if (savedGame.gameFile) {
+      //   const s3Key = savedGame.gameFile.s3Key;
+      //   const baseUrl = s3Service.getBaseUrl();
+      //   savedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+      // }
+      // if (savedGame.thumbnailFile) {
+      //   const s3Key = savedGame.thumbnailFile.s3Key;
+      //   const baseUrl = s3Service.getBaseUrl();
+      //   savedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+      // }
+      const transformedGame = transformGameFiles(savedGame);
 
       res.status(201).json({
         success: true,
-        data: savedGame,
+        data: transformedGame,
       });
     } catch (error) {
       // Rollback transaction on error
@@ -946,20 +946,22 @@ export const updateGame = async (
     }
 
     // Transform game file and thumbnail URLs to direct S3 URLs
-    if (updatedGame.gameFile) {
-      const s3Key = updatedGame.gameFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      updatedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
-    }
-    if (updatedGame.thumbnailFile) {
-      const s3Key = updatedGame.thumbnailFile.s3Key;
-      const baseUrl = s3Service.getBaseUrl();
-      updatedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
-    }
+    // if (updatedGame.gameFile) {
+    //   const s3Key = updatedGame.gameFile.s3Key;
+    //   const baseUrl = s3Service.getBaseUrl();
+    //   updatedGame.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+    // }
+    // if (updatedGame.thumbnailFile) {
+    //   const s3Key = updatedGame.thumbnailFile.s3Key;
+    //   const baseUrl = s3Service.getBaseUrl();
+    //   updatedGame.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+    // }
+
+    const transformedGame = transformGameFiles(updatedGame);
 
     res.status(200).json({
       success: true,
-      data: updatedGame,
+      data: transformedGame,
     });
   } catch (error) {
     // Rollback transaction on error

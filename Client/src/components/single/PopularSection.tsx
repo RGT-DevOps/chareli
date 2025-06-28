@@ -1,11 +1,11 @@
-import { Card } from "../../components/ui/card";
-import { Input } from "../ui/input";
-import { IoIosSearch } from "react-icons/io";
-import { useGames } from "../../backend/games.service";
-import { useGameClickHandler } from "../../hooks/useGameClickHandler";
-import GamesSkeleton from "./GamesSkeleton";
+import { Card } from '../../components/ui/card';
+import { Input } from '../ui/input';
+import { IoIosSearch } from 'react-icons/io';
+import { useGames } from '../../backend/games.service';
+import { useGameClickHandler } from '../../hooks/useGameClickHandler';
+import GamesSkeleton from './GamesSkeleton';
 
-import emptyGameImg from "../../assets/empty-game.png";
+import emptyGameImg from '../../assets/empty-game.png';
 
 interface PopularSectionProps {
   searchQuery: string;
@@ -21,8 +21,8 @@ const PopularSection = ({
     isLoading,
     error,
   } = useGames({
-    filter: "popular",
-    status: "active",
+    filter: 'popular',
+    status: 'active',
     search: searchQuery || undefined,
     limit: 4,
   });
@@ -38,7 +38,7 @@ const PopularSection = ({
         <div className="relative w-full md:w-[400px]">
           <IoIosSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] text-xl pointer-events-none" />
           <Input
-            className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#D946EF] focus:border-[#D946EF] focus:outline-none shadow-[0_0_8px_rgba(217,70,239,0.2)] 
+            className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#D946EF] focus:border-[#D946EF] focus:outline-none shadow-[0_0_8px_rgba(217,70,239,0.2)]
                         placeholder:text-[#64748A] bg-white/5
                         placeholder:text-sm"
             placeholder="What game do you want to search for?"
@@ -62,7 +62,7 @@ const PopularSection = ({
                 alt="No games"
                 className="w-80 h-80 object-contain"
               />
-              No popular games found {searchQuery ? `for "${searchQuery}"` : ""}
+              No popular games found {searchQuery ? `for "${searchQuery}"` : ''}
             </div>
           )}
           {!isLoading && !error && games.length > 0 && (
@@ -74,7 +74,7 @@ const PopularSection = ({
                 >
                   <div className="relative">
                     <img
-                      src={game.thumbnailFile?.s3Key}
+                      src={game.thumbnailFile?.url}
                       alt={game.title}
                       loading="lazy"
                       className="w-full h-[290px] min-h-[290px] max-h-[290px] object-cover rounded-[32px] border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] box-border"

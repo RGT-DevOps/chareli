@@ -1,19 +1,19 @@
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { useGames } from "../../backend/games.service";
-import { useCategories } from "../../backend/category.service";
-import { useGameClickHandler } from "../../hooks/useGameClickHandler";
-import { useState } from "react";
-import GamesSkeleton from "./GamesSkeleton";
+import { Card } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { useGames } from '../../backend/games.service';
+import { useCategories } from '../../backend/category.service';
+import { useGameClickHandler } from '../../hooks/useGameClickHandler';
+import { useState } from 'react';
+import GamesSkeleton from './GamesSkeleton';
 
-import emptyGameImg from "../../assets/empty-game.png";
+import emptyGameImg from '../../assets/empty-game.png';
 
 interface AllGamesSectionProps {
   searchQuery: string;
 }
 
 const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const { data: categoriesData, isLoading: categoriesLoading } =
     useCategories();
   const {
@@ -22,25 +22,25 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
     error: gamesError,
   } = useGames({
     categoryId:
-      selectedCategory === "all"
+      selectedCategory === 'all'
         ? undefined
-        : selectedCategory === "recent"
+        : selectedCategory === 'recent'
         ? undefined
         : selectedCategory,
-    filter: selectedCategory === "recent" ? "recently_added" : undefined,
-    status: "active",
+    filter: selectedCategory === 'recent' ? 'recently_added' : undefined,
+    status: 'active',
     search: searchQuery || undefined,
   });
 
   // Combine static filters with dynamic categories
   const allCategories = [
-    { id: "all", name: "All Games", color: "#C026D3" },
+    { id: 'all', name: 'All Games', color: '#C026D3' },
     ...(categoriesData?.map((cat) => ({
       id: cat.id,
       name: cat.name,
-      color: "#94A3B7",
+      color: '#94A3B7',
     })) || []),
-    { id: "recent", name: "Recently Added", color: "#94A3B7" },
+    { id: 'recent', name: 'Recently Added', color: '#94A3B7' },
   ];
 
   const games: any = gamesData || [];
@@ -49,7 +49,9 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
   return (
     <div className="p-4">
       <div>
-        <h1 className="text-[#D946EF] text-3xl mb-4 font-worksans">All Games</h1>
+        <h1 className="text-[#D946EF] text-3xl mb-4 font-worksans">
+          All Games
+        </h1>
       </div>
       {/* filtering tabs */}
       <div className="flex gap-3 mb-8 flex-wrap">
@@ -61,8 +63,8 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
               key={category.id}
               className={`text-white ${
                 selectedCategory === category.id
-                  ? "bg-[#C026D3]"
-                  : "bg-[#94A3B7]"
+                  ? 'bg-[#C026D3]'
+                  : 'bg-[#94A3B7]'
               }`}
               onClick={() => setSelectedCategory(category.id)}
             >
@@ -87,13 +89,13 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                 alt="No games"
                 className="w-80 h-80 object-contain"
               />
-              No games found for{" "}
-              {selectedCategory === "all"
-                ? "all categories"
-                : selectedCategory === "recent"
-                ? "recently added"
+              No games found for{' '}
+              {selectedCategory === 'all'
+                ? 'all categories'
+                : selectedCategory === 'recent'
+                ? 'recently added'
                 : allCategories.find((cat) => cat.id === selectedCategory)
-                    ?.name || "this category"}
+                    ?.name || 'this category'}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[150px]">
@@ -113,7 +115,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                     <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0px_20px_#D946EF,0_0px_10px_rgba(217,70,239,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
                         <img
-                          src={game.thumbnailFile?.s3Key}
+                          src={game.thumbnailFile?.url}
                           alt={game.title}
                           loading="lazy"
                           className="w-full h-full object-cover"

@@ -15,16 +15,27 @@ export interface Category {
   createdAt: string;
   updatedAt: string;
 }
-
-export interface FileMetadata {
+//Unified File Interface(Combine FileMetadata and GameFile interfaces)
+export interface File {
   id: string;
-  name: string;
-  url: string;
+  s3Key: string;
   type: string;
-  size: number;
   createdAt: string;
   updatedAt: string;
+  url?: string;
+  name?: string;
+  size?: number;
 }
+
+// export interface FileMetadata {
+//   id: string;
+//   name: string;
+//   url: string;
+//   type: string;
+//   size: number;
+//   createdAt: string;
+//   updatedAt: string;
+// }
 
 export type GameStatus = 'active' | 'disabled';
 
@@ -33,10 +44,10 @@ export interface Game {
   title: string;
   description?: string;
   thumbnailFileId?: string;
-  thumbnailFile?: FileMetadata;
+  thumbnailFile?: File;
   status: GameStatus;
   gameFileId?: string;
-  gameFile?: FileMetadata;
+  gameFile?: File;
   config: number;
   categoryId?: string;
   category?: Category;
@@ -68,28 +79,28 @@ export interface PaginatedResponse<T> {
   data: T[];
 }
 
-export interface GameFile {
-  id: string;
-  s3Key: string;
-  url: string;
-  type: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// export interface GameFile {
+//   id: string;
+//   s3Key: string;
+//   url: string;
+//   type: string;
+//   createdAt: string;
+//   updatedAt: string;
+// }
 
 export interface SimilarGame {
   id: string;
   title: string;
   description: string;
-  thumbnailFile?: GameFile;
+  thumbnailFile?: File;
 }
 
 export interface GameData {
   id: string;
   title: string;
   description?: string;
-  thumbnailFile?: GameFile;
-  gameFile?: GameFile;
+  thumbnailFile?: File;
+  gameFile?: File;
   status: GameStatus;
   config: number;
   categoryId?: string;
@@ -113,7 +124,7 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  role: Role
+  role: Role;
 }
 
 export interface LoginCredentials {
