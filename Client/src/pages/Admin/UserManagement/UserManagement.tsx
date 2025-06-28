@@ -15,11 +15,9 @@ import ExportModal from "../../../components/modals/AdminModals/ExportModal";
 import { useNavigate } from "react-router-dom";
 import {
   useUsersAnalytics,
-  useGamesAnalytics,
 } from "../../../backend/analytics.service";
 import type {
   FilterState,
-  GameAnalytics,
 } from "../../../backend/analytics.service";
 import { NoResults } from "../../../components/single/NoResults";
 import { formatTime } from "../../../utils/main";
@@ -37,16 +35,14 @@ export default function UserManagement() {
       min: 0,
       max: 0,
     },
-    gameTitle: '',
-    gameCategory: '',
-    sortByMaxTimePlayed: false
+    gameTitle: "",
+    gameCategory: "",
+    country: "",
+    sortByMaxTimePlayed: false,
   });
 
   const { data: users, isLoading } = useUsersAnalytics(filters);
-  const { data: games } = useGamesAnalytics();
   const usersPerPage = 12;
-
-  console.log("users for analytics", users);
 
   const handleFiltersChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -64,59 +60,47 @@ export default function UserManagement() {
         min: 0,
         max: 0,
       },
-      gameTitle: '',
-      gameCategory: '',
-      sortByMaxTimePlayed: false
+      gameTitle: "",
+      gameCategory: "",
+      country: "",
+      sortByMaxTimePlayed: false,
     });
     setPage(1);
   };
 
-  // Filter users based on criteria
-  let filteredUsers = users?.filter(user => {
-    if (filters.registrationDates.startDate && new Date(user.createdAt) < new Date(filters.registrationDates.startDate)) return false;
-    if (filters.registrationDates.endDate && new Date(user.createdAt) > new Date(filters.registrationDates.endDate)) return false;
-    if (filters.sessionCount && user.analytics?.totalSessionCount < parseInt(filters.sessionCount)) return false;
-    if (filters.timePlayed.min && (user.analytics?.totalTimePlayed || 0) / 60 < filters.timePlayed.min) return false;
-    if (filters.timePlayed.max && (user.analytics?.totalTimePlayed || 0) / 60 > filters.timePlayed.max) return false;
-    if (filters.gameCategory && user.analytics?.mostPlayedGame?.gameId && !games?.find((g: GameAnalytics) => g.id === user.analytics?.mostPlayedGame?.gameId && g.category?.name === filters.gameCategory)) return false;
-    if (filters.gameTitle && user.analytics?.mostPlayedGame?.gameTitle !== filters.gameTitle) return false;
-    return true;
-  });
-
-  if (filters.sortByMaxTimePlayed && filteredUsers) {
-    filteredUsers = [...filteredUsers].sort(
-      (a, b) => (b.analytics?.totalTimePlayed || 0) - (a.analytics?.totalTimePlayed || 0)
-    );
-  }
-
+  // All filtering and sorting is now handled server-side by useUsersAnalytics
+  const filteredUsers = users;
 
   return (
     <div className="px-3">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-[#D946EF] text-3xl font-boogaloo">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-[#D946EF] text-2xl sm:text-3xl font-worksans">
           User Management
         </h1>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 justify-end">
           <UserManagementFilterSheet
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onReset={handleFilterReset}
+            users={users}
           >
             <Button
               variant="outline"
-              className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-5"
+              className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-5 cursor-pointer"
             >
               Filter
-              <div className='text-[#D946EF] bg-[#FAE8FF] px-3 py-1 rounded-full'>
-                {Object.entries(filters).filter(([, value]) =>
-                  typeof value === 'object'
-                    ? Object.values(value).some(v => v !== '' && v !== 0)
-                    : typeof value === 'boolean'
+              <div className="text-[#D946EF] bg-[#FAE8FF] px-2 sm:px-3 py-1 rounded-full text-sm">
+                {
+                  Object.entries(filters).filter(([, value]) =>
+                    typeof value === "object"
+                      ? Object.values(value).some((v) => v !== "" && v !== 0)
+                      : typeof value === "boolean"
                       ? value === true
-                      : value !== ''
-                ).length}
+                      : value !== ""
+                  ).length
+                }
               </div>
-              <RiEqualizer2Line size={32} />
+              <RiEqualizer2Line size={24} className="sm:size-8" />
             </Button>
           </UserManagementFilterSheet>
           <ExportModal
@@ -129,7 +113,7 @@ export default function UserManagement() {
       <div className="col-span-1 md:col-span-2 lg:col-span-4">
         <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
           <div className="flex justify-between p-4 text-3xl">
-            <p className="text-3xl dark:text-[#D946EF]">Recent User Activity</p>
+            <p className="text-xl dark:text-[#D946EF]">Recent User Activity</p>
             {/* <p className="text-xl cursor-pointer">View All</p> */}
           </div>
           {/* table */}
@@ -149,9 +133,10 @@ export default function UserManagement() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="text-xl text-bold">
+                    <TableRow className="text-lg font-worksans">
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Country</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Registration Date</TableHead>
                       <TableHead>Games Played</TableHead>
@@ -167,19 +152,18 @@ export default function UserManagement() {
                         .map((user, idx) => (
                           <TableRow
                             key={idx}
-                            className="font-pincuk text-md tracking-wider cursor-pointer hover:bg-[#f3e8ff] dark:hover:bg-[#23243a]"
+                            className="font-worksans text-sm tracking-wider cursor-pointer hover:bg-[#f3e8ff] dark:hover:bg-[#23243a]"
                             onClick={() =>
                               navigate(`/admin/management/${user.id}`, {
                                 state: { user },
                               })
                             }
                           >
-                            <TableCell className="text-lg">{`${
-                              user.firstName || ""
-                            } ${user.lastName || ""}`}</TableCell>
-                            <TableCell className="text-lg">
-                              {user.email || "-"}
-                            </TableCell>
+                            <TableCell>{`${user.firstName || ""} ${
+                              user.lastName || ""
+                            }`}</TableCell>
+                            <TableCell>{user.email || "-"}</TableCell>
+                            <TableCell>{user.country || "-"}</TableCell>
                             <TableCell className="">
                               {user.phoneNumber || "-"}
                             </TableCell>
@@ -189,7 +173,7 @@ export default function UserManagement() {
                             <TableCell>
                               {user.analytics?.totalGamesPlayed || 0}
                             </TableCell>
-                            <TableCell className="text-lg">
+                            <TableCell>
                               {formatTime(user.analytics?.totalTimePlayed || 0)}
                             </TableCell>
                             <TableCell>
