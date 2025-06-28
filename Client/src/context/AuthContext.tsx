@@ -15,7 +15,7 @@ interface LoginResponse {
   phoneNumber?: string;
   requiresOtp: boolean;
   role: string;
-  otpType?: 'EMAIL' | 'SMS' | 'BOTH';
+  otpType?: 'EMAIL' | 'SMS' | 'NONE';
   message: string;
   tokens?: {
     accessToken: string;
@@ -129,17 +129,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       role
     } = response.data;
 
-
-    //forto display mesage from backend
     const message = (response as any)?.message
 
-    // If tokens are provided (no OTP case), save them and refresh user
     if (tokens) {
       localStorage.setItem('token', tokens.accessToken);
       localStorage.setItem('refreshToken', tokens.refreshToken);
       await refreshUser();
-      // Invalidate stats to trigger a refetch
       queryClient.invalidateQueries({ queryKey: [BackendRoute.USER_STATS] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_USERS_ANALYTICS] });
     }
     
     return { 

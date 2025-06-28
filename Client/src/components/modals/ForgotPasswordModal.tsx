@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FieldProps, FormikHelpers } from "formik";
 import * as Yup from "yup";
-import { useForgotPassword, useForgotPasswordPhone } from "../../backend/auth.service";
+import {
+  useForgotPassword,
+  useForgotPasswordPhone,
+} from "../../backend/auth.service";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -36,8 +39,7 @@ const emailValidationSchema = Yup.object({
 });
 
 const phoneValidationSchema = Yup.object({
-  phoneNumber: Yup.string()
-    .required("Phone number is required"),
+  phoneNumber: Yup.string().required("Phone number is required"),
 });
 
 interface FormValues {
@@ -59,7 +61,8 @@ export function ForgotPasswordModal({
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedContact, setSubmittedContact] = useState("");
-  const [isOTPVerificationModalOpen, setIsOTPVerificationModalOpen] = useState(false);
+  const [isOTPVerificationModalOpen, setIsOTPVerificationModalOpen] =
+    useState(false);
   const [userId, setUserId] = useState("");
   const forgotPassword = useForgotPassword();
   const forgotPasswordPhone = useForgotPasswordPhone();
@@ -73,27 +76,33 @@ export function ForgotPasswordModal({
         try {
           await forgotPassword.mutateAsync(values.email!);
         } catch (error) {
-          console.log(error)
+          console.log(error);
         }
         setSubmittedContact(values.email!);
         setIsSubmitted(true);
-        toast.success("If your email exists in our system, you will receive password reset instructions");
+        toast.success(
+          "If your email exists in our system, you will receive password reset instructions"
+        );
       } else {
         try {
-          const response = await forgotPasswordPhone.mutateAsync(values.phoneNumber!);
+          const response = await forgotPasswordPhone.mutateAsync(
+            values.phoneNumber!
+          );
           setSubmittedContact(values.phoneNumber!);
 
           if (response.data?.userId) {
             // Valid phone number - show OTP verification
             setUserId(response.data.userId);
-            onOpenChange(false)
+            onOpenChange(false);
             setIsOTPVerificationModalOpen(true);
             setIsSubmitted(false); // Ensure submitted state is false to show the form
             toast.success("Reset code sent to your phone number");
           } else {
             // Invalid phone number - show generic message
             setIsSubmitted(true);
-            toast.success("If your phone number exists in our system, you will receive a reset code shortly");
+            toast.success(
+              "If your phone number exists in our system, you will receive a reset code shortly"
+            );
           }
         } catch (error) {
           toast.error("An error occurred. Please try again later.");
@@ -109,9 +118,11 @@ export function ForgotPasswordModal({
 
   const handleVerificationSuccess = () => {
     setIsOTPVerificationModalOpen(false);
-    onOpenChange(false); 
+    onOpenChange(false);
     navigate(`/reset-password/phone/${userId}`);
-    toast.success("OTP verified successfully. You can now reset your password.");
+    toast.success(
+      "OTP verified successfully. You can now reset your password."
+    );
   };
 
   const handleBackToLogin = () => {
@@ -125,16 +136,15 @@ export function ForgotPasswordModal({
     setUserId("");
   };
 
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open]);
+
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={(newOpen) => {
-        if (!newOpen) {
-          resetForm();
-        }
-        onOpenChange(newOpen);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <CustomDialogContent className="sm:max-w-[425px] dark:bg-[#0F1221]">
         <button
           className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#C026D3] flex items-center justify-center shadow-lg hover:bg-[#a21caf] transition-colors"
@@ -145,10 +155,14 @@ export function ForgotPasswordModal({
           <span className="text-white text-2xl font-bold">×</span>
         </button>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[#E328AF] text-center font-boogaloo">
-            {isSubmitted ? (activeTab === "email" ? "Check Your Email" : "Password Reset") : "Forgot Password"}
+          <DialogTitle className="text-2xl font-bold text-[#E328AF] text-center font-dmmono">
+            {isSubmitted
+              ? activeTab === "email"
+                ? "Check Your Email"
+                : "Password Reset"
+              : "Forgot Password"}
           </DialogTitle>
-          <div className="flex font-boogaloo text-xl tracking-wide">
+          <div className="flex font-dmmono text-xl tracking-wide">
             <div className="px-6 flex w-full border-b">
               <button
                 className={`flex-1 py-2 font-semibold ${
@@ -156,7 +170,10 @@ export function ForgotPasswordModal({
                     ? "text-[#E328AF] border-b-2 border-[#E328AF]"
                     : "text-gray-500"
                 }`}
-                onClick={() => setActiveTab("email")}
+                onClick={() => {
+                  setActiveTab("email");
+                  resetForm(); // Reset form state when switching tabs
+                }}
               >
                 Email
               </button>
@@ -166,38 +183,48 @@ export function ForgotPasswordModal({
                     ? "text-[#E328AF] border-b-2 border-[#E328AF]"
                     : "text-gray-500"
                 }`}
-                onClick={() => setActiveTab("phone")}
+                onClick={() => {
+                  setActiveTab("phone");
+                  resetForm(); // Reset form state when switching tabs
+                }}
               >
                 Phone Number
               </button>
             </div>
           </div>
           <DialogDescription className="text-center">
-            {(isSubmitted && !isOTPVerificationModalOpen) || (activeTab === "email" && isSubmitted) ? (
+            {(isSubmitted && !isOTPVerificationModalOpen) ||
+            (activeTab === "email" && isSubmitted) ? (
               <div className="space-y-4">
-                <p className=" text-center text-black dark:text-white font-pincuk text-xl tracking-wider">
-                  We've sent {activeTab === "email" ? "password reset instructions" : "a reset code"} to:
+                <p className=" text-center text-black dark:text-white font-worksans text-xl tracking-wider">
+                  We've sent{" "}
+                  {activeTab === "email"
+                    ? "password reset instructions"
+                    : "a reset code"}{" "}
+                  to:
                   <p className="text-md font-semibold text-center text-black dark:text-white mt-2">
                     {submittedContact}
                   </p>
-                  <p className=" text-center text-black dark:text-white font-pincuk text-xl tracking-wider mt-2">
-                    {activeTab === "email" 
-                      ? "Please check your email and follow the instructions to reset your password."
-                      : "If this phone number exists in our system, you will receive a reset code shortly."}
+                  <p className=" text-center text-black dark:text-white font-worksans text-[18px] tracking-wider mt-2">
+                    {activeTab === "email"
+                      ? "Check your email to reset your password."
+                      : "Reset code will be sent if the number is registered."}
                   </p>
                 </p>
                 <div className="flex flex-col space-y-2 mt-4">
                   <Button
                     type="button"
                     onClick={resetForm}
-                    className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo"
+                    className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-dmmono"
                   >
-                    {activeTab === "email" ? "Try Another Email" : "Try Another Number"}
+                    {activeTab === "email"
+                      ? "Try Another Email"
+                      : "Try Another Number"}
                   </Button>
                   <Button
                     type="button"
                     onClick={handleBackToLogin}
-                    className="w-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white border border-gray-300 dark:border-gray-700 font-boogaloo"
+                    className="w-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white border border-gray-300 dark:border-gray-700 font-dmmono"
                   >
                     Back to Login
                   </Button>
@@ -206,21 +233,27 @@ export function ForgotPasswordModal({
             ) : (
               <Formik
                 initialValues={getInitialValues(activeTab === "email")}
-                validationSchema={activeTab === "email" ? emailValidationSchema : phoneValidationSchema}
+                validationSchema={
+                  activeTab === "email"
+                    ? emailValidationSchema
+                    : phoneValidationSchema
+                }
                 onSubmit={handleSubmit}
                 enableReinitialize
               >
                 {({ isSubmitting }) => (
-                  <Form className="space-y-4">
-                    <p className="text-center text-black dark:text-white font-pincuk text-xl tracking-wider mb-4">
-                      {activeTab === "email" 
-                        ? "Enter your email address and we'll send you instructions to reset your password."
-                        : "Enter your phone number and we'll send you a code to reset your password."}
+                  <Form className="space-y-6">
+                    <p className="text-center text-black dark:text-white font-worksans text-[15px] tracking-wider my-4">
+                      {activeTab === "email"
+                        ? "Enter your email to reset your password."
+                        : "Enter your phone number to reset your password."}
                     </p>
                     <div className="relative">
                       <Label
-                        htmlFor={activeTab === "email" ? "email" : "phoneNumber"}
-                        className="font-boogaloo text-base text-black dark:text-white"
+                        htmlFor={
+                          activeTab === "email" ? "email" : "phoneNumber"
+                        }
+                        className="font-dmmono text-base text-black dark:text-white"
                       >
                         {activeTab === "email" ? "Email" : "Phone Number"}
                       </Label>
@@ -236,7 +269,7 @@ export function ForgotPasswordModal({
                               id="email"
                               name="email"
                               placeholder="email"
-                              className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-pincuk text-xl tracking-wider text-[11px] font-normal h-[48px]"
+                              className="mt-1 bg-[#E2E8F0] dark:bg-[#191c2b] border-0 pl-10 font-worksans text-xl tracking-wider text-[11px] font-normal h-[48px]"
                             />
                           </>
                         ) : (
@@ -285,20 +318,20 @@ export function ForgotPasswordModal({
                       <ErrorMessage
                         name={activeTab === "email" ? "email" : "phoneNumber"}
                         component="div"
-                        className="text-red-500 mt-1 font-pincuk text-xl tracking-wider"
+                        className="text-red-500 mt-1 font-worksans text-xl tracking-wider"
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-boogaloo"
+                      className="w-full bg-[#D946EF] hover:bg-[#C026D3] text-white font-dmmono cursor-pointer"
                     >
                       {isSubmitting ? "Sending..." : "Send Reset Instructions"}
                     </Button>
                     <Button
                       type="button"
                       onClick={handleBackToLogin}
-                      className="w-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white border border-gray-300 dark:border-gray-700 font-boogaloo"
+                      className="w-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-black dark:text-white border border-gray-300 dark:border-gray-700 font-dmmono cursor-pointer"
                     >
                       Back to Login
                     </Button>
