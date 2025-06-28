@@ -2,6 +2,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { CiEdit } from "react-icons/ci";
 import { Button } from "../../components/ui/button";
+import { LazyImage } from "../../components/ui/LazyImage";
 import gameImg from "@/assets/gamesImg/1.svg";
 import { IoChevronBack } from "react-icons/io5";
 import { FiClock } from "react-icons/fi";
@@ -56,11 +57,18 @@ export default function ViewGame() {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left: Game Card */}
         <div className="bg-[#F1F5F9] dark:bg-[#334154] rounded-2xl p-6 flex flex-col items-center w-full md:w-1/3">
-          <img
-            src={(game as any)?.game.thumbnailFile?.url || gameImg}
-            alt={(game as any).game?.description || "Game"}
-            className="w-28 h-28 rounded-full object-cover mb-4"
-          />
+          <div className="w-28 h-28 rounded-full overflow-hidden mb-4 bg-gray-100">
+            <LazyImage
+              src={(game as any)?.game.thumbnailFile?.url || gameImg}
+              alt={(game as any).game?.description || "Game"}
+              placeholder={gameImg}
+              className="w-full h-full object-cover"
+              loadingClassName="rounded-full"
+              spinnerColor="#D946EF"
+              rootMargin="50px"
+              showSpinner={false}
+            />
+          </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:justify-center w-full">
             <h2 className="text-sm sm:text-base font-normal font-dmmono text-[#121C2D] tracking-wider dark:text-white text-center truncate">
               {(game as any).game?.title || "-"}
