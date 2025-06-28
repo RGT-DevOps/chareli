@@ -13,13 +13,14 @@ import type { SimilarGame } from '../../backend/types';
 import GameLoadingScreen from '../../components/single/GameLoadingScreen';
 
 export default function GamePlay() {
-  const { gameId } = useParams();
+  const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-  const { data: game, isLoading, error } = useGameById(gameId || '');
+  const { data: gameData, isLoading, error } = useGameById(gameId || '');
   const { mutate: createAnalytics } = useCreateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
+  const game = gameData?.data;
 
   const handleOpenSignUpModal = () => {
     setIsSignUpModalOpen(true);
@@ -157,7 +158,7 @@ export default function GamePlay() {
 
   const gameUrl = game?.gameFile?.s3Key
     ? `${import.meta.env.VITE_GAMES_CDN_URL}/${game.gameFile.s3Key}`
-    : `${import.meta.env.VITE_GAMES_S3_BASE_URL}/${game.gameFile.s3Key}`;
+    : undefined;
   // Handle game loading progress
   const handleLoadProgress = (progress: number) => {
     setLoadProgress(progress);
