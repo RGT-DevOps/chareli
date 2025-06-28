@@ -47,7 +47,7 @@ export function StatsModal({ open, onClose }: StatsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <CustomDialogContent className="bg-white dark:bg-[#18192b] rounded-2xl shadow-lg p-4 sm:p-6 max-w-[95vw] sm:max-w-[90vw] w-full sm:w-[600px] max-h-[95vh] border-none font-dmmono tracking-wider flex flex-col">
+      <CustomDialogContent className="bg-white dark:bg-[#18192b] rounded-2xl shadow-lg p-4 sm:p-6 max-w-[95vw] sm:max-w-[90vw] w-full sm:w-[600px] max-h-[85vh] border-none font-dmmono tracking-wider flex flex-col">
         {/* Close Button */}
         <button
           className="absolute -top-3 -right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#C026D3] flex items-center justify-center shadow-lg hover:bg-[#a21caf] transition-colors"

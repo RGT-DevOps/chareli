@@ -1,5 +1,6 @@
 import { Card } from "../../components/ui/card";
 import { Input } from "../ui/input";
+import { LazyImage } from "../../components/ui/LazyImage";
 import { IoIosSearch } from "react-icons/io";
 import { useGames } from "../../backend/games.service";
 import { useGameClickHandler } from "../../hooks/useGameClickHandler";
@@ -72,13 +73,16 @@ const PopularSection = ({
                   key={game.id}
                   className="relative group cursor-pointer w-full"
                 >
-                  <div className="relative">
-                    <img
-                      src={game.thumbnailFile?.s3Key}
+                  <div className="relative h-[290px] min-h-[290px] max-h-[290px] rounded-[32px] border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] box-border overflow-hidden"
+                       onClick={() => handleGameClick(game.id)}>
+                    <LazyImage
+                      src={game.thumbnailFile?.s3Key || emptyGameImg}
                       alt={game.title}
-                      loading="lazy"
-                      className="w-full h-[290px] min-h-[290px] max-h-[290px] object-cover rounded-[32px] border-4 border-transparent group-hover:border-[#D946EF] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] box-border"
-                      onClick={() => handleGameClick(game.id)}
+                      placeholder={emptyGameImg}
+                      className="w-full h-full object-cover"
+                      loadingClassName="rounded-[28px]"
+                      spinnerColor="#D946EF"
+                      rootMargin="50px"
                     />
                     {/* Game Info Overlay - Only visible on hover */}
                     <div className="absolute bottom-0 left-0 right-0 rounded-b-[28px] p-4 group-hover:opacity-100 transition-opacity duration-300 ease-in-out lg:opacity-0 lg:group-hover:opacity-100">

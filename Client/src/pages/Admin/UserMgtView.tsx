@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { LuGamepad2 } from "react-icons/lu";
 import { FiClock } from "react-icons/fi";
 import { TbCalendarClock } from "react-icons/tb";
+import { LazyImage } from "../../components/ui/LazyImage";
 import { useUserAnalyticsById } from "../../backend/analytics.service";
 import { formatTime } from "../../utils/main";
 
@@ -215,11 +216,17 @@ const UserManagementView = () => {
                         <td className="flex items-center gap-3 py-2">
                           {/* Game thumbnail */}
                           {game.thumbnailUrl ? (
-                            <img
-                              src={game.thumbnailUrl}
-                              alt={game.gameTitle}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
+                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                              <LazyImage
+                                src={game.thumbnailUrl}
+                                alt={game.gameTitle}
+                                className="w-full h-full object-cover"
+                                loadingClassName="rounded-lg"
+                                spinnerColor="#D946EF"
+                                rootMargin="50px"
+                                showSpinner={false}
+                              />
+                            </div>
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
                               <LuGamepad2 className="w-6 h-6 text-gray-400" />

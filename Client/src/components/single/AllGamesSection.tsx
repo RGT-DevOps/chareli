@@ -1,5 +1,6 @@
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { LazyImage } from "../../components/ui/LazyImage";
 import { useGames } from "../../backend/games.service";
 import { useCategories } from "../../backend/category.service";
 import { useGameClickHandler } from "../../hooks/useGameClickHandler";
@@ -169,11 +170,14 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                   >
                     <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0px_20px_#D946EF,0_0px_10px_rgba(217,70,239,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
-                        <img
-                          src={game.thumbnailFile?.s3Key}
+                        <LazyImage
+                          src={game.thumbnailFile?.s3Key || emptyGameImg}
                           alt={game.title}
-                          loading="lazy"
+                          placeholder={emptyGameImg}
                           className="w-full h-full object-cover"
+                          loadingClassName="rounded-[16px]"
+                          spinnerColor="#D946EF"
+                          rootMargin="50px"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent group-hover:opacity-100 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100 rounded-[16px]">
                           <span className="absolute bottom-3 left-4 text-white font-semibold text-base drop-shadow-lg text-shadow-black/55 text-shadow-lg">

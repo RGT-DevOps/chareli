@@ -145,7 +145,7 @@ export const getAllGames = async (
   try {
     const { 
       page = 1, 
-      limit = 10, 
+      limit, 
       categoryId, 
       status, 
       search,
@@ -154,7 +154,7 @@ export const getAllGames = async (
     } = req.query;
     
     const pageNumber = parseInt(page as string, 10);
-    const limitNumber = parseInt(limit as string, 10);
+    const limitNumber = limit ? parseInt(limit as string, 10) : undefined;
     
     let queryBuilder = gameRepository.createQueryBuilder('game')
       .leftJoinAndSelect('game.category', 'category')
@@ -240,9 +240,13 @@ export const getAllGames = async (
     const total = await queryBuilder.getCount();
     
     // Apply pagination and order by position
+    if (limitNumber) {
+      queryBuilder
+        .skip((pageNumber - 1) * limitNumber)
+        .take(limitNumber);
+    }
+    
     queryBuilder
-      .skip((pageNumber - 1) * limitNumber)
-      .take(limitNumber)
       .orderBy('game.position', 'ASC')
       .addOrderBy('game.createdAt', 'DESC'); 
     
@@ -262,13 +266,9 @@ export const getAllGames = async (
       }
     });
     
+    const totalPages = limitNumber ? Math.ceil(total / limitNumber) : 1;
+    
     res.status(200).json({
-      success: true,
-      count: games.length,
-      total,
-      page: pageNumber,
-      limit: limitNumber,
-      totalPages: Math.ceil(total / limitNumber),
       data: games,
     });
   } catch (error) {

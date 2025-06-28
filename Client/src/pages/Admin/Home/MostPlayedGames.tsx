@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
+import { LazyImage } from "../../../components/ui/LazyImage";
 import { useState, useMemo } from "react";
 import {
   useGamesAnalytics,
@@ -92,11 +93,17 @@ export function MostPlayedGames() {
                 <TableRow key={idx} className="text-sm font-worksans">
                   <TableCell>
                     <div className="flex items-center gap-3 pr-12">
-                      <img
-                        src={game.thumbnailFile?.url}
-                        alt={game.title}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                        <LazyImage
+                          src={game.thumbnailFile?.url || ""}
+                          alt={game.title}
+                          className="w-full h-full object-cover"
+                          loadingClassName="rounded-lg"
+                          spinnerColor="#D946EF"
+                          rootMargin="50px"
+                          showSpinner={false}
+                        />
+                      </div>
                       <span>{game.title}</span>
                     </div>
                   </TableCell>
