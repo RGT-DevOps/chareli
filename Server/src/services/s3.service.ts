@@ -101,6 +101,22 @@ export class S3Service implements S3ServiceInterface {
     this.bucket = config.s3.bucket;
   }
 
+  getBaseUrl(): string {
+    console.log('Getting asset base URL...');
+
+    // Priority 1: Use the CloudFront CDN domain if provided (for production/staging).
+    if (config.cloudfront.distributionDomain) {
+      const baseUrl = `https://${config.cloudfront.distributionDomain}`;
+      console.log(`Using CloudFront CDN domain: ${baseUrl}`);
+      return baseUrl;
+    }
+
+    // Priority 2: Fallback to the default direct S3 bucket URL.
+    const baseUrl = `https://${this.bucket}.s3.${config.s3.region}.amazonaws.com`;
+    console.log(`Using default S3 bucket URL: ${baseUrl}`);
+    return baseUrl;
+  }
+
   async uploadFile(
     file: Buffer,
     originalname: string,
@@ -497,15 +513,15 @@ export class S3Service implements S3ServiceInterface {
     }
   }
 
-  getBaseUrl(): string {
-    console.log('Getting S3 base URL');
-    const baseUrl = config.s3.endpoint
-      ? `${config.s3.endpoint}/${this.bucket}`
-      : `https://${this.bucket}.s3.${config.s3.region}.amazonaws.com`;
+  // getBaseUrl(): string {
+  //   console.log('Getting S3 base URL');
+  //   const baseUrl = config.s3.endpoint
+  //     ? `${config.s3.endpoint}/${this.bucket}`
+  //     : `https://${this.bucket}.s3.${config.s3.region}.amazonaws.com`;
 
-    console.log(`S3 base URL: ${baseUrl}`);
-    return baseUrl;
-  }
+  //   console.log(`S3 base URL: ${baseUrl}`);
+  //   return baseUrl;
+  // }
 }
 
 export const s3Service = new S3Service();
