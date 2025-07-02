@@ -263,15 +263,30 @@ interface UserActivityLog {
   metadata?: Record<string, string | number | boolean>;
 }
 
+// Dashboard time range filter types
+export interface DashboardTimeRange {
+  period?: 'last24hours' | 'last7days' | 'last30days' | 'custom';
+  startDate?: string;
+  endDate?: string;
+}
+
 /**
- * Hook to fetch dashboard analytics
+ * Hook to fetch dashboard analytics with time range support
+ * @param timeRange - Time range filter options
  * @returns Query result with dashboard analytics data
  */
-export const useDashboardAnalytics = () => {
+export const useDashboardAnalytics = (timeRange?: DashboardTimeRange) => {
   return useQuery<DashboardAnalytics>({
-    queryKey: [BackendRoute.ADMIN_DASHBOARD],
+    queryKey: [BackendRoute.ADMIN_DASHBOARD, timeRange],
     queryFn: async () => {
-      const response = await backendService.get(BackendRoute.ADMIN_DASHBOARD);
+      const params = new URLSearchParams();
+      if (timeRange) {
+        if (timeRange.period) params.append('period', timeRange.period);
+        if (timeRange.startDate) params.append('startDate', timeRange.startDate);
+        if (timeRange.endDate) params.append('endDate', timeRange.endDate);
+      }
+      const url = `${BackendRoute.ADMIN_DASHBOARD}${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await backendService.get(url);
       console.log('API Response:', response.data);
       return response.data;
     },
@@ -288,6 +303,10 @@ export interface FilterState {
     startDate: string;
     endDate: string;
   };
+  lastLoginStartDate?: string;
+  lastLoginEndDate?: string;
+  userStatus?: string;
+  sortBy?: string;
   sessionCount: string;
   timePlayed: {
     min: number;
@@ -308,6 +327,10 @@ export const useUsersAnalytics = (filters?: FilterState) => {
       if (filters) {
         if (filters.registrationDates.startDate) params.append('startDate', filters.registrationDates.startDate);
         if (filters.registrationDates.endDate) params.append('endDate', filters.registrationDates.endDate);
+        if (filters.lastLoginStartDate) params.append('lastLoginStartDate', filters.lastLoginStartDate);
+        if (filters.lastLoginEndDate) params.append('lastLoginEndDate', filters.lastLoginEndDate);
+        if (filters.userStatus) params.append('userStatus', filters.userStatus);
+        if (filters.sortBy) params.append('sortBy', filters.sortBy);
         if (filters.sessionCount) params.append('sessionCount', filters.sessionCount);
         if (filters.timePlayed.min) params.append('minTimePlayed', String(filters.timePlayed.min * 60)); // Convert to seconds
         if (filters.timePlayed.max) params.append('maxTimePlayed', String(filters.timePlayed.max * 60)); // Convert to seconds

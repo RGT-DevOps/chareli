@@ -3,11 +3,12 @@ import { Card } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { PopUpSheet } from "../../../components/single/PopUp-Sheet";
 import { AcceptInvitationModal } from "../../../components/modals/AdminModals/AcceptInvitationModal";
+import { DashboardTimeFilter } from "../../../components/single/DashboardTimeFilter";
 import StatsCard from "./StatsCard";
 import PieChart from '../../../components/charts/piechart';
 import { useState } from 'react';
 import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
-import { useDashboardAnalytics } from '../../../backend/analytics.service';
+import { useDashboardAnalytics, type DashboardTimeRange } from '../../../backend/analytics.service';
 import { useSystemConfigByKey } from '../../../backend/configuration.service';
 import AdminKeepPlayingModal from '../../../components/modals/AdminKeepPlayingModal';
 import { MostPlayedGames } from './MostPlayedGames';
@@ -16,6 +17,7 @@ import { RecentUserActivity } from './RecentUserActivity';
 export default function Home() {
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
   const [showKeepPlayingModal, setShowKeepPlayingModal] = useState(false);
+  const [timeRange, setTimeRange] = useState<DashboardTimeRange>({ period: 'last24hours' });
   const { data: popupConfig } = useSystemConfigByKey('popup');
 
   const hasCustomPopup = !!popupConfig;
@@ -26,9 +28,18 @@ export default function Home() {
   return (
     <div>
       <div className="px-6 pb-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Dashboard
+          </h1>
+          <DashboardTimeFilter 
+            value={timeRange} 
+            onChange={setTimeRange} 
+          />
+        </div>
       </div>
       <div className="px-6">
-        <StatsCard />
+        <StatsCard timeRange={timeRange} />
         {/* pop up */}
         <div className="col-span-1 md:col-span-2 lg:col-span-4 my-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
