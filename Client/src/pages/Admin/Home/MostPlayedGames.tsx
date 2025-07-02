@@ -57,11 +57,19 @@ export function MostPlayedGames() {
               </TableHead>
               <TableHead>
                 {" "}
-                <p className="pr-12">Total Plays</p>
+                <p className="pr-12">Total Plays Sessions</p>
               </TableHead>
               <TableHead>
                 {" "}
                 <p className="pr-12">Minutes played</p>
+              </TableHead>
+              <TableHead>
+                {" "}
+                <p className="pr-12">Unique Users</p>
+              </TableHead>
+              <TableHead>
+                {" "}
+                <p className="pr-12">Average playtime</p>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -112,6 +120,16 @@ export function MostPlayedGames() {
                   <TableCell>
                     <p className="pr-12">
                       {formatTime(game.analytics?.totalPlayTime || 0)}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="pr-12">{game.analytics?.uniquePlayers || 0}</p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="pr-12">
+                      {game.analytics?.uniquePlayers && game.analytics?.uniquePlayers > 0
+                        ? `${Math.round((game.analytics.totalPlayTime / game.analytics.uniquePlayers) / 60)} minutes`
+                        : '0 minutes'}
                     </p>
                   </TableCell>
                 </TableRow>
