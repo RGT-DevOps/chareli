@@ -380,6 +380,11 @@ export const deleteCategory = async (
       return next(ApiError.notFound(`Category with id ${id} not found`));
     }
     
+    // Prevent deletion of default category
+    if (category.isDefault) {
+      return next(ApiError.badRequest('Cannot delete the default "General" category'));
+    }
+    
     // Check if category has associated games
     if (category.games && category.games.length > 0) {
       return next(ApiError.badRequest(`Cannot delete category with ${category.games.length} associated games`));

@@ -146,14 +146,16 @@ export function EditCategory({
               </div>
 
               <div className="flex justify-between mt-8 items-center">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="dark:bg-[#EF4444]"
-                >
-                  Delete
-                </Button>
+                {!category.isDefault && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="dark:bg-[#EF4444]"
+                  >
+                    Delete
+                  </Button>
+                )}
                 <div className="flex gap-3">
                   <SheetClose asChild>
                     <Button
