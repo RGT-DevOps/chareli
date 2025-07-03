@@ -231,7 +231,6 @@ export default function UserManagement() {
                       <TableHead>Time Played</TableHead>
                       <TableHead>Session count</TableHead>
                       <TableHead>Last Login</TableHead>
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -291,23 +290,6 @@ export default function UserManagement() {
                                   </span>
                                 </div>
                               </span>
-                            </TableCell>
-                            <TableCell>
-                              {canDeleteUser(currentUser, user) ? (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation(); // Prevent row click navigation
-                                    handleDeleteUser(user);
-                                  }}
-                                  className="h-8 w-8 p-0 hover:bg-red-600 cursor-pointer"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              ) : (
-                                <span className="text-gray-400 text-sm">-</span>
-                              )}
                             </TableCell>
                           </TableRow>
                         ))}
