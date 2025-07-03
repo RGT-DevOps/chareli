@@ -121,8 +121,8 @@ const UserManagementView = () => {
               </div>
             </div>
             
-            {/* Delete Button */}
-            {canDeleteUser(currentUser, response.user) && (
+            {/* Delete Button - Hidden for now */}
+            {false && canDeleteUser(currentUser, response.user) && (
               <div className="mt-4 w-full">
                 <Button
                   className="flex items-center justify-center gap-2 w-full bg-[#EF4444] text-white tracking-wider hover:bg-[#dc2626] cursor-pointer"
