@@ -61,7 +61,15 @@ export function MostPlayedGames() {
               </TableHead>
               <TableHead>
                 {" "}
-                <p className="pr-12">Minutes played</p>
+                <p className="pr-12">Minutes Played</p>
+              </TableHead>
+              <TableHead>
+                {" "}
+                <p className="pr-12">Unique Users</p>
+              </TableHead>
+              <TableHead>
+                {" "}
+                <p className="pr-12">Average Play Time</p>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -112,6 +120,16 @@ export function MostPlayedGames() {
                   <TableCell>
                     <p className="pr-12">
                       {formatTime(game.analytics?.totalPlayTime || 0)}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="pr-12">{game.analytics?.uniquePlayers || 0}</p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="pr-12">
+                      {game.analytics?.avgPlayTime 
+                        ? `${Math.round(game.analytics.avgPlayTime / 60)} minutes`
+                        : '0 minutes'}
                     </p>
                   </TableCell>
                 </TableRow>
@@ -227,13 +245,13 @@ export function MostPlayedGames() {
                           );
                         }
                         pages.push(
-                          <button
+                  <button
                             key={totalPages}
-                            className={`w-8 h-8 rounded-full transition-colors ${
+                    className={`w-8 h-8 rounded-full transition-colors ${
                               currentPage === totalPages
-                                ? "bg-[#D946EF] text-white"
-                                : "hover:bg-[#F3E8FF] text-black dark:text-white"
-                            }`}
+                        ? "bg-[#D946EF] text-white"
+                        : "hover:bg-[#F3E8FF] text-black dark:text-white"
+                    }`}
                             onClick={() => setCurrentPage(totalPages)}
                           >
                             {totalPages}
@@ -257,7 +275,7 @@ export function MostPlayedGames() {
                   disabled={currentPage === totalPages}
                 >
                   ›
-                </button>
+                  </button>
               </div>
             )}
           </div>

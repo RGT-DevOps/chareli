@@ -251,6 +251,7 @@ export interface GameAnalytics {
     uniquePlayers: number;
     totalSessions: number;
     totalPlayTime: number;
+    avgPlayTime: number;
   };
 }
 

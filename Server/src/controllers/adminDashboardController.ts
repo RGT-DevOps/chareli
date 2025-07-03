@@ -684,9 +684,11 @@ export const getGamesWithAnalytics = async (
       gamesAnalytics = await analyticsRepository
         .createQueryBuilder('analytics')
         .select('analytics.gameId', 'gameId')
-        .addSelect('COUNT(*)', 'uniquePlayers')
+        // .addSelect('COUNT(*)', 'uniquePlayers')
+        .addSelect('COUNT(DISTINCT analytics.userId)', 'uniquePlayers')
         .addSelect('COUNT(*)', 'totalSessions')
         .addSelect('SUM(analytics.duration)', 'totalPlayTime')
+        .addSelect('AVG(analytics.duration)', 'avgPlayTime')
         .where('analytics.gameId IN (:...gameIds)', { gameIds })
         .andWhere('analytics.startTime IS NOT NULL')
         .andWhere('analytics.endTime IS NOT NULL')
@@ -702,7 +704,8 @@ export const getGamesWithAnalytics = async (
       analyticsMap.set(item.gameId, {
         uniquePlayers: parseInt(item.uniquePlayers) || 0,
         totalSessions: parseInt(item.totalSessions) || 0,
-        totalPlayTime: item.totalPlayTime || 0
+        totalPlayTime: item.totalPlayTime || 0,
+        avgPlayTime: item.avgPlayTime || 0
       });
     });
     
@@ -711,7 +714,8 @@ export const getGamesWithAnalytics = async (
       const analytics = analyticsMap.get(game.id) || {
         uniquePlayers: 0,
         totalSessions: 0,
-        totalPlayTime: 0
+        totalPlayTime: 0,
+        avgPlayTime: 0
       };
       
       // Transform game data to include CloudFront URLs
