@@ -26,13 +26,13 @@ import type {
 import { NoResults } from "../../../components/single/NoResults";
 import { formatTime } from "../../../utils/main";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { BackendRoute } from "../../../backend/constants";
+// import { useQueryClient } from "@tanstack/react-query";
+// import { BackendRoute } from "../../../backend/constants";
 import { useAuth } from "../../../context/AuthContext";
 
 export default function UserManagement() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   const { user: currentUser, logout } = useAuth();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -197,6 +197,7 @@ export default function UserManagement() {
           </UserManagementFilterSheet>
           <ExportModal
             data={filteredUsers || []}
+            filters={filters}
             title="Export User Data"
             description="Choose the format you'd like to export your user data"
           />
