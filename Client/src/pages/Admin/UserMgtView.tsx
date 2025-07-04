@@ -14,8 +14,8 @@ import { useDeleteUser } from "../../backend/user.service";
 import { formatTime } from "../../utils/main";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
-import { BackendRoute } from "../../backend/constants";
+// import { useQueryClient } from "@tanstack/react-query";
+// import { BackendRoute } from "../../backend/constants";
 
 const PAGE_SIZE = 5;
 
@@ -30,7 +30,7 @@ interface GameActivity {
 
 const UserManagementView = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   const { user: currentUser, logout } = useAuth();
   const { userId } = useParams();
   const [page, setPage] = useState(1);
