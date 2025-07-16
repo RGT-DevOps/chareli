@@ -138,11 +138,13 @@ export default function UserManagement() {
       const fullName = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
       const email = (user.email || "").toLowerCase();
       const phone = (user.phoneNumber || "").toLowerCase();
+      const country = (user.country || "").toLowerCase();
       const id = user.id.toLowerCase();
       
       return fullName.includes(query) || 
              email.includes(query) || 
              phone.includes(query) || 
+             country.includes(query) ||
              id.includes(query);
     });
   };
@@ -160,7 +162,7 @@ export default function UserManagement() {
           <div className="relative w-full sm:w-auto sm:min-w-[250px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search"
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
