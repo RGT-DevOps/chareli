@@ -5,7 +5,6 @@ import HorizontalBarChart from "../../../components/charts/barChart";
 import click from "../../../assets/click.svg";
 import UserActivityLog from "./UserActivityLog";
 import GameActivity from "./GameActivity";
-import UserAgeBarChart from "../../../components/charts/barChart II";
 import { useDashboardAnalytics } from "../../../backend/analytics.service";
 
 export default function Analytics() {
