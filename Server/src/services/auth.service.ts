@@ -447,7 +447,7 @@ export class AuthService {
     // const frontendUrl = getFrontendUrl();
 
     //hardcode this for now, to be removed
-    const frontendUrl = 'https://staging.chareli.reallygreattech.com';
+    const frontendUrl = 'https://dev.chareli.reallygreattech.com';
     const invitationLink = `${frontendUrl}/register-invitation/${token}`;
 
     // Send invitation email
@@ -537,7 +537,7 @@ export class AuthService {
 
     //hardcode this for now, will be removed 
 
-    const frontendUrl = 'https://staging.chareli.reallygreattech.com';
+    const frontendUrl = 'https://dev.chareli.reallygreattech.com/';
     const resetLink = `${frontendUrl}/reset-password/${resetToken}`;
 
     try {
