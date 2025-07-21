@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { Game } from './Games';
+import { User } from './User';
 
 @Entity('signup_analytics')
 export class SignupAnalytics {
@@ -18,11 +20,33 @@ export class SignupAnalytics {
 
   @Column({ nullable: true })
   @Index()
-  deviceType: string;  // 'mobile', 'tablet', 'desktop'
+  deviceType: string; 
 
   @Column()
   @Index()
-  type: string;  // Type of signup form that was clicked
+  type: string; 
+
+  @Column({ nullable: true })
+  @Index()
+  gameId: string;  // Which game they were playing when they clicked signup
+
+  @ManyToOne(() => Game, { nullable: true })
+  @JoinColumn({ name: 'gameId' })
+  game: Game;
+
+  @Column({ nullable: true })
+  @Index()
+  userId: string;  // Set when user completes registration
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column({ default: false })
+  convertedToAccount: boolean;  // Whether this signup click led to account creation
+
+  @Column({ default: false })
+  userVerified: boolean;  // Whether user completed first login
 
   @CreateDateColumn()
   @Index()

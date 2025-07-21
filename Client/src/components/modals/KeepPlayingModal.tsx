@@ -9,9 +9,10 @@ interface KeepPlayingModalProps {
   open: boolean;
   openSignUpModal: () => void;
   isGameLoading?: boolean;
+  gameId?: string;
 }
 
-export default function KeepPlayingModal({ open, isGameLoading }: KeepPlayingModalProps) {
+export default function KeepPlayingModal({ open, isGameLoading, gameId }: KeepPlayingModalProps) {
   const { mutate: trackSignup } = useTrackSignupClick();
   const navigate = useNavigate();
   const { setKeepPlayingRedirect } = useAuth();
@@ -19,7 +20,8 @@ export default function KeepPlayingModal({ open, isGameLoading }: KeepPlayingMod
   const handleSignupClick = () => {
     trackSignup({ 
       sessionId: getVisitorSessionId(),
-      type: 'keep-playing' 
+      type: 'keep-playing',
+      gameId: gameId 
     });
     setKeepPlayingRedirect(true);
     navigate('/');
@@ -29,6 +31,7 @@ export default function KeepPlayingModal({ open, isGameLoading }: KeepPlayingMod
   
   if (!open || isGameLoading) return null;
 
+  // Handle case when config doesn't exist or query fails
   const title = popupConfig?.value?.title ? decodeHtmlEntities(popupConfig.value.title) : "Time's Up!";
   const subtitle = popupConfig?.value?.subtitle ? decodeHtmlEntities(popupConfig.value.subtitle) : "Sign up to keep playing this game and unlock unlimited access to all games!";
 

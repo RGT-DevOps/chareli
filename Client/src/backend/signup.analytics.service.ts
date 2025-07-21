@@ -31,7 +31,7 @@ interface SignupAnalyticsData {
 export const useTrackSignupClick = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { sessionId?: string; type: string }) => {
+    mutationFn: async (data: { sessionId?: string; type: string; gameId?: string }) => {
       const response = await backendService.post(
         BackendRoute.SIGNUP_ANALYTICS_CLICK,
         data

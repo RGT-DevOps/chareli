@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCreateUser } from "../../backend/user.service";
 import { useTrackSignupClick } from "../../backend/signup.analytics.service";
+import { useLinkAnonymousToUser } from "../../backend/anonymous.analytics.service";
 import { useSystemConfigByKey } from "../../backend/configuration.service";
 import { toast } from "sonner";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -157,19 +158,22 @@ export function SignUpModal({
 
   const createUser = useCreateUser();
   const { mutate: trackSignup } = useTrackSignupClick();
+  const { mutate: linkAnonymousToUser } = useLinkAnonymousToUser();
 
   const handleSignUp = async (
     values: ReturnType<typeof getInitialValues>,
     actions: FormikHelpers<ReturnType<typeof getInitialValues>>
   ) => {
     try {
+      const sessionId = getVisitorSessionId();
+      
       // Track the final signup button click with session ID
       trackSignup({
-        sessionId: getVisitorSessionId(),
+        sessionId,
         type: "signup-modal",
       });
 
-      await createUser.mutateAsync({
+      const response = await createUser.mutateAsync({
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
@@ -177,6 +181,20 @@ export function SignUpModal({
         phoneNumber: values.phoneNumber,
         isAdult: values.ageConfirm,
         hasAcceptedTerms: values.terms,
+      });
+
+      // Link anonymous user activity to new account
+      linkAnonymousToUser({
+        sessionId,
+        userId: response.data.id,
+      }, {
+        onSuccess: () => {
+          console.log('Successfully linked anonymous activity to user account');
+        },
+        onError: (error) => {
+          console.error('Failed to link anonymous activity:', error);
+          // Don't fail the registration process if linking fails
+        }
       });
 
       // Close signup modal

@@ -5,6 +5,7 @@ import type { FieldProps, FormikHelpers } from "formik";
 import type { LoginCredentials } from "../../backend/types";
 import * as Yup from "yup";
 import { useAuth } from "../../context/AuthContext";
+import { useMarkUserAsVerified } from "../../backend/anonymous.analytics.service";
 import { toast } from "sonner";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { Dialog, DialogHeader, DialogTitle } from "../../components/ui/dialog";
@@ -97,6 +98,7 @@ export function LoginModal({
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { login } = useAuth();
+  const { mutate: markUserAsVerified } = useMarkUserAsVerified();
   const navigate = useNavigate();
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
@@ -150,7 +152,19 @@ export function LoginModal({
         toast.info(response.message);
         setIsLoggingIn(false);
       } else {
-        // No OTP required, show success and redirect
+        // No OTP required, mark user as verified and redirect
+        markUserAsVerified({
+          userId: response.userId,
+        }, {
+          onSuccess: () => {
+            console.log('Successfully marked user as verified');
+          },
+          onError: (error) => {
+            console.error('Failed to mark user as verified:', error);
+            // Don't fail the login process if verification marking fails
+          }
+        });
+
         toast.success(response.message);
         if (isValidRole(response.role)) {
           navigate("/admin");

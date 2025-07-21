@@ -18,10 +18,18 @@ export const useSystemConfigByKey = (key: string) => {
   return useQuery({
     queryKey: [BackendRoute.SYSTEM_CONFIG, key],
     queryFn: async () => {
-      const response = await backendService.get(
-        BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(':key', key)
-      );
-      return response.data;
+      try {
+        const response = await backendService.get(
+          BackendRoute.SYSTEM_CONFIG_BY_KEY.replace(':key', key)
+        );
+        return response.data;
+      } catch (error: any) {
+        // If config doesn't exist (404), return null instead of undefined
+        if (error.response?.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
     retry: false, // Don't retry on 404
     enabled: true // Always enabled by default

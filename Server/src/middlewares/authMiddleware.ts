@@ -146,30 +146,7 @@ export const isEditor = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-/**
- * Middleware to check if user has admin panel access (viewer, editor, admin, or superadmin)
- */
-export const hasAdminPanelAccess = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    return next(ApiError.unauthorized('Authentication required'));
-  }
 
-  if (
-    req.user.role !== RoleType.VIEWER &&
-    req.user.role !== RoleType.EDITOR && 
-    req.user.role !== RoleType.ADMIN && 
-    req.user.role !== RoleType.SUPERADMIN
-  ) {
-    return next(ApiError.forbidden('Admin panel access required'));
-  }
-
-  next();
-};
-
-/**
- * Middleware to check if user can perform write operations (editor, admin, or superadmin)
- * Viewers can only read, not write
- */
 export const canWrite = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
     return next(ApiError.unauthorized('Authentication required'));
@@ -186,9 +163,7 @@ export const canWrite = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-/**
- * Middleware to check if user is accessing their own resource or has admin privileges
- */
+
 export const isOwnerOrAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
     return next(ApiError.unauthorized('Authentication required'));

@@ -10,6 +10,11 @@ import {
   useCreateAnalytics,
   useUpdateAnalytics,
 } from "../../backend/analytics.service";
+import {
+  useTrackAnonymousGameSession,
+  useUpdateAnonymousGameSession,
+} from "../../backend/anonymous.analytics.service";
+import { getVisitorSessionId } from "../../utils/sessionUtils";
 import type { SimilarGame } from "../../backend/types";
 import GameLoadingScreen from "../../components/single/GameLoadingScreen";
 
@@ -20,7 +25,14 @@ export default function GamePlay() {
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const { data: game, isLoading, error } = useGameById(gameId || "");
   const { mutate: createAnalytics } = useCreateAnalytics();
+  const { mutate: updateAnalytics } = useUpdateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
+  
+  // Anonymous analytics
+  const { mutate: trackAnonymousSession } = useTrackAnonymousGameSession();
+  const { mutate: updateAnonymousSession } = useUpdateAnonymousGameSession();
+  const anonymousSessionIdRef = useRef<string | null>(null);
+  const reachedTimeLimitRef = useRef<boolean>(false);
 
   const handleOpenSignUpModal = () => {
     setIsSignUpModalOpen(true);
@@ -32,14 +44,38 @@ export default function GamePlay() {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const { isAuthenticated } = useAuth();
 
-  console.log(isSignUpModalOpen, timeRemaining);
+  console.log(isSignUpModalOpen);
 
   // Reset loading states when gameId changes (for similar games navigation)
   useEffect(() => {
     setIsGameLoading(true);
     setLoadProgress(0);
     setTimeRemaining(null);
-  }, [gameId]);
+    
+    // Clear any existing session refs when navigating to a new game
+    const currentAnalyticsId = analyticsIdRef.current;
+    const currentAnonymousId = anonymousSessionIdRef.current;
+    
+    if (currentAnalyticsId) {
+      updateAnalytics({
+        id: currentAnalyticsId,
+        endTime: new Date(),
+      });
+      analyticsIdRef.current = null;
+    }
+    
+    if (currentAnonymousId) {
+      updateAnonymousSession({
+        id: currentAnonymousId,
+        endedAt: new Date(),
+        reachedTimeLimit: reachedTimeLimitRef.current 
+      });
+      anonymousSessionIdRef.current = null;
+      reachedTimeLimitRef.current = false;
+    }
+  }, [gameId, updateAnalytics, updateAnonymousSession]);
+
+
 
   useEffect(() => {
     if (game?.gameFile?.s3Key) {
@@ -55,7 +91,6 @@ export default function GamePlay() {
   // Timer for non-authenticated users - starts after game is loaded
   useEffect(() => {
     let timer: NodeJS.Timeout;
-
     if (game && !isAuthenticated && game.config > 0 && !isGameLoading) {
       setIsModalOpen(false);
       setTimeRemaining(game.config * 60);
@@ -65,6 +100,8 @@ export default function GamePlay() {
           if (prev === null || prev <= 0) {
             clearInterval(timer);
             setIsModalOpen(true);
+            
+            reachedTimeLimitRef.current = true;
             return 0;
           }
           return prev - 1;
@@ -78,11 +115,18 @@ export default function GamePlay() {
         setIsModalOpen(false);
       }
     };
-  }, [game, isAuthenticated, isGameLoading]);
+  }, [game, isAuthenticated, isGameLoading, updateAnonymousSession]);
+
 
   // Create analytics record when game starts
   useEffect(() => {
-    if (game && isAuthenticated) {
+    if (!game) return;
+
+    // Prevent duplicate calls
+    if (isAuthenticated && analyticsIdRef.current) return;
+    if (!isAuthenticated && anonymousSessionIdRef.current) return;
+
+    if (isAuthenticated) {
       createAnalytics(
         {
           gameId: game.id,
@@ -91,17 +135,40 @@ export default function GamePlay() {
         },
         {
           onSuccess: (response) => {
+            console.log('✅ Authenticated session created:', response.id);
             analyticsIdRef.current = response.id;
           },
+          onError: (error: any) => {
+            console.error('❌ Failed to create authenticated session:', error);
+          }
+        }
+      );
+    } else {
+      const sessionId = getVisitorSessionId();
+      const startTime = new Date();
+      
+      trackAnonymousSession(
+        {
+          sessionId,
+          gameId: game.id,
+          startedAt: startTime,
+        },
+        {
+          onSuccess: (response) => {
+            anonymousSessionIdRef.current = response.id;
+          },
+          onError: (error: any) => {
+            console.error('❌ Failed to track anonymous session:', error);
+          }
         }
       );
     }
-  }, [game, isAuthenticated, createAnalytics]);
+  }, [game, isAuthenticated, createAnalytics, trackAnonymousSession]);
+
+
 
   const location = useLocation();
-  const { mutate: updateAnalytics } = useUpdateAnalytics();
 
-  // Function to update end time
   const updateEndTime = async () => {
     if (!analyticsIdRef.current) return;
     
@@ -111,34 +178,71 @@ export default function GamePlay() {
         id: analyticsIdRef.current,
         endTime,
       });
-      // Clear ID after successful update to prevent duplicate updates
       analyticsIdRef.current = null;
     } catch (error) {
       console.error('Failed to update analytics:', error);
-      // Clear ID even on error to prevent duplicate attempts
       analyticsIdRef.current = null;
     }
   };
 
+  
+  const updateAnonymousEndTime = () => {
+    if (!anonymousSessionIdRef.current) return;
+    
+    const sessionId = anonymousSessionIdRef.current;
+    const endTime = new Date();
+    
+    updateAnonymousSession(
+      {
+        id: sessionId,
+        endedAt: endTime,
+        reachedTimeLimit: reachedTimeLimitRef.current 
+      },
+      {
+        onSuccess: (response) => {
+          console.log('✅ Anonymous session updated successfully:', response);
+        },
+        onError: (error: any) => {
+          console.error('❌ Failed to update anonymous session:', error);
+        }
+      }
+    );
+    
+    // Clear refs after initiating update
+    anonymousSessionIdRef.current = null;
+    reachedTimeLimitRef.current = false;
+  };
+
   // Handle route changes
   useEffect(() => {
+    // Only update if we're actually leaving the current game page
+    const currentPath = location.pathname;
+    const isGameplayPage = currentPath.includes('/gameplay/');
+    const currentGameInPath = currentPath.split('/gameplay/')[1];
+    
+    // Don't update if we're still on the same game page or just arrived
+    if (isGameplayPage && currentGameInPath === gameId) {
+      return;
+    }
+     
     if (analyticsIdRef.current) {
       updateEndTime();
     }
-  }, [location]);
+    if (anonymousSessionIdRef.current) {
+      updateAnonymousEndTime();
+    }
+  }, [location, gameId]);
 
-  // Handle tab visibility and cleanup
+
+
+  // Handle page unload and cleanup
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && analyticsIdRef.current) {
-        updateEndTime();
-      }
-    };
-
-    const handleBeforeUnload = () => {
+    
+    const handleBeforeUnload = () => {;
+      const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+      
       if (analyticsIdRef.current) {
         const endTime = new Date();
-        const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
         const url = `${baseURL}/api/analytics/${analyticsIdRef.current}/end`;
         const data = new Blob([JSON.stringify({ endTime })], {
           type: 'application/json',
@@ -146,18 +250,33 @@ export default function GamePlay() {
         navigator.sendBeacon(url, data);
         analyticsIdRef.current = null;
       }
+      
+      if (anonymousSessionIdRef.current) {
+        const endTime = new Date();
+        const url = `${baseURL}/api/anonymous/update-game-session/${anonymousSessionIdRef.current}`;
+        const data = new Blob([JSON.stringify({ 
+          endedAt: endTime,
+          reachedTimeLimit: reachedTimeLimitRef.current
+        })], {
+          type: 'application/json',
+        });
+        navigator.sendBeacon(url, data);
+        anonymousSessionIdRef.current = null;
+      }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       if (analyticsIdRef.current) {
         updateEndTime();
       }
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      
+      if (anonymousSessionIdRef.current) {
+        updateAnonymousEndTime();
+      }
+      
       window.removeEventListener('beforeunload', handleBeforeUnload);
-
       const iframe = document.querySelector<HTMLIFrameElement>("#gameIframe");
       if (iframe) {
         iframe.src = "about:blank";
@@ -286,6 +405,9 @@ export default function GamePlay() {
                           if (analyticsIdRef.current) {
                             updateEndTime();
                           }
+                          if (anonymousSessionIdRef.current) {
+                            updateAnonymousEndTime();
+                          }
                           navigate(-1);
                         }}
                         title="Close Game"
@@ -334,6 +456,9 @@ export default function GamePlay() {
                         if (analyticsIdRef.current) {
                           updateEndTime();
                         }
+                        if (anonymousSessionIdRef.current) {
+                          updateAnonymousEndTime();
+                        }
                         navigate('/');
                       }}
                       title="Close Game"
@@ -360,6 +485,9 @@ export default function GamePlay() {
                            onClick={() => {
                              if (analyticsIdRef.current) {
                                updateEndTime();
+                             }
+                             if (anonymousSessionIdRef.current) {
+                               updateAnonymousEndTime();
                              }
                              navigate(`/gameplay/${similarGame.id}`);
                            }}>
