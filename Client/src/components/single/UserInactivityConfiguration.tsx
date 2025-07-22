@@ -65,7 +65,7 @@ const UserInactivityConfiguration = forwardRef<UserInactivityConfigurationRef, U
             </Label>
           </div>
           
-          <div className="relative w-64">
+          <div className="relative w-full max-w-xs sm:max-w-sm">
             <button
               type="button"
               onClick={() => !disabled && !isLoadingConfig && setIsDropdownOpen(!isDropdownOpen)}
