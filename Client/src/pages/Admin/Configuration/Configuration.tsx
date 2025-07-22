@@ -4,9 +4,12 @@ import { Label } from '../../../components/ui/label';
 import { useCreateSystemConfig, useSystemConfigByKey } from '../../../backend/configuration.service';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { BackendRoute } from '../../../backend/constants';
 import SearchBarConfiguration, { type SearchBarConfigurationRef } from '../../../components/single/SearchBarConfiguration';
 import DynamicPopupConfiguration from '../../../components/single/DynamicPopupConfiguration';
 import UserInactivityConfiguration, { type UserInactivityConfigurationRef } from '../../../components/single/UserInactivityConfiguration';
+import PopularGamesConfiguration, { type PopularGamesConfigurationRef } from '../../../components/single/PopularGamesConfiguration';
 
 interface AuthMethodSettings {
   enabled: boolean;
@@ -44,6 +47,8 @@ export default function Configuration() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchBarConfigRef = useRef<SearchBarConfigurationRef>(null);
   const userInactivityConfigRef = useRef<UserInactivityConfigurationRef>(null);
+  const popularGamesConfigRef = useRef<PopularGamesConfigurationRef>(null);
+  const queryClient = useQueryClient();
   const { mutateAsync: createConfig } = useCreateSystemConfig();
   const { data: configData, isLoading: isLoadingConfig } = useSystemConfigByKey('authentication_settings');
 
@@ -190,6 +195,19 @@ export default function Configuration() {
           value: inactivitySettings,
           description: 'User inactivity timer configuration'
         });
+      }
+
+      // Save popular games settings
+      if (popularGamesConfigRef.current) {
+        const popularGamesSettings = popularGamesConfigRef.current.getSettings();
+        await createConfig({
+          key: 'popular_games_settings',
+          value: popularGamesSettings,
+          description: 'Popular games configuration for homepage'
+        });
+        
+        // Invalidate games queries to refresh popular section
+        queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
       }
 
       toast.success('Configuration saved successfully!');
@@ -365,12 +383,9 @@ export default function Configuration() {
           )}
         </div>
       </div>
-      
-      {/* Dynamic Popup Configuration Section */}
       <DynamicPopupConfiguration />
-      
-      {/* User Inactivity Configuration Section */}
       <UserInactivityConfiguration ref={userInactivityConfigRef} disabled={isSubmitting} />
+      <PopularGamesConfiguration ref={popularGamesConfigRef} disabled={isSubmitting} />
       
       <div className="flex justify-end mt-6 mb-4 px-2">
         <button

@@ -34,7 +34,7 @@ export default function Home() {
         <StatsCard timeRange={timeRange} />
 
         {/* insights */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6 mt-6">
           <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
             <div className="flex p-3">
               <p className="text-lg sm:text-2xl">Click insights</p>
