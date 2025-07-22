@@ -148,18 +148,15 @@ export default function StatsCard({ timeRange }: StatsCardProps) {
       description: timeDescription,
       color: "text-[#D946EF] dark:text-[#F0ABFC]",
     },
-    
-    
-    
-    // {
-    //   title: "User Retention",
-    //   value: `${Math.round(data.retentionRate) ?? 0}%`,
-    //   icon: <TbCalendarClock size={36} />,
-    //   change: "0%",
-    //   changeType: "up",
-    //   description: timeDescription,
-    //   color: "text-[#D946EF] dark:text-[#F0ABFC]",
-    // },
+    {
+      title: "User Retention",
+      value: `${Math.round(data.retentionRate) ?? 0}%`,
+      icon: <TbCalendarClock size={36} />,
+      change: "0%",
+      changeType: "up",
+      description: timeDescription,
+      color: "text-[#D946EF] dark:text-[#F0ABFC]",
+    },
   ];
 
   return (
