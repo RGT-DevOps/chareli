@@ -91,7 +91,7 @@ export const getDashboardAnalytics = async (
     const twentyFourHoursAgo = currentPeriodStart;
     const fortyEightHoursAgo = previousPeriodStart;
 
-    // Get users who were active yesterday (24-48 hours ago)
+    // Get users who played games yesterday (24-48 hours ago) for 30+ seconds
     const yesterdayUsersResult = await analyticsRepository
       .createQueryBuilder('analytics')
       .select('COUNT(DISTINCT analytics.userId)', 'count')
@@ -99,18 +99,30 @@ export const getDashboardAnalytics = async (
         start: fortyEightHoursAgo,
         end: twentyFourHoursAgo
       })
+      .andWhere('analytics.gameId IS NOT NULL')
+      .andWhere('analytics.startTime IS NOT NULL')
+      .andWhere('analytics.endTime IS NOT NULL')
+      .andWhere('analytics.duration >= :minDuration', { minDuration: 30 })
       .getRawOne();
 
-    // Among those users, count how many returned in the last 24 hours
+    // Among those users, count how many also played games today (last 24 hours) for 30+ seconds
     const returningUsersResult = await analyticsRepository
       .createQueryBuilder('a1')
       .select('COUNT(DISTINCT a1.userId)', 'count')
       .innerJoin('analytics', 'a2', 'a1.userId = a2.userId')
       .where('a1.createdAt > :twentyFourHoursAgo', { twentyFourHoursAgo })
+      .andWhere('a1.gameId IS NOT NULL')
+      .andWhere('a1.startTime IS NOT NULL')
+      .andWhere('a1.endTime IS NOT NULL')
+      .andWhere('a1.duration >= :minDuration', { minDuration: 30 })
       .andWhere('a2.createdAt BETWEEN :start AND :end', {
         start: fortyEightHoursAgo,
         end: twentyFourHoursAgo
       })
+      .andWhere('a2.gameId IS NOT NULL')
+      .andWhere('a2.startTime IS NOT NULL')
+      .andWhere('a2.endTime IS NOT NULL')
+      .andWhere('a2.duration >= :minDuration2', { minDuration2: 30 })
       .getRawOne();
 
     const yesterdayUsers = parseInt(yesterdayUsersResult?.count) || 0;
@@ -161,15 +173,37 @@ export const getDashboardAnalytics = async (
       ? Math.max(Math.min(((currentTotalRegisteredUsers - previousTotalRegisteredUsers) / previousTotalRegisteredUsers) * 100, 100), -100)
       : 0;
 
-    // Count active and inactive users (no percentage change needed as requested)
+    // Count active and inactive users based on business logic
+    // Active users: users who have logged in at least once and are still active
     const activeUsers = await userRepository.count({
-      where: { isActive: true, isDeleted: false }
+      where: { 
+        isActive: true, 
+        isDeleted: false,
+        lastLoggedIn: Not(IsNull()) // Only count users who have actually logged in
+      }
     });
     
-    const inactiveUsers = await userRepository.count({
-      where: { isActive: false, isDeleted: false }
-    });
+    // Inactive users: users who are either:
+    // 1. Set to inactive by the system, OR
+    // 2. Never logged in (regardless of isActive status)
+    const [systemInactiveUsers, neverLoggedInUsers] = await Promise.all([
+      userRepository.count({
+        where: { isActive: false, isDeleted: false }
+      }),
+      userRepository.count({
+        where: { 
+          isActive: true, 
+          isDeleted: false,
+          lastLoggedIn: IsNull()
+        }
+      })
+    ]);
+    
+    const inactiveUsers = systemInactiveUsers + neverLoggedInUsers;
+    const registeredButNeverLoggedIn = neverLoggedInUsers;
 
+
+    
     // 3. Game Coverage - Percentage of total games that have been played
     const totalGames = await gameRepository.count();
     
@@ -449,6 +483,7 @@ export const getDashboardAnalytics = async (
         },
         activeUsers,
         inactiveUsers,
+        registeredButNeverLoggedIn,
         adultsCount,
         minorsCount,
         gameCoverage: {
@@ -1429,6 +1464,8 @@ export const getUsersWithAnalytics = async (
         'user.lastName',
         'user.email',
         'user.country',
+        'user.registrationIpAddress',
+        'user.lastKnownDeviceType',
         'user.phoneNumber',
         'user.isActive',
         'user.isVerified',
