@@ -5,9 +5,10 @@ import { GamePositionHistory } from '../entities/GamePositionHistory';
 import { Category } from '../entities/Category';
 import { File } from '../entities/Files';
 import { Analytics } from '../entities/Analytics';
+import { SystemConfig } from '../entities/SystemConfig';
 import { ApiError } from '../middlewares/errorHandler';
 import { RoleType } from '../entities/Role';
-import { Not } from 'typeorm';
+import { Not, In } from 'typeorm';
 import { s3Service } from '../services/s3.service';
 import { zipService } from '../services/zip.service';
 import multer from 'multer';
@@ -184,25 +185,74 @@ export const getAllGames = async (
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       queryBuilder.andWhere('game.createdAt >= :sevenDaysAgo', { sevenDaysAgo });
     } else if (filter === 'popular') {
-      queryBuilder = gameRepository.createQueryBuilder('game')
-        .leftJoinAndSelect('game.category', 'category')
-        .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
-        .leftJoinAndSelect('game.gameFile', 'gameFile')
-        .leftJoinAndSelect('game.createdBy', 'createdBy')
-        .leftJoin('analytics', 'a', 'a.gameId = game.id')
-        .addSelect([
-          'COUNT(DISTINCT a.userId) as playerCount',
-          'SUM(a.duration) as totalPlayTime',
-          'COUNT(a.id) as sessionCount'
-        ])
-        .groupBy('game.id')
-        .addGroupBy('category.id')
-        .addGroupBy('thumbnailFile.id')
-        .addGroupBy('gameFile.id')
-        .addGroupBy('createdBy.id')
-        .orderBy('playerCount', 'DESC')
-        .addOrderBy('totalPlayTime', 'DESC')
-        .addOrderBy('sessionCount', 'DESC');
+      const systemConfigRepository = AppDataSource.getRepository(SystemConfig);
+      const popularConfig = await systemConfigRepository.findOne({
+        where: { key: 'popular_games_settings' }
+      });
+
+      if (popularConfig?.value?.mode === 'manual' && popularConfig.value.selectedGameIds) {
+        let gameIds: string[] = [];
+        if (Array.isArray(popularConfig.value.selectedGameIds)) {
+          gameIds = popularConfig.value.selectedGameIds;
+        } else if (typeof popularConfig.value.selectedGameIds === 'object') {
+          gameIds = Object.values(popularConfig.value.selectedGameIds);
+        }
+
+        if (gameIds.length > 0) {
+          const games = await gameRepository.find({
+            where: {
+              id: In(gameIds),
+              status: GameStatus.ACTIVE
+            },
+            relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy'],
+            order: { position: 'ASC' } // Order by position
+          });
+
+          
+          const orderedGames = gameIds
+            .map((id: string) => games.find(game => game.id === id))
+            .filter((game: Game | undefined): game is Game => game !== undefined)
+            .slice(0, limitNumber || 4);
+
+          orderedGames.forEach((game: Game) => {
+            if (game.gameFile) {
+              const s3Key = game.gameFile.s3Key;
+              const baseUrl = s3Service.getBaseUrl();
+              game.gameFile.s3Key = `${baseUrl}/${s3Key}`;
+            }
+            if (game.thumbnailFile) {
+              const s3Key = game.thumbnailFile.s3Key;
+              const baseUrl = s3Service.getBaseUrl();
+              game.thumbnailFile.s3Key = `${baseUrl}/${s3Key}`;
+            }
+          });
+
+          res.status(200).json({
+            data: orderedGames,
+          });
+          return;
+        }
+      } else {
+        queryBuilder = gameRepository.createQueryBuilder('game')
+          .leftJoinAndSelect('game.category', 'category')
+          .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
+          .leftJoinAndSelect('game.gameFile', 'gameFile')
+          .leftJoinAndSelect('game.createdBy', 'createdBy')
+          .leftJoin('analytics', 'a', 'a.gameId = game.id')
+          .addSelect([
+            'COUNT(DISTINCT a.userId) as playerCount',
+            'SUM(a.duration) as totalPlayTime',
+            'COUNT(a.id) as sessionCount'
+          ])
+          .groupBy('game.id')
+          .addGroupBy('category.id')
+          .addGroupBy('thumbnailFile.id')
+          .addGroupBy('gameFile.id')
+          .addGroupBy('createdBy.id')
+          .orderBy('playerCount', 'DESC')
+          .addOrderBy('totalPlayTime', 'DESC')
+          .addOrderBy('sessionCount', 'DESC');
+      }
     } else if (filter === 'recommended' && req.user?.userId) {
       const userTopCategory = await AppDataSource
         .getRepository(Analytics)
