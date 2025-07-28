@@ -92,6 +92,9 @@ export const createAnalytics = async (
     const keys = await redis.keys('analytics:all:*');
     if (keys.length > 0) await redis.del(keys);
 
+    // Invalidate user stats cache for this user
+    await redis.del(`users:stats:${userId}`);
+
     res.status(201).json({
       success: true,
       data: analytics

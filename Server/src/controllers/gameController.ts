@@ -14,6 +14,7 @@ import { zipService } from '../services/zip.service';
 import multer from 'multer';
 import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import redis from '../config/redisClient';
 
 const gameRepository = AppDataSource.getRepository(Game);
 const gamePositionHistoryRepository = AppDataSource.getRepository(GamePositionHistory);
@@ -168,6 +169,17 @@ export const getAllGames = async (
       createdById,
       filter
     } = req.query;
+    
+    const cacheKey = `games:all:${JSON.stringify(req.query)}`;
+
+    // Try to get cached data
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log('[Redis] Cache HIT for getAllGames:', cacheKey);
+      res.status(200).json(JSON.parse(cached));
+      return;
+    }
+    console.log('[Redis] Cache MISS for getAllGames:', cacheKey);
     
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = limit ? parseInt(limit as string, 10) : undefined;
@@ -426,9 +438,14 @@ export const getAllGames = async (
     
     const totalPages = limitNumber ? Math.ceil(total / limitNumber) : 1;
     
-    res.status(200).json({
+    const response = {
       data: games,
-    });
+    };
+
+    // Cache the result for 10 minutes
+    await redis.set(cacheKey, JSON.stringify(response), 'EX', 600);
+    
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }
@@ -501,6 +518,16 @@ export const getGameById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    const cacheKey = `games:id:${id}`;
+
+    // Try to get cached data
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log('[Redis] Cache HIT for getGameById:', cacheKey);
+      res.status(200).json(JSON.parse(cached));
+      return;
+    }
+    console.log('[Redis] Cache MISS for getGameById:', cacheKey);
     
     // Get the requested game with its relations
     const game = await gameRepository.findOne({
@@ -549,14 +576,19 @@ export const getGameById = async (
         }
       });
     }
-      
-    res.status(200).json({
+    
+    const response = {
       success: true,
       data: {
         ...game,
         similarGames: similarGames
       }
-    });
+    };
+
+    // Cache the result for 10 minutes
+    await redis.set(cacheKey, JSON.stringify(response), 'EX', 600);
+      
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }
@@ -771,6 +803,10 @@ export const createGame = async (
 
       // Commit transaction
       await queryRunner.commitTransaction();
+
+      // Invalidate games cache
+      const keys = await redis.keys('games:all:*');
+      if (keys.length > 0) await redis.del(keys);
 
       // Fetch the game with relations to return
       const savedGame = await gameRepository.findOne({
@@ -1046,6 +1082,11 @@ export const updateGame = async (
     // Commit transaction
     await queryRunner.commitTransaction();
     
+    // Invalidate games cache
+    await redis.del(`games:id:${id}`);
+    const keys = await redis.keys('games:all:*');
+    if (keys.length > 0) await redis.del(keys);
+    
     // Fetch the updated game with relations to return
       const updatedGame = await gameRepository.findOne({
         where: { id },
@@ -1145,6 +1186,11 @@ export const deleteGame = async (
     }
     
     await gameRepository.remove(game);
+    
+    // Invalidate games cache
+    await redis.del(`games:id:${id}`);
+    const keys = await redis.keys('games:all:*');
+    if (keys.length > 0) await redis.del(keys);
     
     res.status(200).json({
       success: true,
