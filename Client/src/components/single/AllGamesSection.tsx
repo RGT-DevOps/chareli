@@ -7,7 +7,6 @@ import { useState } from 'react';
 import GamesSkeleton from './GamesSkeleton';
 
 import emptyGameImg from '../../assets/empty-game.png';
-import { SecureImage } from './SecureImage';
 
 interface AllGamesSectionProps {
   searchQuery: string;
@@ -115,7 +114,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                   >
                     <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0px_20px_#D946EF,0_0px_10px_rgba(217,70,239,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
-                        <SecureImage
+                        <img
                           src={game.thumbnailFile?.url}
                           alt={game.title}
                           loading="lazy"

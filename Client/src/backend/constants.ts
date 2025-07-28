@@ -19,21 +19,23 @@ export const BackendRoute = {
   AUTH_INVITATION_BY_ID: '/api/auth/invitations/:id',
   AUTH_VERIFY_INVITATION: '/api/auth/verify-invitation/:token',
   AUTH_REGISTER_FROM_INVITATION: '/api/auth/register/:token',
-  AUTH_RESET_PASSWORD_FROM_INVITATION: '/api/auth/reset-password-from-invitation/:token',
+  AUTH_RESET_PASSWORD_FROM_INVITATION:
+    '/api/auth/reset-password-from-invitation/:token',
   AUTH_REVOKE_ROLE: '/api/auth/revoke-role/:id',
   GAMES: '/api/games',
   GAME_BY_ID: '/api/games/:id',
+  GAME_REQUEST_ACCESS: '/api/games/:id/request-access',
   GAME_BY_POSITION: '/api/games/position/:position',
   CATEGORIES: '/api/categories',
   CATEGORY_BY_ID: '/api/categories/:id',
-  
+
   // Game Position History Routes
   GAME_POSITION_HISTORY: '/api/game-position-history',
   GAME_POSITION_HISTORY_BY_GAME: '/api/game-position-history/:gameId',
   GAME_POSITION_HISTORY_CLICK: '/api/game-position-history/:gameId/click',
   GAME_POSITION_HISTORY_ANALYTICS: '/api/game-position-history/analytics',
   GAME_POSITION_HISTORY_PERFORMANCE: '/api/game-position-history/performance',
-  
+
   // Analytics Routes
   ANALYTICS: '/api/analytics',
   ANALYTICS_BY_ID: '/api/analytics/:id',
@@ -45,14 +47,14 @@ export const BackendRoute = {
   ADMIN_USERS_ANALYTICS: '/api/admin/users-analytics',
   ADMIN_USER_ANALYTICS: '/api/admin/users/:id/analytics',
   ADMIN_GAMES_ANALYTICS: '/api/admin/games-analytics',
-  ADMIN_GAME_ANALYTICS: '/api/admin/games/:id/analytics', 
+  ADMIN_GAME_ANALYTICS: '/api/admin/games/:id/analytics',
   ADMIN_USER_ACTIVITY: '/api/admin/user-activity-log',
   ADMIN_GAMES_ANALYTICS_POPULARITY: '/api/admin/games-popularity',
   ADMIN_CHECK_INACTIVE: '/api/admin/check-inactive-users',
-  
+
   // User Stats Route
   USER_STATS: '/api/users/me/stats',
-  
+
   // Heartbeat Routes
   USER_HEARTBEAT: '/api/users/heartbeat',
   USER_ONLINE_STATUS: '/api/users/online-status',

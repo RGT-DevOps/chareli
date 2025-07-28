@@ -6,7 +6,6 @@ import { useGameClickHandler } from '../../hooks/useGameClickHandler';
 import GamesSkeleton from './GamesSkeleton';
 
 import emptyGameImg from '../../assets/empty-game.png';
-import { SecureImage } from './SecureImage';
 
 interface PopularSectionProps {
   searchQuery: string;
@@ -74,7 +73,7 @@ const PopularSection = ({
                   className="relative group cursor-pointer w-full"
                 >
                   <div className="relative">
-                    <SecureImage
+                    <img
                       src={game.thumbnailFile?.url}
                       alt={game.title}
                       loading="lazy"

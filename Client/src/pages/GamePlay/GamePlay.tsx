@@ -5,30 +5,37 @@ import { Card } from '../../components/ui/card';
 import { LuExpand, LuX } from 'react-icons/lu';
 import KeepPlayingModal from '../../components/modals/KeepPlayingModal';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useGameById } from '../../backend/games.service';
+import { useGameById, useRequestGameAccess } from '../../backend/games.service';
 import {
   useCreateAnalytics,
   useUpdateAnalytics,
 } from '../../backend/analytics.service';
 import type { SimilarGame } from '../../backend/types';
 import GameLoadingScreen from '../../components/single/GameLoadingScreen';
-import { useSecureGameLoader } from '../../hooks/useSecureGameLoader';
+//import { useSecureGameLoader } from '../../hooks/useSecureGameLoader';
 
 export default function GamePlay() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  // ----- STATE MANAGEMENT ----
+
+  const [isReadyToPlay, setIsReadyToPlay] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // ---- DATA FETCHING ----
+
+  const { data: game, isLoading: isGameMetadataLoading } = useGameById(
+    gameId || ''
+  );
+
+  const { mutateAsync: requestGameAccess, isPending: isRequestingAccess } =
+    useRequestGameAccess(); //NEW: Hook for getting the cookie
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
-  const {
-    data: game,
-    isLoading: isGameMetadataLoading,
-    error: gameMetadataError,
-  } = useGameById(gameId || '');
-  const {
-    iframeSrc,
-    isLoading: isGameContentLoading,
-    error: gameContentError,
-  } = useSecureGameLoader(game);
+
   const { mutate: createAnalytics } = useCreateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
 
@@ -38,7 +45,6 @@ export default function GamePlay() {
 
   const [expanded, setExpanded] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const { isAuthenticated } = useAuth();
 
   console.log(isSignUpModalOpen, timeRemaining);
 
@@ -46,13 +52,12 @@ export default function GamePlay() {
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
-    if (game && !isAuthenticated && game.config > 0 && !isGameContentLoading) {
-      setIsModalOpen(false);
+    if (game && !isAuthenticated && game.config > 0 && isReadyToPlay) {
       setTimeRemaining(game.config * 60);
 
       timer = setInterval(() => {
         setTimeRemaining((prev) => {
-          if (prev === null || prev <= 0) {
+          if (prev === null || prev <= 1) {
             clearInterval(timer);
             setIsModalOpen(true);
             return 0;
@@ -65,10 +70,9 @@ export default function GamePlay() {
     return () => {
       if (timer) {
         clearInterval(timer);
-        setIsModalOpen(false);
       }
     };
-  }, [game, isAuthenticated, isGameContentLoading]);
+  }, [game, isAuthenticated, isReadyToPlay]);
 
   // Create analytics record when game starts
   useEffect(() => {
@@ -153,26 +157,35 @@ export default function GamePlay() {
     };
   }, []);
 
-  if (isGameMetadataLoading) {
-    return (
-      <div className="flex items-center justify-center h-[80vh]">
-        <span className="text-xl">Loading game details...</span>
-      </div>
-    );
-  }
+  // --- NEW: THE CORE GAME LAUNCH LOGIC ---
+  useEffect(() => {
+    if (gameId && isAuthenticated) {
+      const secureLaunchGame = async () => {
+        try {
+          // Step 1: Ask the backend for the access cookie.
+          await requestGameAccess(gameId);
+          // Step 2: If the request succeeds, the cookie is set. We are now ready to load the iframe.
+          setIsReadyToPlay(true);
+        } catch (err) {
+          console.error('Failed to get game access token:', err);
+          setError(
+            'You do not have permission to play this game or your session has expired.'
+          );
+        }
+      };
 
-  if (gameMetadataError) {
-    return (
-      <div className="flex items-center justify-center h-[80vh]">
-        <span className="text-xl text-red-500">
-          Error loading game details.
-        </span>
-      </div>
-    );
-  }
+      secureLaunchGame();
+    }
+    // For non-authenticated users, we can just try to play directly
+    else if (gameId && !isAuthenticated) {
+      setIsReadyToPlay(true);
+    }
+  }, [gameId, isAuthenticated, requestGameAccess]);
 
-  // Now handle the content loading part
-  if (isGameContentLoading) {
+  // --- LOADING AND ERROR STATES ---
+  const isLoading = isGameMetadataLoading || isRequestingAccess;
+
+  if (isLoading) {
     return (
       <GameLoadingScreen
         game={game as any}
@@ -182,13 +195,14 @@ export default function GamePlay() {
     );
   }
 
-  if (gameContentError) {
+  if (error) {
+    // A more robust error display
     return (
       <div className="flex flex-col items-center justify-center h-screen text-center p-4">
         <h2 className="text-2xl font-bold text-red-500 mb-4">
           Error Loading Game
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">{gameContentError}</p>
+        <p className="text-gray-600 dark:text-gray-400">{error}</p>
         <Button
           onClick={() => navigate('/')}
           className="mt-6 bg-[#D946EF] hover:bg-[#c026d3]"
@@ -199,6 +213,12 @@ export default function GamePlay() {
     );
   }
 
+  // --- RENDER LOGIC ---
+  // Construct the iframe URL to point directly to the worker
+  const gameUrl = game?.gameFile?.storageKey
+    ? `${import.meta.env.VITE_GAMES_CDN_URL}/${game.gameFile.storageKey}`
+    : null;
+
   return (
     <>
       <div className={expanded ? 'fixed inset-0 z-40 bg-black' : 'relative'}>
@@ -207,10 +227,10 @@ export default function GamePlay() {
             expanded ? 'h-screen w-full' : 'w-full'
           } overflow-hidden`}
         >
-          {iframeSrc ? (
+          {isReadyToPlay && gameUrl ? (
             <iframe
               id="gameIframe"
-              src={iframeSrc} // Use the secure blob URL from our hook
+              src={gameUrl} // Use the secure blob URL from our hook
               className="w-full"
               style={{
                 display: 'block',
@@ -222,15 +242,19 @@ export default function GamePlay() {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             />
           ) : (
-            <div className="flex items-center justify-center h-[80vh]">
-              <span className="text-xl">Game file not available.</span>
-            </div>
+            !error && (
+              <GameLoadingScreen
+                game={game as any}
+                progress={75}
+                onProgress={() => {}}
+              />
+            )
           )}
           {/* Non-Authenticated User Modal */}
           <KeepPlayingModal
             open={isModalOpen}
             openSignUpModal={handleOpenSignUpModal}
-            isGameLoading={isGameContentLoading}
+            isGameLoading={isLoading}
           />
           {/* Expanded Mode UI Bar */}
 

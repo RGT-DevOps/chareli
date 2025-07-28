@@ -269,3 +269,17 @@ export const usePositionPerformance = () => {
     },
   });
 };
+
+/**
+ * Hook to request a secure access token (as a cookie) for a game session.
+ * This should be called right before attempting to load the game content.
+ * @returns Mutation function to request game access.
+ */
+export const useRequestGameAccess = () => {
+  return useMutation({
+    mutationFn: (gameId: string) =>
+      backendService.post(
+        BackendRoute.GAME_REQUEST_ACCESS.replace(':id', gameId)
+      ),
+  });
+};

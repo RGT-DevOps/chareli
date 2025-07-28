@@ -85,8 +85,8 @@ jobs:
       - name: Build Frontend
         working-directory: ./Client
         env:
-          VITE_API_URL: 'https://dev.chareli.reallygreattech.com'
-          VITE_GAMES_CDN_URL: 'https://games.dev.chareli.reallygreattech.com'
+          VITE_API_URL: 'https://api.dev.chareli.reallygreattech.com'
+          VITE_GAMES_CDN_URL: 'https://chareli-games-gatekeeper-v2.netalie.workers.dev'
         run: npm run build
 
       - name: Archive Frontend Build
