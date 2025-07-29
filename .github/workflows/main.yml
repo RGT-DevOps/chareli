@@ -12,7 +12,7 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REGISTRY: 330858616968.dkr.ecr.eu-central-1.amazonaws.com
+  ECR_REGISTRY: 330858616968.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPO_SERVER: chareli-server-production-v1
   ECS_SERVICE: chareli-service-production-v1
   ECS_CLUSTER: chareli-ecs-cluster-production-v1
