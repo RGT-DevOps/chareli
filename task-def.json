@@ -136,7 +136,7 @@
         },
         {
           "name": "R2_PUBLIC_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:330858616968:secret:chareli/production/v1/application-secrets-PNu7WL:R2_PUBLIC_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:330858616968:secret:chareli/production/v1/application-secrets-PNu7WL:R2_PUBLIC_URL::"
         }
       ],
       "logConfiguration": {
