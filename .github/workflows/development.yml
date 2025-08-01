@@ -209,7 +209,7 @@ jobs:
           message: |
             🚀 **Chareli Dev Deployment Summary**
             🔀 Branch: `${{ github.ref_name }}`
-            📄 Commit: `${{ github.sha }}` by `${{ github.actor }}`
+            📄 Commit: `${{ github.event.head_commit.message }}-${{ github.sha }}` by `${{ github.actor }}`
             🏗️ Event: `${{ github.event_name }}`
             🧪 **Build & Test:** ${{ steps.build-status.outputs.build_msg }}
             🖥️ **Backend (ECS):** ${{ steps.backend-status.outputs.backend_msg }}
