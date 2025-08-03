@@ -139,7 +139,7 @@ jobs:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
-          # wait-for-service-stability: true
+          wait-for-service-stability: true
 
   deploy-frontend:
     name: Deploy Frontend to Cloudflare Pages
@@ -213,5 +213,5 @@ jobs:
             🏗️ Event: `${{ github.event_name }}`
             🧪 **Build & Test:** ${{ steps.build-status.outputs.build_msg }}
             🖥️ **Backend (ECS):** ${{ steps.backend-status.outputs.backend_msg }}
-            🌐 **Frontend (S3/CloudFront):** ${{ steps.frontend-status.outputs.frontend_msg }}
+            🌐 **Frontend (Cloudflare Pages):** ${{ steps.frontend-status.outputs.frontend_msg }}
             🔗 [View Run on GitHub](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
