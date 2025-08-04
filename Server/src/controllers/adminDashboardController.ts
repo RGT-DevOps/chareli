@@ -119,7 +119,7 @@ export const getDashboardAnalytics = async (
       .andWhere('analytics.duration >= :minDuration', { minDuration: 30 })
       .andWhere('user.hasCompletedFirstLogin = :hasCompleted', { hasCompleted: true });
 
-    // Add country filter if provided
+    
     if (countries.length > 0) {
       yesterdayUsersQuery = yesterdayUsersQuery
         .andWhere('user.country IN (:...countries)', { countries });
