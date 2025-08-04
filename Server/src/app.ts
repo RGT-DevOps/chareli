@@ -8,9 +8,16 @@ import { errorHandler } from './middlewares/errorHandler';
 import { requestLogger } from './middlewares/requestLogger';
 import { sanitizeInput } from './middlewares/sanitizationMiddleware';
 import logger from './utils/logger';
-import { specs } from './config/swagger';
+import fs from 'fs';
+import path from 'path';
+//import swaggerDocument from '../dist/swagger.json';
+//import { specs } from './config/swagger';
 import config from './config/config';
 // import { cloudFrontService } from './services/cloudfront.service';
+
+const swaggerDocument = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'swagger.json'), 'utf-8')
+);
 
 const app: Express = express();
 app.use(requestLogger);
@@ -25,15 +32,6 @@ app.use(
     maxAge: 86400,
   })
 );
-
-// Content Security Policy
-// app.use((req, res, next) => {
-//   res.setHeader(
-//     'Content-Security-Policy',
-//     "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;"
-//   );
-//   next();
-// });
 
 app.use(
   helmet({
@@ -59,7 +57,7 @@ app.use(sanitizeInput);
 app.use(
   '/api-docs',
   swaggerUi.serve,
-  swaggerUi.setup(specs, {
+  swaggerUi.setup(swaggerDocument, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
     swaggerOptions: {
@@ -67,19 +65,6 @@ app.use(
     },
   })
 );
-
-// test/cloudfront.test.ts
-
-// async function testSignedUrl() {
-//    const s3Key = 'games/200274ce-df18-4160-96c1-09efe2e71cd8/glass-city/index.html';
-
-//   const signedUrl = cloudFrontService.transformS3KeyToCloudFront(s3Key);
-
-//   console.log('Generated Signed URL:');
-//   console.log(signedUrl);
-// }
-
-// testSignedUrl();
 
 // API Routes
 app.use('/api', routes);
