@@ -1,13 +1,18 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { frontendUploadService } from '../services/frontend-upload.service';
-import type { FrontendUploadOptions, UploadProgress } from '../services/frontend-upload.service';
+import type { FrontendUploadOptions, FrontendUpdateOptions, UploadProgress } from '../services/frontend-upload.service';
 
 export interface UseFrontendUploadReturn {
   uploadGame: (
     thumbnailFile: File,
     gameZipFile: File,
     options: FrontendUploadOptions
+  ) => Promise<{ gameId: string }>;
+  updateGame: (
+    thumbnailFile: File | null,
+    gameZipFile: File | null,
+    options: FrontendUpdateOptions
   ) => Promise<{ gameId: string }>;
   progress: UploadProgress;
   isUploading: boolean;
@@ -66,6 +71,46 @@ export const useFrontendUpload = (): UseFrontendUploadReturn => {
     }
   }, [queryClient]);
 
+  const updateGame = useCallback(async (
+    thumbnailFile: File | null,
+    gameZipFile: File | null,
+    options: FrontendUpdateOptions
+  ): Promise<{ gameId: string }> => {
+    setIsUploading(true);
+    
+    try {
+      const result = await frontendUploadService.updateGame(
+        thumbnailFile,
+        gameZipFile,
+        options,
+        (progressUpdate) => {
+          setProgress(progressUpdate);
+        }
+      );
+
+      // Invalidate React Query cache after successful update
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/games-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      
+      // Also invalidate specific game query
+      queryClient.invalidateQueries({ queryKey: ['/api/games', options.gameId] });
+
+      return result;
+    } catch (error) {
+      setProgress({
+        phase: 'error',
+        progress: 0,
+        message: `Update failed: ${(error as Error).message}`,
+        error: (error as Error).message,
+      });
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  }, [queryClient]);
+
   const reset = useCallback(() => {
     setProgress({
       phase: 'extracting',
@@ -77,6 +122,7 @@ export const useFrontendUpload = (): UseFrontendUploadReturn => {
 
   return {
     uploadGame,
+    updateGame,
     progress,
     isUploading,
     isCompleted: progress.phase === 'completed',

@@ -1,4 +1,6 @@
 import JSZip from 'jszip';
+import Uppy from '@uppy/core';
+import AwsS3 from '@uppy/aws-s3';
 import { backendService } from '../backend/api.service';
 
 // Simple UUID generator to avoid external dependency
@@ -10,55 +12,21 @@ const generateUUID = () => {
   });
 };
 
-// Simple parallel upload with concurrency control
-const uploadFileToR2 = async (
-  file: Blob,
-  filename: string,
-  onProgress?: (progress: number) => void
-): Promise<void> => {
-  // Get signed URL
-  const response = await backendService.post('api/upload/signed-url', {
-    filename,
-    contentType: file.type || 'application/octet-stream',
-  });
-
-  const uploadUrl = response.data.uploadUrl;
-
-  // Upload file with progress tracking
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable && onProgress) {
-        const progress = Math.round((event.loaded / event.total) * 100);
-        onProgress(progress);
-      }
-    });
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed with status: ${xhr.status}`));
-      }
-    });
-
-    xhr.addEventListener('error', () => {
-      reject(new Error('Upload failed'));
-    });
-
-    xhr.open('PUT', uploadUrl);
-    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-    xhr.send(file);
-  });
-};
-
 export interface FrontendUploadOptions {
   title: string;
   description?: string;
   categoryId?: string;
   config?: number;
   position?: number;
+}
+
+export interface FrontendUpdateOptions {
+  title: string;
+  description?: string;
+  categoryId?: string;
+  config?: number;
+  position?: number;
+  gameId: string;
 }
 
 export interface UploadProgress {
@@ -71,6 +39,8 @@ export interface UploadProgress {
 }
 
 export class FrontendUploadService {
+  private uppy: Uppy | null = null;
+
   async uploadGame(
     thumbnailFile: File,
     gameZipFile: File,
@@ -119,33 +89,8 @@ export class FrontendUploadService {
         });
       }
 
-      // Step 3: Upload all files with controlled concurrency
-      const concurrency = 5; // Upload 5 files at a time
-      let uploadedCount = 0;
-
-      for (let i = 0; i < allFiles.length; i += concurrency) {
-        const batch = allFiles.slice(i, i + concurrency);
-        
-        await Promise.all(
-          batch.map(async (file) => {
-            await uploadFileToR2(file.data, file.name, (_fileProgress) => {
-              // Individual file progress can be tracked here if needed
-            });
-            uploadedCount++;
-            
-            if (onProgress) {
-              const overallProgress = 40 + Math.round((uploadedCount / allFiles.length) * 40);
-              onProgress({
-                phase: 'uploading',
-                progress: overallProgress,
-                message: `Uploading files... (${uploadedCount}/${allFiles.length})`,
-                filesUploaded: uploadedCount,
-                totalFiles: allFiles.length,
-              });
-            }
-          })
-        );
-      }
+      // Step 3: Upload all files using Uppy
+      await this.uploadFilesWithUppy(allFiles, onProgress);
 
       // Step 4: Create game record in database
       if (onProgress) {
@@ -173,6 +118,19 @@ export class FrontendUploadService {
 
       const gameResponse = await backendService.post('api/games/frontend-upload', gameData);
 
+      // Handle different response structures
+      let responseGameId: string;
+      if (gameResponse.data?.data?.id) {
+        responseGameId = gameResponse.data.data.id;
+      } else if (gameResponse.data?.id) {
+        responseGameId = gameResponse.data.id;
+      } else if (gameResponse.data?.gameId) {
+        responseGameId = gameResponse.data.gameId;
+      } else {
+        console.error('Unexpected response structure:', gameResponse.data);
+        throw new Error('Game created but could not retrieve game ID from response');
+      }
+
       if (onProgress) {
         onProgress({
           phase: 'completed',
@@ -183,7 +141,7 @@ export class FrontendUploadService {
         });
       }
 
-      return { gameId: gameResponse.data.data.id };
+      return { gameId: responseGameId };
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -196,6 +154,115 @@ export class FrontendUploadService {
         });
       }
       throw error;
+    }
+  }
+
+  private async uploadFilesWithUppy(
+    files: Array<{
+      name: string;
+      data: Blob;
+      type: string;
+      isMain: boolean;
+    }>,
+    onProgress?: (progress: UploadProgress) => void
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Create new Uppy instance
+      this.uppy = new Uppy({
+        autoProceed: false,
+        allowMultipleUploadBatches: false,
+        restrictions: {
+          maxNumberOfFiles: files.length,
+        },
+      });
+
+      // Configure AWS S3 plugin
+      this.uppy.use(AwsS3, {
+        shouldUseMultipart: false,
+        getUploadParameters: async (file) => {
+          // Get signed URL for each file
+          const response = await backendService.post('api/upload/signed-url', {
+            filename: file.meta.key || file.name,
+            contentType: file.type || 'application/octet-stream',
+          });
+
+          return {
+            method: 'PUT',
+            url: response.data.uploadUrl,
+            fields: {},
+            headers: {
+              'Content-Type': file.type || 'application/octet-stream',
+            },
+          };
+        },
+      });
+
+      let uploadedCount = 0;
+
+      // Set up event listeners
+      this.uppy.on('upload-progress', (_file, _progress) => {
+        if (onProgress) {
+          const overallProgress = 40 + Math.round((uploadedCount / files.length) * 40);
+          onProgress({
+            phase: 'uploading',
+            progress: overallProgress,
+            message: `Uploading files... (${uploadedCount}/${files.length})`,
+            filesUploaded: uploadedCount,
+            totalFiles: files.length,
+          });
+        }
+      });
+
+      this.uppy.on('upload-success', (_file, _response) => {
+        uploadedCount++;
+        if (onProgress) {
+          const overallProgress = 40 + Math.round((uploadedCount / files.length) * 40);
+          onProgress({
+            phase: 'uploading',
+            progress: overallProgress,
+            message: `Uploading files... (${uploadedCount}/${files.length})`,
+            filesUploaded: uploadedCount,
+            totalFiles: files.length,
+          });
+        }
+      });
+
+      this.uppy.on('complete', (result) => {
+        if (result.failed && result.failed.length > 0) {
+          reject(new Error(`Upload failed for ${result.failed.length} files`));
+        } else {
+          resolve();
+        }
+        this.cleanup();
+      });
+
+      this.uppy.on('error', (error) => {
+        reject(error);
+        this.cleanup();
+      });
+
+      // Add files to Uppy
+      files.forEach((file, _index) => {
+        this.uppy!.addFile({
+          name: file.name,
+          type: file.type,
+          data: file.data,
+          meta: {
+            key: file.name,
+          },
+        });
+      });
+
+      // Start upload
+      this.uppy.upload();
+    });
+  }
+
+  private cleanup() {
+    if (this.uppy) {
+      this.uppy.cancelAll();
+      this.uppy.removeFiles(this.uppy.getFiles().map(file => file.id));
+      this.uppy = null;
     }
   }
 
@@ -266,6 +333,131 @@ export class FrontendUploadService {
 
   private getFileExtension(filename: string): string {
     return filename.split('.').pop() || '';
+  }
+
+  async updateGame(
+    thumbnailFile: File | null,
+    gameZipFile: File | null,
+    options: FrontendUpdateOptions,
+    onProgress?: (progress: UploadProgress) => void
+  ): Promise<{ gameId: string }> {
+    try {
+      const filesToUpload: Array<{
+        name: string;
+        data: Blob;
+        type: string;
+        isMain: boolean;
+      }> = [];
+
+      let gameData: any = {
+        title: options.title,
+        description: options.description,
+        categoryId: options.categoryId,
+        config: options.config || 1,
+        position: options.position,
+      };
+
+      // Step 1: Handle ZIP file if provided
+      if (gameZipFile) {
+        if (onProgress) {
+          onProgress({
+            phase: 'extracting',
+            progress: 10,
+            message: 'Extracting game files...',
+          });
+        }
+
+        const extractedFiles = await this.extractZipFile(gameZipFile, options.gameId);
+        filesToUpload.push(...extractedFiles);
+
+        const mainGameFile = extractedFiles.find(f => f.isMain);
+        if (!mainGameFile) {
+          throw new Error('No index.html found in game files');
+        }
+        gameData.gameFileUrl = mainGameFile.name;
+      }
+
+      // Step 2: Handle thumbnail if provided
+      if (thumbnailFile) {
+        if (onProgress) {
+          onProgress({
+            phase: 'extracting',
+            progress: 20,
+            message: 'Preparing thumbnail...',
+          });
+        }
+
+        filesToUpload.push({
+          name: `thumbnails/${options.gameId}-thumbnail.${this.getFileExtension(thumbnailFile.name)}`,
+          data: thumbnailFile,
+          type: thumbnailFile.type,
+          isMain: false,
+        });
+        gameData.thumbnailUrl = `thumbnails/${options.gameId}-thumbnail.${this.getFileExtension(thumbnailFile.name)}`;
+      }
+
+      // Step 3: Upload files if any
+      if (filesToUpload.length > 0) {
+        if (onProgress) {
+          onProgress({
+            phase: 'uploading',
+            progress: 30,
+            message: 'Starting upload...',
+            totalFiles: filesToUpload.length,
+            filesUploaded: 0,
+          });
+        }
+
+        await this.uploadFilesWithUppy(filesToUpload, onProgress);
+      }
+
+      // Step 4: Update game record in database
+      if (onProgress) {
+        onProgress({
+          phase: 'finalizing',
+          progress: 90,
+          message: 'Updating game record...',
+        });
+      }
+
+      const gameResponse = await backendService.put(`api/games/${options.gameId}/frontend-update`, gameData);
+
+      // Handle different response structures
+      let responseGameId: string;
+      if (gameResponse.data?.data?.id) {
+        responseGameId = gameResponse.data.data.id;
+      } else if (gameResponse.data?.id) {
+        responseGameId = gameResponse.data.id;
+      } else if (gameResponse.data?.gameId) {
+        responseGameId = gameResponse.data.gameId;
+      } else {
+        responseGameId = options.gameId; // Fallback to the provided gameId
+      }
+
+      if (onProgress) {
+        onProgress({
+          phase: 'completed',
+          progress: 100,
+          message: 'Game updated successfully!',
+          filesUploaded: filesToUpload.length,
+          totalFiles: filesToUpload.length,
+        });
+      }
+
+      return { gameId: responseGameId };
+
+    } catch (error) {
+      console.error('Update error:', error);
+      if (onProgress) {
+        onProgress({
+          phase: 'error',
+          progress: 0,
+          message: `Update failed: ${(error as Error).message}`,
+          error: (error as Error).message,
+        });
+      }
+      throw error;
+    }
   }
 
   destroy() {

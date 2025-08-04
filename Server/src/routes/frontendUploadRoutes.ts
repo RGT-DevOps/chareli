@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate, canWrite } from '../middlewares/authMiddleware';
 import { 
   createGameFromFrontendUpload,
+  updateGameFromFrontendUpload,
   generateSignedUrl 
 } from '../controllers/frontendUploadController';
 
@@ -15,5 +16,8 @@ router.post('/upload/signed-url', canWrite, generateSignedUrl);
 
 // Create game from frontend upload (requires write access)
 router.post('/games/frontend-upload', canWrite, createGameFromFrontendUpload);
+
+// Update game from frontend upload (requires write access)
+router.put('/games/:id/frontend-update', canWrite, updateGameFromFrontendUpload);
 
 export default router;

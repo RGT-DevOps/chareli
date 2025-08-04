@@ -272,6 +272,243 @@ export const createGameFromFrontendUpload = async (
  *       500:
  *         description: Internal server error
  */
+/**
+ * @swagger
+ * /games/{id}/frontend-update:
+ *   put:
+ *     summary: Update game from frontend-processed files
+ *     description: Update a game record after files have been processed and uploaded by the frontend
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID of the game to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               categoryId:
+ *                 type: string
+ *                 format: uuid
+ *               config:
+ *                 type: integer
+ *               position:
+ *                 type: integer
+ *               thumbnailUrl:
+ *                 type: string
+ *                 description: S3 key for new thumbnail (optional)
+ *               gameFileUrl:
+ *                 type: string
+ *                 description: S3 key for new game file (optional)
+ *     responses:
+ *       200:
+ *         description: Game updated successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Game not found
+ *       500:
+ *         description: Internal server error
+ */
+export const updateGameFromFrontendUpload = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      description,
+      categoryId,
+      config,
+      position,
+      thumbnailUrl,
+      gameFileUrl
+    } = req.body;
+
+    logger.info(`Updating game from frontend upload: ${id}`);
+
+    // Find the game
+    const game = await queryRunner.manager.findOne(Game, {
+      where: { id }
+    });
+
+    if (!game) {
+      return next(ApiError.notFound(`Game with id ${id} not found`));
+    }
+
+    // Validate position if provided
+    if (position !== undefined && position !== game.position) {
+      const newPosition = parseInt(position);
+      
+      if (newPosition < 1) {
+        return next(ApiError.badRequest('Position must be a positive integer'));
+      }
+      
+      const totalGames = await queryRunner.manager.count(Game);
+      if (newPosition > totalGames) {
+        return next(ApiError.badRequest(`Position cannot be greater than ${totalGames}`));
+      }
+    }
+
+    // Handle thumbnail update
+    if (thumbnailUrl) {
+      logger.info('Creating new thumbnail file record for frontend update...');
+      const thumbnailFileRecord = fileRepository.create({
+        s3Key: thumbnailUrl,
+        type: 'thumbnail'
+      });
+      
+      await queryRunner.manager.save(thumbnailFileRecord);
+      game.thumbnailFileId = thumbnailFileRecord.id;
+    }
+
+    // Handle game file update
+    if (gameFileUrl) {
+      logger.info('Creating new game file record for frontend update...');
+      const gameFileRecord = fileRepository.create({
+        s3Key: gameFileUrl,
+        type: 'game_file'
+      });
+      
+      await queryRunner.manager.save(gameFileRecord);
+      game.gameFileId = gameFileRecord.id;
+    }
+
+    // Handle category update
+    if (categoryId !== undefined) {
+      if (categoryId && categoryId !== game.categoryId) {
+        // Validate category exists
+        const category = await queryRunner.manager.findOne(Category, {
+          where: { id: categoryId }
+        });
+        
+        if (!category) {
+          return next(ApiError.badRequest(`Category with id ${categoryId} not found`));
+        }
+        
+        game.categoryId = categoryId;
+      } else if (!categoryId && game.categoryId) {
+        // Auto-assign default category
+        const defaultCategory = await queryRunner.manager.findOne(Category, {
+          where: { isDefault: true }
+        });
+        
+        if (!defaultCategory) {
+          throw new ApiError(500, 'Default category not found');
+        }
+        
+        game.categoryId = defaultCategory.id;
+      }
+    }
+
+    // Handle position update
+    if (position !== undefined && position !== game.position) {
+      const newPosition = parseInt(position);
+      
+      // Check if target position is occupied
+      const gameAtTargetPosition = await queryRunner.manager.findOne(Game, {
+        where: { position: newPosition }
+      });
+      
+      if (gameAtTargetPosition) {
+        // Swap positions
+        const currentPosition = game.position;
+        game.position = newPosition;
+        gameAtTargetPosition.position = currentPosition;
+        
+        await queryRunner.manager.save(gameAtTargetPosition);
+      } else {
+        // Position is free
+        game.position = newPosition;
+      }
+    }
+
+    // Update basic properties
+    if (title !== undefined) game.title = title;
+    if (description !== undefined) game.description = description;
+    if (config !== undefined) game.config = config;
+
+    await queryRunner.manager.save(game);
+
+    // Commit transaction
+    await queryRunner.commitTransaction();
+
+    // Invalidate all games-related cache
+    const cachePatterns = [
+      'games:all:*',
+      'games:id:*',
+      'admin:games:*',
+      'admin:games-analytics:*',
+      'categories:*'
+    ];
+    
+    for (const pattern of cachePatterns) {
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(keys);
+        logger.info(`Invalidated ${keys.length} cache keys matching pattern: ${pattern}`);
+      }
+    }
+
+    // Fetch updated game with relations
+    const updatedGame = await gameRepository.findOne({
+      where: { id },
+      relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy']
+    });
+
+    if (!updatedGame) {
+      return next(ApiError.notFound(`Game with id ${id} not found`));
+    }
+
+    // Transform file URLs to public URLs
+    if (updatedGame.gameFile) {
+      updatedGame.gameFile.s3Key = storageService.getPublicUrl(updatedGame.gameFile.s3Key);
+    }
+    if (updatedGame.thumbnailFile) {
+      updatedGame.thumbnailFile.s3Key = storageService.getPublicUrl(updatedGame.thumbnailFile.s3Key);
+    }
+
+    logger.info(`Successfully updated game: ${updatedGame.id}`);
+
+    res.status(200).json({
+      success: true,
+      data: updatedGame,
+    });
+
+  } catch (error) {
+    // Rollback transaction on error
+    await queryRunner.rollbackTransaction();
+    logger.error('Error updating game from frontend upload:', error);
+    next(error);
+  } finally {
+    // Release query runner
+    await queryRunner.release();
+  }
+};
+
 export const generateSignedUrl = async (
   req: Request,
   res: Response,
