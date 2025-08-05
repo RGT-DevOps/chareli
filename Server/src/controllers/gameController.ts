@@ -724,10 +724,20 @@ export const createGame = async (
     logger.info('Uploading extracted game files to permanent storage...');
     await storageService.uploadDirectory(processedZip.extractedPath, gamePath);
 
+    // Move thumbnail to permanent storage and create file record
+    logger.info('Moving thumbnail to permanent storage...');
+    const thumbnailBuffer = await storageService.downloadFile(thumbnailFileKey);
+    const thumbnailUploadResult = await storageService.uploadFile(
+      thumbnailBuffer,
+      thumbnailFileKey.split('/').pop() || 'thumbnail.jpg', // Get filename from key
+      'image/jpeg', // Default to jpeg, could be improved to detect actual type
+      'thumbnails'
+    );
+    
     // Create file records in the database using transaction
     logger.info('Creating file records in the database...');
     const thumbnailFileRecord = fileRepository.create({
-      s3Key: thumbnailFileKey,
+      s3Key: thumbnailUploadResult.key,
       type: 'thumbnail'
     });
 
@@ -893,8 +903,14 @@ export const updateGame = async (
       categoryId, 
       status,
       config,
-      position
+      position,
+      thumbnailFileKey: rawThumbnailFileKey,
+      gameFileKey: rawGameFileKey
     } = req.body;
+    
+    // Decode HTML entities in file keys if provided
+    const thumbnailFileKey = rawThumbnailFileKey?.replace(/&#x2F;/g, '/');
+    const gameFileKey = rawGameFileKey?.replace(/&#x2F;/g, '/');
     
     const game = await queryRunner.manager.findOne(Game, {
       where: { id }
@@ -919,11 +935,45 @@ export const updateGame = async (
       }
     }
     
-    // Handle file uploads if provided
+    // Handle file uploads if provided (support both old multer and new presigned URL approach)
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     
-    // Handle thumbnail file upload
-    if (files?.thumbnailFile && files.thumbnailFile[0]) {
+    // Handle thumbnail file upload - New presigned URL approach
+    if (thumbnailFileKey) {
+      logger.info(`Updating thumbnail from temporary storage: ${thumbnailFileKey}`);
+      
+      // Download from temporary storage
+      const thumbnailBuffer = await storageService.downloadFile(thumbnailFileKey);
+      
+      // Upload to permanent storage
+      const thumbnailUploadResult = await storageService.uploadFile(
+        thumbnailBuffer,
+        thumbnailFileKey.split('/').pop() || 'thumbnail.jpg',
+        'image/jpeg', // Default to jpeg, could be improved to detect actual type
+        'thumbnails'
+      );
+      
+      // Create file record
+      logger.info('Creating new thumbnail file record...');
+      const thumbnailFileRecord = fileRepository.create({
+        s3Key: thumbnailUploadResult.key,
+        type: 'thumbnail'
+      });
+      
+      await queryRunner.manager.save(thumbnailFileRecord);
+      
+      // Update game with new file ID
+      game.thumbnailFileId = thumbnailFileRecord.id;
+      
+      // Clean up temporary file
+      try {
+        await storageService.deleteFile(thumbnailFileKey);
+      } catch (cleanupError) {
+        logger.warn('Failed to clean up temporary thumbnail file:', cleanupError);
+      }
+    }
+    // Handle thumbnail file upload - Old multer approach (for backward compatibility)
+    else if (files?.thumbnailFile && files.thumbnailFile[0]) {
       const thumbnailFile = files.thumbnailFile[0];
       
       // Upload to storage
@@ -942,14 +992,59 @@ export const updateGame = async (
         type: 'thumbnail'
       });
       
-      await fileRepository.save(thumbnailFileRecord);
+      await queryRunner.manager.save(thumbnailFileRecord);
       
       // Update game with new file ID
       game.thumbnailFileId = thumbnailFileRecord.id;
     }
     
-    // Handle game file upload
-    if (files?.gameFile && files.gameFile[0]) {
+    // Handle game file upload - New presigned URL approach
+    if (gameFileKey) {
+      logger.info(`Updating game file from temporary storage: ${gameFileKey}`);
+      
+      // Download and process the uploaded ZIP file from storage
+      const zipBuffer = await storageService.downloadFile(gameFileKey);
+      logger.info(`Successfully downloaded ZIP file, size: ${zipBuffer.length} bytes`);
+      const processedZip = await zipService.processGameZip(zipBuffer);
+      
+      if (processedZip.error) {
+        throw new ApiError(400, processedZip.error);
+      }
+
+      // Generate unique game folder name
+      const gameFolderId = uuidv4();
+      const gamePath = `games/${gameFolderId}`;
+
+      // Upload extracted game files to permanent storage location
+      logger.info('Uploading extracted game files to permanent storage...');
+      await storageService.uploadDirectory(processedZip.extractedPath, gamePath);
+
+      // Create file record for the index.html
+      logger.info('Creating new game file record...');
+      if (!processedZip.indexPath) {
+        throw new ApiError(400, 'No index.html found in the zip file');
+      }
+
+      const indexPath = processedZip.indexPath.replace(/\\/g, '/');
+      const gameFileRecord = fileRepository.create({
+        s3Key: `${gamePath}/${indexPath}`,
+        type: 'game_file'
+      });
+      
+      await queryRunner.manager.save(gameFileRecord);
+      
+      // Update game with new file ID
+      game.gameFileId = gameFileRecord.id;
+      
+      // Clean up temporary file
+      try {
+        await storageService.deleteFile(gameFileKey);
+      } catch (cleanupError) {
+        logger.warn('Failed to clean up temporary game file:', cleanupError);
+      }
+    }
+    // Handle game file upload - Old multer approach (for backward compatibility)
+    else if (files?.gameFile && files.gameFile[0]) {
       const gameFile = files.gameFile[0];
       
       // Process game zip file first to validate it
