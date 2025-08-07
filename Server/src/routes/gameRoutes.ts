@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllGames,
   getGameById,
@@ -7,29 +7,53 @@ import {
   updateGame,
   deleteGame,
   uploadGameFiles,
-  uploadGameFilesForUpdate
-} from '../controllers/gameController';
-import { authenticate, isAdmin, optionalAuthenticate } from '../middlewares/authMiddleware';
-import { validateBody, validateParams, validateQuery } from '../middlewares/validationMiddleware';
+  uploadGameFilesForUpdate,
+} from "../controllers/gameController";
+import {
+  authenticate,
+  isAdmin,
+  optionalAuthenticate,
+} from "../middlewares/authMiddleware";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../middlewares/validationMiddleware";
 import {
   createGameSchema,
   updateGameSchema,
   gameIdParamSchema,
-  gameQuerySchema
-} from '../validation';
-
+  gameQuerySchema,
+} from "../validation";
+import gameTokenTest from "../middlewares/gameTokenTest";
 const router = Router();
 
 // Public routes with optional authentication (for personalized features like recommendations)
-router.get('/', optionalAuthenticate, validateQuery(gameQuerySchema), getAllGames);
-router.get('/position/:position', optionalAuthenticate, getGameByPosition);
-router.get('/:id', optionalAuthenticate, validateParams(gameIdParamSchema), getGameById);
+router.get(
+  "/",
+  optionalAuthenticate,
+  validateQuery(gameQuerySchema),
+  getAllGames
+);
+router.get("/position/:position", optionalAuthenticate, getGameByPosition);
+router.get(
+  "/:id",
+  optionalAuthenticate,
+  validateParams(gameIdParamSchema),
+  gameTokenTest,
+  getGameById
+);
 
 router.use(authenticate);
 router.use(isAdmin);
 
-router.post('/', uploadGameFiles, createGame);
-router.put('/:id', validateParams(gameIdParamSchema), uploadGameFilesForUpdate, updateGame);
-router.delete('/:id', validateParams(gameIdParamSchema), deleteGame);
+router.post("/", uploadGameFiles, createGame);
+router.put(
+  "/:id",
+  validateParams(gameIdParamSchema),
+  uploadGameFilesForUpdate,
+  updateGame
+);
+router.delete("/:id", validateParams(gameIdParamSchema), deleteGame);
 
 export default router;
