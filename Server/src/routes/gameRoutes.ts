@@ -8,17 +8,10 @@ import {
   deleteGame,
   uploadGameFiles,
   uploadGameFilesForUpdate,
-} from "../controllers/gameController";
-import {
-  authenticate,
-  isAdmin,
-  optionalAuthenticate,
-} from "../middlewares/authMiddleware";
-import {
-  validateBody,
-  validateParams,
-  validateQuery,
-} from "../middlewares/validationMiddleware";
+  generatePresignedUrl
+} from '../controllers/gameController';
+import { authenticate, isAdmin, optionalAuthenticate } from '../middlewares/authMiddleware';
+import { validateBody, validateParams, validateQuery } from '../middlewares/validationMiddleware';
 import {
   createGameSchema,
   updateGameSchema,
@@ -47,13 +40,9 @@ router.get(
 router.use(authenticate);
 router.use(isAdmin);
 
-router.post("/", uploadGameFiles, createGame);
-router.put(
-  "/:id",
-  validateParams(gameIdParamSchema),
-  uploadGameFilesForUpdate,
-  updateGame
-);
-router.delete("/:id", validateParams(gameIdParamSchema), deleteGame);
+router.post('/presigned-url', generatePresignedUrl);
+router.post('/', uploadGameFiles, createGame);
+router.put('/:id', validateParams(gameIdParamSchema), uploadGameFilesForUpdate, updateGame);
+router.delete('/:id', validateParams(gameIdParamSchema), deleteGame);
 
 export default router;

@@ -51,10 +51,10 @@ export const useGameByIdTest = (gameId: string) => {
 export const useCreateGame = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: FormData) =>
+    mutationFn: (data: any) => 
       backendService.post(BackendRoute.GAMES, data, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          'Content-Type': 'application/json',
         },
       }),
     onSuccess: () => {
@@ -71,12 +71,16 @@ export const useCreateGame = () => {
 export const useUpdateGame = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
-      backendService.put(BackendRoute.GAME_BY_ID.replace(":id", id), data, {
+    mutationFn: ({ id, data }: { id: string; data: FormData | any }) => {
+      // Check if data is FormData (old approach) or plain object (new approach)
+      const isFormData = data instanceof FormData;
+      
+      return backendService.put(BackendRoute.GAME_BY_ID.replace(':id', id), data, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
         },
-      }),
+      });
+    },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES, id] });
