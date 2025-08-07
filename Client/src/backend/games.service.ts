@@ -34,42 +34,18 @@ export const useGameById = (id: string) => {
   });
 };
 
-export const useGameByIdTest = (gameId: string, userId: string | undefined) => {
-  // getting the token
-  const { data, isLoading: isTokenLoading } = useQuery({
-    queryKey: ["game-token", gameId],
-    queryFn: async () => {
-      const response = await backendService.post(
-        BackendRoute.GAME_BY_ID.replace(":id", gameId),
-        {
-          userId: userId,
-          expiresIn: "1h",
-        }
-      );
-      console.log("getting game token from bckend:::::", response.data);
-      return response.data;
-    },
-  });
-
+export const useGameByIdTest = (gameId: string) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gameQuery = useQuery<any>({
+  return useQuery<any>({
     queryKey: [BackendRoute.GAMES, gameId],
     queryFn: async () => {
       const response = await backendService.get(
-        `${BackendRoute.GAME_BY_ID.replace(":id", gameId)}?game-auth-token=${
-          data.token
-        }`
+        `${BackendRoute.GAME_BY_ID.replace(":id", gameId)}`
       );
       console.log("Game API Response:", response.data);
       return response.data as GameResponse;
     },
-    enabled: !!data?.token,
-  });
-
-  return {
-    ...gameQuery,
-    isLoading: isTokenLoading || gameQuery.isLoading,
-  };
+  })
 };
 
 export const useCreateGame = () => {

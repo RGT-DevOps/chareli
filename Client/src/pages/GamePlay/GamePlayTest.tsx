@@ -16,14 +16,13 @@ import GameLoadingScreen from "../../components/single/GameLoadingScreen";
 const GamePlayTest = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
   const {
     data: game,
     isLoading,
     error,
-  } = useGameByIdTest(gameId || "", user?.id);
+  } = useGameByIdTest(gameId || "");
   const { mutate: createAnalytics } = useCreateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
 

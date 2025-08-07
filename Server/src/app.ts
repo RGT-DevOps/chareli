@@ -20,7 +20,7 @@ import config from "./config/config";
 // swaggerDocument= JSON.parse(
 //   fs.readFileSync(path.join(__dirname, "swagger.json"), "utf-8")
 // );
-
+  
 const app: Express = express();
 app.use(requestLogger);
 app.use(helmet());

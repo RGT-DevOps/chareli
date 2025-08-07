@@ -17,9 +17,6 @@ const gameTokenTest = async (
 ) => {
   try {
     const { gameId } = req.params;
-    const {expiresIn="1h", userId} = req.body;
-    console.log("userID:::::", userId);
-    // const expiresIn = "1h";
 
     // Get the game with its file information
     const game = await gameRepository.findOne({
@@ -38,37 +35,37 @@ const gameTokenTest = async (
     }
 
     // Use provided userId or fall back to authenticated user
-    const targetUserId = userId || req.user?.userId;
+    // const targetUserId = userId || req.user?.userId;
 
-    if (!targetUserId) {
-      return next(ApiError.badRequest("User ID is required"));
-    }
+    // if (!targetUserId) {
+    //   return next(ApiError.badRequest("User ID is required"));
+    // }
 
     // Calculate expiration time
-    let expirationSeconds: number;
-    const timeUnit = expiresIn.slice(-1);
-    const timeValue = parseInt(expiresIn.slice(0, -1));
+    let expirationSeconds: number = 60 * 60;
+    // const timeUnit = expiresIn.slice(-1);
+    // const timeValue = parseInt(expiresIn.slice(0, -1));
 
-    switch (timeUnit) {
-      case "s":
-        expirationSeconds = timeValue;
-        break;
-      case "m":
-        expirationSeconds = timeValue * 60;
-        break;
-      case "h":
-        expirationSeconds = timeValue * 60 * 60;
-        break;
-      case "d":
-        expirationSeconds = timeValue * 24 * 60 * 60;
-        break;
-      default:
-        expirationSeconds = 60 * 60; // Default to 1 hour
-    }
+    // switch (timeUnit) {
+    //   case "s":
+    //     expirationSeconds = timeValue;
+    //     break;
+    //   case "m":
+    //     expirationSeconds = timeValue * 60;
+    //     break;
+    //   case "h":
+    //     expirationSeconds = timeValue * 60 * 60;
+    //     break;
+    //   case "d":
+    //     expirationSeconds = timeValue * 24 * 60 * 60;
+    //     break;
+    //   default:
+    //     expirationSeconds = 60 * 60; // Default to 1 hour
+    // }
 
     // Create JWT payload for the worker
     const payload = {
-      userId: targetUserId,
+      // userId: targetUserId,
       gameId: game.id,
       gameTitle: game.title,
       iat: Math.floor(Date.now() / 1000),
@@ -84,6 +81,15 @@ const gameTokenTest = async (
     const gameUrl = `${workerUrl}/${gameFileKey}`;
 
     const expiresAt = new Date((payload.iat + expirationSeconds) * 1000);
+
+    res.cookie("game-auth-token", token, {
+      domain: new URL(workerUrl).hostname,
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      expires: expiresAt,
+    });
 
     res.status(200).json({
       success: true,
