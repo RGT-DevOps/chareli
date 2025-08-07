@@ -43,7 +43,6 @@ class SESProvider implements EmailProvider {
     try {
       const emailsToSkip = ["admin@example.com"];
 
-      // In development mode, just log the email instead of sending
       if (emailsToSkip.includes(to)) {
         logger.info(`DEVELOPMENT MODE -- Skipping for this email ${to}: Email would be sent to ${to}`);
         return true;
