@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllGames,
   getGameById,
@@ -16,15 +16,26 @@ import {
   createGameSchema,
   updateGameSchema,
   gameIdParamSchema,
-  gameQuerySchema
-} from '../validation';
-
+  gameQuerySchema,
+} from "../validation";
+import gameTokenTest from "../middlewares/gameTokenTest";
 const router = Router();
 
 // Public routes with optional authentication (for personalized features like recommendations)
-router.get('/', optionalAuthenticate, validateQuery(gameQuerySchema), getAllGames);
-router.get('/position/:position', optionalAuthenticate, getGameByPosition);
-router.get('/:id', optionalAuthenticate, validateParams(gameIdParamSchema), getGameById);
+router.get(
+  "/",
+  optionalAuthenticate,
+  validateQuery(gameQuerySchema),
+  getAllGames
+);
+router.get("/position/:position", optionalAuthenticate, getGameByPosition);
+router.get(
+  "/:id",
+  optionalAuthenticate,
+  validateParams(gameIdParamSchema),
+  gameTokenTest,
+  getGameById
+);
 
 router.use(authenticate);
 router.use(isAdmin);
