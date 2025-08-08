@@ -1,6 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { version } from '../../package.json';
-import { isPrimitive } from '@sentry/core';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const fileExtension = isProduction ? '.js' : '.ts';
