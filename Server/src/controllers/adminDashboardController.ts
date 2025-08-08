@@ -10,6 +10,7 @@ import { Between, FindOptionsWhere, In, LessThan, IsNull, Not } from 'typeorm';
 import { checkInactiveUsers } from '../jobs/userInactivityCheck';
 import { storageService } from '../services/storage.service';
 import redis from '../config/redisClient';
+import { cacheService } from '../services/cache.service';
 
 const userRepository = AppDataSource.getRepository(User);
 const gameRepository = AppDataSource.getRepository(Game);
@@ -45,10 +46,10 @@ export const getDashboardAnalytics = async (
     const cacheKey = `admin:dashboard:${JSON.stringify(req.query)}`;
 
     // Try to get cached data
-    const cached = await redis.get(cacheKey);
+    const cached = await cacheService.get(cacheKey);
     if (cached) {
       console.log('[Redis] Cache HIT for getDashboardAnalytics:', cacheKey);
-      res.status(200).json(JSON.parse(cached));
+      res.status(200).json(cached);
       return;
     }
     console.log('[Redis] Cache MISS for getDashboardAnalytics:', cacheKey);
@@ -681,7 +682,7 @@ export const getDashboardAnalytics = async (
     };
 
     // Cache the result for 5 minutes (dashboard needs relatively fresh data)
-    await redis.set(cacheKey, JSON.stringify(response), 'EX', 300);
+    await cacheService.set(cacheKey, response, 300);
     
     res.status(200).json(response);
   } catch (error) {
@@ -1037,10 +1038,10 @@ export const getGamesWithAnalytics = async (
     const cacheKey = `admin:games-analytics:${JSON.stringify(req.query)}`;
 
     // Try to get cached data
-    const cached = await redis.get(cacheKey);
+    const cached = await cacheService.get(cacheKey);
     if (cached) {
       console.log('[Redis] Cache HIT for getGamesWithAnalytics:', cacheKey);
-      res.status(200).json(JSON.parse(cached));
+      res.status(200).json(cached);
       return;
     }
     console.log('[Redis] Cache MISS for getGamesWithAnalytics:', cacheKey);
@@ -1160,7 +1161,7 @@ export const getGamesWithAnalytics = async (
     }
     
     // Cache the result for 10 minutes
-    await redis.set(cacheKey, JSON.stringify(response), 'EX', 600);
+    await cacheService.set(cacheKey, response, 600);
     
     res.status(200).json(response);
   } catch (error) {
@@ -1512,10 +1513,10 @@ export const getGamesPopularityMetrics = async (
     const cacheKey = 'admin:games-popularity';
 
     // Try to get cached data
-    const cached = await redis.get(cacheKey);
+    const cached = await cacheService.get(cacheKey);
     if (cached) {
       console.log('[Redis] Cache HIT for getGamesPopularityMetrics:', cacheKey);
-      res.status(200).json(JSON.parse(cached));
+      res.status(200).json(cached);
       return;
     }
     console.log('[Redis] Cache MISS for getGamesPopularityMetrics:', cacheKey);
@@ -1618,7 +1619,7 @@ export const getGamesPopularityMetrics = async (
     };
 
     // Cache the result for 15 minutes (popularity metrics don't change frequently)
-    await redis.set(cacheKey, JSON.stringify(response), 'EX', 900);
+    await cacheService.set(cacheKey, response, 900);
 
     res.status(200).json(response);
   } catch (error) {
@@ -1976,7 +1977,7 @@ export const getUsersWithAnalytics = async (
     };
 
     // Cache the result for 10 minutes (user analytics data)
-    await redis.set(cacheKey, JSON.stringify(response), 'EX', 600);
+    await cacheService.set(cacheKey, response, 600);
 
     res.status(200).json(response);
   } catch (error) {
