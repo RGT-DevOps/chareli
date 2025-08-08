@@ -34,35 +34,9 @@ const gameTokenTest = async (
       return next(ApiError.badRequest("Game file not found"));
     }
 
-    // Use provided userId or fall back to authenticated user
-    // const targetUserId = userId || req.user?.userId;
-
-    // if (!targetUserId) {
-    //   return next(ApiError.badRequest("User ID is required"));
-    // }
-
     // Calculate expiration time
     let expirationSeconds: number = 60 * 60;
-    // const timeUnit = expiresIn.slice(-1);
-    // const timeValue = parseInt(expiresIn.slice(0, -1));
-
-    // switch (timeUnit) {
-    //   case "s":
-    //     expirationSeconds = timeValue;
-    //     break;
-    //   case "m":
-    //     expirationSeconds = timeValue * 60;
-    //     break;
-    //   case "h":
-    //     expirationSeconds = timeValue * 60 * 60;
-    //     break;
-    //   case "d":
-    //     expirationSeconds = timeValue * 24 * 60 * 60;
-    //     break;
-    //   default:
-    //     expirationSeconds = 60 * 60; // Default to 1 hour
-    // }
-
+    
     // Create JWT payload for the worker
     const payload = {
       // userId: targetUserId,
@@ -91,32 +65,7 @@ const gameTokenTest = async (
       expires: expiresAt,
     });
 
-    res.status(200).json({
-      success: true,
-      data: {
-        token,
-        expiresAt: expiresAt.toISOString(),
-        gameUrl,
-        gameFileKey,
-        cookieInstructions: {
-          name: "game-auth-token",
-          value: token,
-          domain: new URL(workerUrl).hostname,
-          path: "/",
-          httpOnly: true,
-          secure: true,
-          sameSite: "None",
-          expires: expiresAt.toISOString(),
-        },
-        testInstructions: {
-          message: "To test access, set the cookie and visit the gameUrl",
-          curlExample: `curl -H "Cookie: game-auth-token=${token}" "${gameUrl}"`,
-          browserTest: `document.cookie = "game-auth-token=${token}; domain=${
-            new URL(workerUrl).hostname
-          }; path=/; secure; samesite=none"; window.open("${gameUrl}");`,
-        },
-      },
-    });
+   next()
   } catch (error) {
     logger.error("Error generating game access token:", error);
     next(error);
