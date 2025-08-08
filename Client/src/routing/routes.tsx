@@ -4,7 +4,7 @@ import Home from '../pages/Home/Home';
 import About from '../pages/About/About';
 import { RegisterInvitationPage } from '../pages/RegisterInvitation';
 import MainLayout from '../layout/MainLayout';
-import GamePlay from '../pages/GamePlay/GamePlay';
+// import GamePlay from '../pages/GamePlay/GamePlay';
 import Categories from '../pages/Categories/Categories';
 import { ResetPasswordPage } from '../pages/ResetPassword/ResetPasswordPage';
 import { ProtectedRoute } from './ProtectedRoute';
