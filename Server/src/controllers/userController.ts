@@ -14,6 +14,7 @@ import { detectDeviceType } from "../utils/deviceUtils";
 import { emailService } from "../services/email.service";
 import { anonymizationService } from "../services/anonymization.service";
 import redis from "../config/redisClient";
+import { cacheService } from "../services/cache.service";
 
 const userRepository = AppDataSource.getRepository(User);
 const roleRepository = AppDataSource.getRepository(Role);
@@ -568,6 +569,9 @@ export const updateUser = async (
 
     await userRepository.save(user);
 
+    // Invalidate user cache if user stats might be affected
+    await cacheService.invalidateUserCache(id);
+
     // Don't return sensitive information
     const { password: _, ...userWithoutSensitiveInfo } = user;
 
@@ -675,6 +679,9 @@ export const deleteUser = async (
 
     // Anonymize user data (GDPR compliant soft deletion)
     await anonymizationService.anonymizeUserData(id);
+
+    // Invalidate analytics-related cache since user data affects analytics
+    await cacheService.invalidateAnalyticsCache();
 
     const actionMessage = isSelfDeactivation
       ? "Account deactivated and data anonymized successfully. Notification email sent."

@@ -4,6 +4,7 @@ import { GamePositionHistory } from '../entities/GamePositionHistory';
 import { Game } from '../entities/Games';
 import { ApiError } from '../middlewares/errorHandler';
 import { storageService } from '../services/storage.service';
+import { cacheService } from '../services/cache.service';
 
 const gamePositionHistoryRepository = AppDataSource.getRepository(GamePositionHistory);
 const gameRepository = AppDataSource.getRepository(Game);
@@ -184,6 +185,17 @@ export const getClickAnalytics = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const cacheKey = 'game-position-history:analytics';
+
+    // Try to get cached data
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      console.log('[Redis] Cache HIT for getClickAnalytics:', cacheKey);
+      res.status(200).json(cached);
+      return;
+    }
+    console.log('[Redis] Cache MISS for getClickAnalytics:', cacheKey);
+
     // Get position performance analytics
     const positionPerformance = await gamePositionHistoryRepository
       .createQueryBuilder('history')
@@ -222,14 +234,19 @@ export const getClickAnalytics = async (
       .limit(20)
       .getMany();
     
-    res.status(200).json({
+    const response = {
       success: true,
       data: {
         positionPerformance,
         mostClickedPositions,
         recentActivity
       }
-    });
+    };
+
+    // Cache the result for 15 minutes (position analytics don't change frequently)
+    await cacheService.set(cacheKey, response, 900);
+    
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }
@@ -432,6 +449,17 @@ export const getPositionPerformance = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    const cacheKey = 'game-position-history:performance';
+
+    // Try to get cached data
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      console.log('[Redis] Cache HIT for getPositionPerformance:', cacheKey);
+      res.status(200).json(cached);
+      return;
+    }
+    console.log('[Redis] Cache MISS for getPositionPerformance:', cacheKey);
+
     // Get simplified position performance metrics
     const performance = await gamePositionHistoryRepository
       .createQueryBuilder('history')
@@ -447,10 +475,15 @@ export const getPositionPerformance = async (
       .orderBy('history.position', 'ASC')
       .getRawMany();
     
-    res.status(200).json({
+    const response = {
       success: true,
       data: performance
-    });
+    };
+
+    // Cache the result for 15 minutes (position performance doesn't change frequently)
+    await cacheService.set(cacheKey, response, 900);
+    
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }

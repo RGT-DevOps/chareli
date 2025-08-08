@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../config/database';
 import { SignupAnalytics } from '../entities/SignupAnalytics';
 import { getCountryFromIP, extractClientIP, getIPCacheStats } from '../utils/ipUtils';
+import { cacheService } from '../services/cache.service';
 
 const signupAnalyticsRepository = AppDataSource.getRepository(SignupAnalytics);
 
@@ -185,6 +186,16 @@ export const getSignupAnalyticsData = async (
 ): Promise<void> => {
   try {
     const { period, startDate: queryStartDate, endDate: queryEndDate, country, days } = req.query;
+    const cacheKey = `signup-analytics:data:${JSON.stringify(req.query)}`;
+
+    // Try to get cached data
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      console.log('[Redis] Cache HIT for getSignupAnalyticsData:', cacheKey);
+      res.status(200).json(cached);
+      return;
+    }
+    console.log('[Redis] Cache MISS for getSignupAnalyticsData:', cacheKey);
 
     // Handle country filter
     const countries = Array.isArray(country) ? country as string[] : country ? [country as string] : [];
@@ -346,7 +357,7 @@ export const getSignupAnalyticsData = async (
       .orderBy('count', 'DESC')
       .getRawMany();
     
-    res.status(200).json({
+    const response = {
       success: true,
       data: {
         totalClicks,
@@ -357,7 +368,12 @@ export const getSignupAnalyticsData = async (
         clicksByDay,
         clicksByType
       }
-    });
+    };
+
+    // Cache the result for 10 minutes (signup analytics don't change frequently)
+    await cacheService.set(cacheKey, response, 600);
+    
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }
