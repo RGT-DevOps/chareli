@@ -26,6 +26,8 @@ export default function Home() {
   // Separate state for insights filter
   const [insightsTimeRange, setInsightsTimeRange] =
     useState<DashboardTimeRange>({ period: "last24hours" });
+
+  const { data: analyticsData } = useSignupAnalyticsData();
   return (
     <div>
       {/* stats cards */}
@@ -78,7 +80,8 @@ export default function Home() {
                       className="w-8 h-8 sm:w-10 sm:h-10 dark:text-white flex-shrink-0"
                     />
                     <p className="text-sm sm:text-lg text-[#64748A] dark:text-white">
-                      Total clicks on Sign-up button
+                      Total clicks on Sign-up button (
+                      {analyticsData?.totalClicks})
                     </p>
                   </div>
 
