@@ -4,78 +4,28 @@ import { AcceptInvitationModal } from "../../../components/modals/AdminModals/Ac
 import { DashboardTimeFilter } from "../../../components/single/DashboardTimeFilter";
 import { DashboardCountryFilter } from "../../../components/single/DashboardCountryFilter";
 import StatsCard from "./StatsCard";
-<<<<<<< HEAD
 import PieChart from "../../../components/charts/piechart";
 import { useState } from "react";
 import { useSignupAnalyticsData } from "../../../backend/signup.analytics.service";
-import { useUsersAnalytics } from "../../../backend/analytics.service";
-import { useSystemConfigByKey } from "../../../backend/configuration.service";
-import KeepPlayingModal from "../../../components/modals/KeepPlayingModal";
+import {
+  useDashboardAnalytics,
+  type DashboardTimeRange,
+} from "../../../backend/analytics.service";
 import { MostPlayedGames } from "./MostPlayedGames";
-import { RecentUserActivity } from "./RecentUserActivity";
-
-export default function Home() {
-  const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
-  const [showKeepPlayingModal, setShowKeepPlayingModal] = useState(false);
-  const { data: popupConfig } = useSystemConfigByKey("popup");
-
-  const handleShowPopup = () => {
-    if (popupConfig?.value?.enabled) {
-      // const delay = (popupConfig?.value?.delay || 3) * 1000;
-      // setTimeout(() => {
-      setShowKeepPlayingModal(true);
-      // }, delay);
-    }
-  };
-  return (
-    <div>
-      <div className="px-6 pb-3"></div>
-      <div className="px-6">
-        <StatsCard />
-        {/* pop up */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4 my-6">
-          <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
-            <div className="justify-between items-center flex p-3">
-              <p className="text-3xl dark:text-[#D946EF]">
-                Dynamic Popup System
-              </p>
-              <PopUpSheet>
-                <Button className="bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200">
-                  Create New Pop-up
-                </Button>
-              </PopUpSheet>
-            </div>
-            {/* inner card */}
-            <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
-              <div className="justify-end flex flex-col p-3 space-y-4">
-                <p className="text-lg">User View</p>
-                {/* <p className="text-lg">Pop-Up will appear after {popupConfig?.value?.delay || 3} seconds</p> */}
-                <Button
-                  onClick={handleShowPopup}
-                  className="w-32 bg-[#D946EF] hover:bg-[#C026D3] text-white transition-colors duration-200"
-                >
-                  Show Pop-up Now
-                </Button>
-              </div>
-            </Card>
-          </Card>
-=======
-import PieChart from '../../../components/charts/piechart';
-import { useState } from 'react';
-import { useSignupAnalyticsData } from '../../../backend/signup.analytics.service';
-import { useDashboardAnalytics, type DashboardTimeRange } from '../../../backend/analytics.service';
-import { MostPlayedGames } from './MostPlayedGames';
-import { usePermissions } from '../../../hooks/usePermissions';
+import { usePermissions } from "../../../hooks/usePermissions";
 // import { RecentUserActivity } from './RecentUserActivity';
 
 export default function Home() {
   const permissions = usePermissions();
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
   // Separate state for stats cards filter
-  const [statsTimeRange, setStatsTimeRange] = useState<DashboardTimeRange>({ period: 'last24hours' });
+  const [statsTimeRange, setStatsTimeRange] = useState<DashboardTimeRange>({
+    period: "last24hours",
+  });
   const [countryFilter, setCountryFilter] = useState<string[]>([]);
   // Separate state for insights filter
-  const [insightsTimeRange, setInsightsTimeRange] = useState<DashboardTimeRange>({ period: 'last24hours' });
+  const [insightsTimeRange, setInsightsTimeRange] =
+    useState<DashboardTimeRange>({ period: "last24hours" });
   return (
     <div>
       {/* stats cards */}
@@ -99,11 +49,12 @@ export default function Home() {
         </div>
       </div>
       <div className="px-6">
-        <StatsCard filters={{ timeRange: statsTimeRange, countries: countryFilter }} />
+        <StatsCard
+          filters={{ timeRange: statsTimeRange, countries: countryFilter }}
+        />
 
         <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6 mt-6">
           <MostPlayedGames />
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
         </div>
 
         {/* insights */}
@@ -120,27 +71,18 @@ export default function Home() {
             <Card className="bg-[#F8FAFC] dark:bg-[#0F1221] shadow-none border-none mx-3 p-4">
               <div className="flex flex-col space-y-8">
                 <div className="">
-<<<<<<< HEAD
-                  <div className="justify-start flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                     <img
                       src={click}
                       alt="click"
-                      className="w-10 h-10 dark:text-white"
+                      className="w-8 h-8 sm:w-10 sm:h-10 dark:text-white flex-shrink-0"
                     />
-                    <p className="text-lg text-[#64748A] dark:text-white">
-                      Total clicks on Sign-up form
+                    <p className="text-sm sm:text-lg text-[#64748A] dark:text-white">
+                      Total clicks on Sign-up button
                     </p>
                   </div>
 
-                  <SignupClickInsights />
-=======
-                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                    <img src={click} alt="click" className="w-8 h-8 sm:w-10 sm:h-10 dark:text-white flex-shrink-0" />
-                    <p className="text-sm sm:text-lg text-[#64748A] dark:text-white">Total clicks on Sign-up button</p>
-                  </div>
-                  
                   <SignupClickInsights timeRange={insightsTimeRange} />
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
                 </div>
               </div>
             </Card>
@@ -152,60 +94,39 @@ export default function Home() {
         </div> */}
       </div>
 
-<<<<<<< HEAD
       <AcceptInvitationModal
         open={isAcceptInviteOpen}
         onOpenChange={setIsAcceptInviteOpen}
         isExistingUser={true}
       />
-      <KeepPlayingModal
-        open={showKeepPlayingModal}
-        openSignUpModal={() => setShowKeepPlayingModal(false)}
-        isGameLoading={false}
-        setOpen={setShowKeepPlayingModal}
-      />
-=======
-      <AcceptInvitationModal open={isAcceptInviteOpen} onOpenChange={setIsAcceptInviteOpen} isExistingUser={true} />
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
     </div>
   );
 }
 
 // Separate component for signup click insights
-<<<<<<< HEAD
-function SignupClickInsights() {
-  const { data: signupAnalytics, isLoading: analyticsLoading } =
-    useSignupAnalyticsData();
-  const { data: usersWithAnalytics, isLoading: usersLoading } =
-    useUsersAnalytics();
-
-  if (analyticsLoading || usersLoading) {
-    return <div className="text-center py-4">Loading...</div>;
-  }
-
-  if (!signupAnalytics || !usersWithAnalytics) {
-=======
 function SignupClickInsights({ timeRange }: { timeRange: DashboardTimeRange }) {
   // Use the new filtering approach - pass only the time range filter
   const filters = { timeRange };
 
-  const { data: signupAnalytics, isLoading: analyticsLoading } = useSignupAnalyticsData(filters);
+  const { data: signupAnalytics, isLoading: analyticsLoading } =
+    useSignupAnalyticsData(filters);
   // const { data: usersWithAnalytics, isLoading: usersLoading } = useUsersAnalytics();
-  const { data: dashboardAnalytics, isLoading: usersLoading } = useDashboardAnalytics(filters);
-  
+  const { data: dashboardAnalytics, isLoading: usersLoading } =
+    useDashboardAnalytics(filters);
+
   if (analyticsLoading || usersLoading) {
     return <div className="text-center py-4">Loading...</div>;
   }
-  
+
   if (!signupAnalytics || !dashboardAnalytics) {
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
     return <div className="text-center py-4">No data available</div>;
   }
 
- // For clicks insight, we need users who completed first login in the selected period
+  // For clicks insight, we need users who completed first login in the selected period
   // The dashboard API returns users who REGISTERED in the period, but we need users who FIRST LOGGED IN
-  const registeredInPeriod = dashboardAnalytics?.totalRegisteredUsers?.current || 0;
-  
+  const registeredInPeriod =
+    dashboardAnalytics?.totalRegisteredUsers?.current || 0;
+
   // Use the periodClicks from signup analytics (already filtered by time range)
   const totalClicks = signupAnalytics?.periodClicks || 0;
 
@@ -215,21 +136,12 @@ function SignupClickInsights({ timeRange }: { timeRange: DashboardTimeRange }) {
   const didntVerifyCount = Math.max(0, totalClicks - verifiedCount);
 
   const chartData = [
-<<<<<<< HEAD
-    { name: "Didn't register", value: didntRegisterCount, fill: "#F3C7FA" },
-    { name: "Verified users", value: verifiedCount, fill: "#D24CFB" },
-=======
     { name: "Didn't verify", value: didntVerifyCount, fill: "#F3C7FA" },
-    { name: "Verified users", value: verifiedCount, fill: "#D24CFB" }
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
+    { name: "Verified users", value: verifiedCount, fill: "#D24CFB" },
   ];
 
   return <PieChart data={chartData} totalClicks={totalClicks} />;
 }
-
-
-
-
 
 // // Separate component for signup click insights
 // function SignupClickInsights({ filters }: { filters: { timeRange: DashboardTimeRange } }) {
@@ -240,11 +152,11 @@ function SignupClickInsights({ timeRange }: { timeRange: DashboardTimeRange }) {
 
 //   const { data: signupAnalytics, isLoading: analyticsLoading } = useSignupAnalyticsData(signupFilters);
 //   const { data: dashboardAnalytics, isLoading: usersLoading } = useDashboardAnalytics({ timeRange: filters.timeRange });
-  
+
 //   if (analyticsLoading || usersLoading) {
 //     return <div className="text-center py-4">Loading...</div>;
 //   }
-  
+
 //   if (!signupAnalytics || !dashboardAnalytics) {
 //     return <div className="text-center py-4">No data available</div>;
 //   }
@@ -252,7 +164,7 @@ function SignupClickInsights({ timeRange }: { timeRange: DashboardTimeRange }) {
 //   // For clicks insight, we need users who completed first login in the selected period
 //   // The dashboard API returns users who REGISTERED in the period, but we need users who FIRST LOGGED IN
 //   const registeredInPeriod = dashboardAnalytics?.totalRegisteredUsers?.current || 0;
-  
+
 //   // Use the periodClicks from signup analytics (already filtered by time range)
 //   const totalClicks = signupAnalytics?.periodClicks || 0;
 

@@ -1,21 +1,11 @@
-<<<<<<< HEAD
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { backendService } from "../backend/api.service";
 import type { User, LoginCredentials } from "../backend/types";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { BackendRoute } from "../backend/constants";
-=======
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
-import { backendService } from '../backend/api.service';
-import type { User, LoginCredentials } from '../backend/types';
-import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
-import { BackendRoute } from '../backend/constants';
-import { sendHeartbeat } from '../backend/user.service';
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
+import { sendHeartbeat } from "../backend/user.service";
 
 interface LoginResponse {
   userId: string;
@@ -24,12 +14,8 @@ interface LoginResponse {
   email?: string;
   phoneNumber?: string;
   requiresOtp: boolean;
-<<<<<<< HEAD
-  otpType?: "EMAIL" | "SMS" | "BOTH";
-=======
   role: string;
-  otpType?: 'EMAIL' | 'SMS' | 'NONE';
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
+  otpType?: "EMAIL" | "SMS" | "NONE";
   message: string;
   tokens?: {
     accessToken: string;
@@ -79,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const startHeartbeat = () => {
         // Send initial heartbeat
         sendHeartbeat().catch(console.error);
-        
+
         // Set up interval to send heartbeat every 60 seconds
         heartbeatIntervalRef.current = setInterval(() => {
           sendHeartbeat().catch(console.error);
@@ -95,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       };
 
-      document.addEventListener('visibilitychange', handleVisibilityChange);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
 
       return () => {
         // Cleanup interval and event listener
@@ -103,7 +89,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = null;
         }
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
       };
     } else {
       // Clear heartbeat when user is not authenticated
@@ -131,38 +120,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-<<<<<<< HEAD
   const login = async (
     credentials: LoginCredentials
   ): Promise<LoginResponse> => {
     const response = await backendService.post("/api/auth/login", credentials);
-    const { userId, email, phoneNumber, requiresOtp, otpType, tokens } =
+    const { userId, email, phoneNumber, requiresOtp, otpType, tokens, role } =
       response.data;
 
-    //forto display mesage from backend
     const message = (response as any)?.message;
-=======
-  const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response = await backendService.post('/api/auth/login', credentials);
-    const { 
-      userId, 
-      email, 
-      phoneNumber, 
-      requiresOtp, 
-      otpType, 
-      tokens, 
-      role
-    } = response.data;
-
-    const message = (response as any)?.message
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
 
     if (tokens) {
       localStorage.setItem("token", tokens.accessToken);
       localStorage.setItem("refreshToken", tokens.refreshToken);
       await refreshUser();
       queryClient.invalidateQueries({ queryKey: [BackendRoute.USER_STATS] });
-      queryClient.invalidateQueries({ queryKey: [BackendRoute.ADMIN_USERS_ANALYTICS] });
+      queryClient.invalidateQueries({
+        queryKey: [BackendRoute.ADMIN_USERS_ANALYTICS],
+      });
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
     }
 
@@ -195,32 +169,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return userData;
   };
 
-<<<<<<< HEAD
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    setUser(null);
-    toast.success("Logged out successfully");
-=======
   const logout = (silent?: boolean) => {
     // Clear heartbeat interval on logout
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
       heartbeatIntervalRef.current = null;
     }
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     setUser(null);
-    
+
     // Invalidate games queries to refresh data without authentication context
     queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
-    
+
     // Only show toast if not silent
     if (!silent) {
-      toast.success('Logged out successfully');
+      toast.success("Logged out successfully");
     }
->>>>>>> 0f1ce3d0a577ebad9fe35fa8c37c82532ab9f078
   };
 
   const isRoleIncluded =
