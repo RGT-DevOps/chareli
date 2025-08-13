@@ -102,14 +102,14 @@ const Navbar: React.FC = () => {
             <div className="space-y-2">
               <Link
                 to="/about"
-                className="block text-[#111826] dark:text-[#94A3B7] hover:bg-gradient-to-r hover:from-[#D946EF] hover:to-[#C026D3] hover:text-white px-4 py-3 rounded-xl text-md font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                className="block text-[#111826] dark:text-white hover:bg-gradient-to-r hover:from-[#D946EF] hover:to-[#C026D3] hover:text-white px-4 py-3 rounded-xl text-md font-semibold transition-all duration-300 transform hover:scale-[1.02]"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 About Us
               </Link>
               <Link
                 to="/categories"
-                className="block text-[#111826] dark:text-[#94A3B7] hover:bg-gradient-to-r hover:from-[#D946EF] hover:to-[#C026D3] hover:text-white px-4 py-3 rounded-xl text-md font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                className="block text-[#111826] dark:text-white hover:bg-gradient-to-r hover:from-[#D946EF] hover:to-[#C026D3] hover:text-white px-4 py-3 rounded-xl text-md font-semibold transition-all duration-300 transform hover:scale-[1.02]"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Categories
