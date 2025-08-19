@@ -17,7 +17,7 @@ import moon from "../../assets/moon.svg";
 
 import { SignUpModal } from "../modals/SignUpModal";
 import { LoginModal } from "../modals/LoginModal";
-import { Menu, CircleUserRound } from "lucide-react";
+import { Menu} from "lucide-react";
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -65,7 +65,7 @@ const Navbar: React.FC = () => {
         className="cursor-pointer flex justify-center items-center bg-gradient-to-t from-[#121C2D] to-[#475568] rounded-br-[40px] py-2 px-8 -mt-4 -ml-4"
       >
         <img src={Logo} alt="logo" className="w-10 pt-4 " />
-        <p className="text-[27.22px] sm:text-[15px] text-center text-white dark:text-white font-bold font-jersey pt-4">
+        <p className="text-[20.22px] text-center text-white dark:text-white font-bold font-jersey pt-4">
           ARCADES BOX
         </p>
       </div>
@@ -137,7 +137,7 @@ const Navbar: React.FC = () => {
               </Link>
             </div>
             {isAuthenticated ? (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 {permissions.hasAdminAccess && (
                   <Button
                     onClick={() => {
@@ -191,7 +191,7 @@ const Navbar: React.FC = () => {
                     navigate("/");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white w-full py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] text-[15px]"
+                  className="bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white w-full py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] text-[15px]"
                 >
                   Logout
                 </Button>
@@ -280,10 +280,10 @@ const Navbar: React.FC = () => {
               onClick={() => setIsStatsModalOpen(true)}
             /> */}
 
-            <CircleUserRound
+            {/* <CircleUserRound
               className="cursor-pointer text-[#DC8B18] w-6 h-6"
               onClick={() => setIsProfileModalOpen(true)}
-            />
+            /> */}
 
             {/* Desktop Menu Dropdown for Authenticated Users */}
             <div className="relative desktop-menu-container">
@@ -311,20 +311,20 @@ const Navbar: React.FC = () => {
                     >
                       Categories
                     </Link>
+                    <Button
+                      onClick={() => {
+                        logout();
+                        navigate("/");
+                        setIsDesktopMenuOpen(false);
+                      }}
+                      className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white cursor-pointer text-[15px] mt-2"
+                    >
+                      Logout
+                    </Button>
                   </div>
                 </div>
               )}
             </div>
-
-            <Button
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-              className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white cursor-pointer text-[15px]"
-            >
-              Logout
-            </Button>
           </>
         ) : (
           <>
