@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
-import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
 import { StatsModal } from "../modals/StatsModal";
 import { ProfileModal } from "../modals/ProfileModal";
 import { useAuth } from "../../context/AuthContext";
@@ -9,15 +8,16 @@ import { useTheme } from "../../context/ThemeContext";
 import { useTrackSignupClick } from "../../backend/signup.analytics.service";
 import { getVisitorSessionId } from "../../utils/sessionUtils";
 import { usePermissions } from "../../hooks/usePermissions";
-import ArcadeIcon from "../../assets/logo_2.png";
+import Logo from "../../assets/logo.svg";
 
 import sun from "../../assets/sun.svg";
 import moon from "../../assets/moon.svg";
 // import bolt from '../../assets/bolt.svg';
-import profileImg from "../../assets/profile.svg";
+
 
 import { SignUpModal } from "../modals/SignUpModal";
 import { LoginModal } from "../modals/LoginModal";
+import { Menu} from "lucide-react";
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -31,6 +31,7 @@ const Navbar: React.FC = () => {
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -43,6 +44,11 @@ const Navbar: React.FC = () => {
       ) {
         setIsMobileMenuOpen(false);
       }
+      
+      // Close desktop menu when clicking outside
+      if (!(event.target as Element).closest('.desktop-menu-container')) {
+        setIsDesktopMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -52,19 +58,20 @@ const Navbar: React.FC = () => {
   }, []);
 
   return (
-    <header className="relative flex justify-between p-4 items-center bg-white dark:bg-[#0f1221] transition-colors duration-300">
+    <header className="relative flex justify-between items-center bg-white dark:bg-[#0f1221] transition-colors duration-300">
+      {/* Logo */}
       <div
         onClick={() => navigate("/")}
-        className="cursor-pointer flex flex-col justify-center items-center"
+        className="cursor-pointer flex justify-center items-center bg-gradient-to-t from-[#121C2D] to-[#475568] rounded-br-[40px] py-2 px-8 -mt-4 -ml-4"
       >
-        <img src={ArcadeIcon} alt="logo" className="w-14" />
-        <p className="text-[10px] sm:text-[10px] text-center text-[#111826] dark:text-white font-bold">
+        <img src={Logo} alt="logo" className="w-10 pt-4 " />
+        <p className="text-[20.22px] text-center text-white dark:text-white font-bold font-jersey pt-4">
           ARCADES BOX
         </p>
       </div>
 
       {/* Desktop Navigation */}
-      <div className="hidden md:flex gap-4 text-[16px] font-bold text-[#111826] dark:text-white items-center justify-center">
+      {/* <div className="hidden md:flex gap-4 text-[16px] font-bold text-[#111826] dark:text-white items-center justify-center">
         <Link
           to="/about"
           className="hover:bg-[#D946EF] hover:text-white px-4 py-2 rounded-md"
@@ -77,64 +84,79 @@ const Navbar: React.FC = () => {
         >
           Categories
         </Link>
-      </div>
+      </div> */}
 
-      {/* Mobile Menu Button */}
-      <button
-        ref={menuButtonRef}
-        className="md:hidden text-[#D946EF] p-2"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      >
-        {isMobileMenuOpen ? (
-          <RiCloseLine size={24} />
-        ) : (
-          <RiMenu3Line size={24} />
-        )}
-      </button>
+      {/* Mobile Menu Button and Theme Toggle */}
+      <div className="md:hidden flex items-center space-x-2 mx-2">
+        {/* Mobile Theme Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className="text-white bg-[#DC8B18] py-2 px-2 rounded-3xl flex items-center justify-center"
+        >
+          <img
+            src={isDarkMode ? moon : sun}
+            alt={isDarkMode ? "light mode" : "dark mode"}
+            className="w-5 h-5"
+          />
+        </button>
+        
+        <button
+          ref={menuButtonRef}
+          className="text-white bg-[#DC8B18] py-2 px-3 pt-4 rounded-md flex items-center justify-center"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? (
+            <Menu className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
+        </button>
+      </div>
 
       {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="absolute top-full left-0 right-0 bg-white dark:bg-[#0f1221] shadow-lg md:hidden z-50 border-t border-gray-200 dark:border-gray-800"
+          className="absolute top-full right-0 mt-2 mx-2 bg-white dark:bg-[#0f1221] shadow-lg md:hidden z-50 border border-gray-200 dark:border-gray-800 rounded-lg min-w-[300px]"
         >
-          <div className="flex flex-col p-6 gap-5">
-            <div className="space-y-2 text-[15px]">
+          <div className="flex flex-col p-4 gap-2">
+            <div className=" text-[15px]">
               <Link
                 to="/about"
-                className="block text-[#111826] dark:text-white hover:bg-gradient-to-r hover:from-[#D946EF] hover:to-[#C026D3] hover:text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                className="block text-[#111826] dark:text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 About Us
               </Link>
               <Link
                 to="/categories"
-                className="block text-[#111826] dark:text-white hover:bg-gradient-to-r hover:from-[#D946EF] hover:to-[#C026D3] hover:text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                className="block text-[#111826] dark:text-white px-4 py-3 rounded-xl font-semibold transition-all duration-300"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Categories
               </Link>
             </div>
             {isAuthenticated ? (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 {permissions.hasAdminAccess && (
                   <Button
                     onClick={() => {
                       navigate("/admin");
                       setIsMobileMenuOpen(false);
                     }}
-                    className="bg-gradient-to-r from-[#E328AF] to-[#C026D3] text-white hover:from-[#C026D3] hover:to-[#A21CAF] w-full py-3 rounded-xl font-semibold shadow-lg transform hover:scale-[1.02] transition-all duration-300 text-[15px]"
+                    className="bg-[#DC8B18] text-white hover:from-[#DC8B18] hover:to-[#A21CAF] w-full py-3 rounded-lg font-semibold shadow-lg transform hover:scale-[1.02] transition-all duration-300 text-[15px]"
                   >
                     Admin Dashboard
                   </Button>
                 )}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* <button
+                
+                {/* <div className="grid grid-cols-2 gap-4">
+                  <button
                     onClick={() => {
                       setIsStatsModalOpen(true);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#D946EF] to-[#C026D3] text-white px-4 py-4 rounded-xl hover:from-[#C026D3] hover:to-[#A21CAF] transition-all duration-300 shadow-lg transform hover:scale-[1.05]"
+                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#D946EF] to-[#DC8B18] text-white px-4 py-4 rounded-xl hover:from-[#DC8B18] hover:to-[#A21CAF] transition-all duration-300 shadow-lg transform hover:scale-[1.05]"
                   >
                     <img
                       src={bolt}
@@ -142,41 +164,46 @@ const Navbar: React.FC = () => {
                       className="w-4 h-4 filter brightness-0 invert"
                     />
                     <span className="text-sm font-semibold">Stats</span>
-                  </button> */}
+                  </button>
                   <button
                     onClick={() => {
                       setIsProfileModalOpen(true);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#64748B] to-[#475569] text-white px-4 py-4 rounded-xl hover:from-[#475569] hover:to-[#334155] transition-all duration-300 shadow-lg transform hover:scale-[1.05]"
+                    className="bg-[#DC8B18] text-white w-full py-3 rounded-lg font-semibold shadow-lg transform hover:scale-[1.02] transition-all duration-300 text-[15px]"
                   >
-                    <img
-                      src={profileImg}
-                      alt="profile image"
-                      className="w-4 h-4 filter brightness-0 invert"
-                    />
-                    <span className="text-sm font-semibold">Profile</span>
+                    Profile
                   </button>
-                </div>
+                </div> */}
+                
+                <button
+                  onClick={() => {
+                    setIsProfileModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="bg-[#DC8B18] text-white w-full py-2 rounded-lg font-semibold shadow-lg transform hover:scale-[1.02] transition-all duration-300 text-[15px]"
+                >
+                  Profile
+                </button>
                 <Button
                   onClick={() => {
                     logout();
                     navigate("/");
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white w-full py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] text-[15px]"
+                  className="bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white w-full py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] text-[15px]"
                 >
                   Logout
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <Button
                   onClick={() => {
                     setIsLoginModalOpen(true);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-transparent border-2 text-[15px] border-[#111826] dark:border-gray-400 text-[#111826] dark:text-gray-300 hover:bg-[#111826] hover:text-white dark:hover:bg-gray-400 dark:hover:text-gray-900 w-full py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                  className="bg-[#DC8B18] text-white text-[15px] w-full py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02]"
                 >
                   Log in
                 </Button>
@@ -189,23 +216,13 @@ const Navbar: React.FC = () => {
                     setIsSignUpModalOpen(true);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-gradient-to-r from-[#C026D3] to-[#D946EF] text-white hover:from-[#A21CAF] hover:to-[#C026D3] w-full py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-[1.02] text-[15px]"
+                  className="bg-transparent border border-[#DC8B18] text-[#DC8B18] text-[15px] w-full py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02]"
                 >
                   Sign up
                 </Button>
               </div>
             )}
-            <div className="flex items-center justify-between pt-6 mt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-[#111826] dark:text-[#94A3B7] font-semibold">
-                Theme
-              </span>
-              <img
-                onClick={toggleDarkMode}
-                src={isDarkMode ? moon : sun}
-                alt={isDarkMode ? "light mode" : "dark mode"}
-                className="w-6 h-6 cursor-pointer"
-              />
-            </div>
+
           </div>
         </div>
       )}
@@ -237,7 +254,7 @@ const Navbar: React.FC = () => {
       />
 
       {/* Desktop Actions */}
-      <div className="hidden md:flex space-x-4 items-center">
+      <div className="hidden md:flex space-x-4 items-center pt-4 pr-4">
         <img
           onClick={toggleDarkMode}
           src={isDarkMode ? moon : sun}
@@ -250,7 +267,7 @@ const Navbar: React.FC = () => {
             {permissions.hasAdminAccess && (
               <Button
                 onClick={() => navigate("/admin")}
-                className="bg-[#E328AF] text-white hover:bg-[#C026D3] cursor-pointer text-[15px]"
+                className="bg-[#DC8B18] text-white hover:bg-[#DC8B18] cursor-pointer text-[15px]"
               >
                 Admin Dashboard
               </Button>
@@ -263,28 +280,57 @@ const Navbar: React.FC = () => {
               onClick={() => setIsStatsModalOpen(true)}
             /> */}
 
-            <img
-              src={profileImg}
-              alt="profile image"
-              className="cursor-pointer"
+            {/* <CircleUserRound
+              className="cursor-pointer text-[#DC8B18] w-6 h-6"
               onClick={() => setIsProfileModalOpen(true)}
-            />
+            /> */}
 
-            <Button
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-              className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white cursor-pointer text-[15px]"
-            >
-              Logout
-            </Button>
+            {/* Desktop Menu Dropdown for Authenticated Users */}
+            <div className="relative desktop-menu-container">
+              <Button
+                onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                className="bg-[#334154] text-white hover:bg-[#475568]"
+              >
+                <Menu className="w-[21px] h-[21px]" />
+              </Button>
+              
+              {isDesktopMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white dark:bg-[#0f1221] shadow-lg z-50 border border-gray-200 dark:border-gray-800 rounded-lg min-w-[200px]">
+                  <div className="flex flex-col p-4 gap-2">
+                    <Link
+                      to="/about"
+                      className="block text-[#111826] dark:text-white border-1 border-transparent hover:border-[#DC8B18] px-4 py-3 rounded-xl font-semibold transition-all duration-300"
+                      onClick={() => setIsDesktopMenuOpen(false)}
+                    >
+                      About Us
+                    </Link>
+                    <Link
+                      to="/categories"
+                      className="block text-[#111826] dark:text-white border-1 border-transparent hover:border-[#DC8B18] px-4 py-3 rounded-xl font-semibold transition-all duration-300"
+                      onClick={() => setIsDesktopMenuOpen(false)}
+                    >
+                      Categories
+                    </Link>
+                    <Button
+                      onClick={() => {
+                        logout();
+                        navigate("/");
+                        setIsDesktopMenuOpen(false);
+                      }}
+                      className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white cursor-pointer text-[15px] mt-2"
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <>
             <Button
               onClick={() => setIsLoginModalOpen(true)}
-              className="bg-transparent border border-[#111826] dark:border-gray-500 text-[#111826] hover:text-[#111826] dark:text-gray-300 text-[15px] cursor-pointer hover:bg-accent"
+              className="bg-[#DC8B18] dark:border-gray-500 text-white hover:text-[#111826] dark:text-gray-300 text-[15px] cursor-pointer hover:bg-accent"
             >
               Log in
             </Button>
@@ -296,10 +342,42 @@ const Navbar: React.FC = () => {
                 });
                 setIsSignUpModalOpen(true);
               }}
-              className="bg-transparent border border-[#C026D3] dark:border-purple-400 text-[#C026D3] dark:text-purple-300 text-[15px] hover:bg-accent hover:text-[#C026D3] cursor-pointer"
+              className="bg-transparent border border-[#DC8B18] text-[#DC8B18] text-[15px] hover:bg-transparent hover:text-[#DC8B18] cursor-pointer"
             >
               Sign up
             </Button>
+
+            {/* Desktop Menu Dropdown */}
+            <div className="relative desktop-menu-container">
+              <Button
+                onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                className="bg-[#334154] text-white hover:bg-[#475568]"
+              >
+                <Menu className="w-[21px] h-[21px]" />
+              </Button>
+
+              {isDesktopMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white dark:bg-[#0f1221] shadow-lg z-50 border border-gray-200 dark:border-gray-800 rounded-lg min-w-[200px]">
+                  <div className="flex flex-col p-4 gap-2">
+                    <Link
+                      to="/about"
+                      className="block text-[#111826] dark:text-white border-1 border-transparent hover:border-[#DC8B18] px-4 py-3 rounded-xl font-semibold transition-all duration-300"
+                      onClick={() => setIsDesktopMenuOpen(false)}
+                    >
+                      About Us
+                    </Link>
+                    <Link
+                      to="/categories"
+                      className="block text-[#111826] dark:text-white border-1 border-transparent hover:border-[#DC8B18] px-4 py-3 rounded-xl font-semibold transition-all duration-300"
+                      onClick={() => setIsDesktopMenuOpen(false)}
+                    >
+                      Categories
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </>
         )}
       </div>

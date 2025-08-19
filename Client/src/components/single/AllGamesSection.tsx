@@ -35,7 +35,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
 
   // Combine static filters with dynamic categories
   const allCategories = [
-    { id: "all", name: "All Games", color: "#DC8B18" },
+            { id: "all", name: "All Games", color: "#DC8B18" },
     ...(categoriesData?.map((cat) => ({
       id: cat.id,
       name: cat.name,
@@ -108,7 +108,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                     className={`text-white cursor-pointer min-w-[120px] max-w-[200px] px-4 py-2 relative group flex-shrink-0 ${
                       selectedCategory === category.id
                         ? "bg-[#DC8B18]"
-                        : "bg-[#94A3B7]"
+                        : "bg-[#94A3B8]"
                     }`}
                     onClick={() => setSelectedCategory(category.id)}
                     title={category.name.length > 18 ? category.name : undefined}
@@ -168,7 +168,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
                     style={{ gridRow: `span ${Math.round(rowSpan * 2)}` }}
                     onClick={() => handleGameClick(game.id)}
                   >
-                    <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:shadow-[0_0px_20px_#DC8B18,0_0px_10px_rgba(193,118,0,0.8)]">
+                    <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:shadow-[0_0px_20px_#DC8B18,0_0px_10px_rgba(220,139,24,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
                         <LazyImage
                           src={game.thumbnailFile?.s3Key}

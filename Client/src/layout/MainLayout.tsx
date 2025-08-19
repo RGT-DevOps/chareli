@@ -32,14 +32,14 @@ const MainLayout: React.FC = () => {
             <p className="font-worksans text-[10px] sm:text-xs md:text-sm mt-3 leading-relaxed">
               By using this service, you agree to the Arcades Box{" "}
               <span
-                className="text-gray-900 underline cursor-pointer hover:text-gray-700 transition-colors font-semibold"
+                className="text-[#DC8B18] underline cursor-pointer hover:text-[#db2ee8] transition-colors"
                 onClick={handleTermsPage}
               >
                 Terms of Service
               </span>
               . The Arcades Box{" "}
               <span
-                className="text-gray-900 underline cursor-pointer hover:text-gray-700 transition-colors font-semibold"
+                className="text-[#DC8B18] underline cursor-pointer hover:text-[#db2ee8] transition-colors"
                 onClick={handlePrivacyPage}
               >
                 Privacy Policy
