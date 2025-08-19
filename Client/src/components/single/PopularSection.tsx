@@ -41,7 +41,7 @@ const PopularSection = ({
             <div className="relative w-full md:w-[400px]">
               <IoIosSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] text-xl pointer-events-none" />
               <Input
-                className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#C17600] focus:border-[#C17600] focus:outline-none shadow-[0_0_8px_rgba(193,118,0,0.2)] 
+                className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#DC8B18] focus:border-[#DC8B18] focus:outline-none shadow-[0_0_8px_rgba(220,139,24,0.2)] 
                             placeholder:text-[#64748A] bg-white/5
                             placeholder:text-sm"
                 placeholder="What game do you want to search for?"
@@ -65,7 +65,7 @@ const PopularSection = ({
           <div className="relative w-full md:w-[400px]">
             <IoIosSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] text-xl pointer-events-none" />
             <Input
-              className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#C17600] focus:border-[#C17600] focus:outline-none shadow-[0_0_8px_rgba(193,118,0,0.2)] 
+              className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#DC8B18] focus:border-[#DC8B18] focus:outline-none shadow-[0_0_8px_rgba(220,139,24,0.2)] 
                           placeholder:text-[#64748A] bg-white/5
                           placeholder:text-sm"
               placeholder="What game do you want to search for?"
@@ -100,7 +100,7 @@ const PopularSection = ({
                   key={game.id}
                   className="relative group cursor-pointer w-full"
                 >
-                  <div className="relative h-[290px] min-h-[290px] max-h-[290px] rounded-[32px] border-4 border-transparent group-hover:border-[#C17600] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(193,118,0,0.3)] box-border overflow-hidden"
+                  <div className="relative h-[290px] min-h-[290px] max-h-[290px] rounded-[32px] border-4 border-transparent group-hover:border-[#DC8B18] transition-all duration-300 ease-in-out group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(220,139,24,0.3)] box-border overflow-hidden"
                        onClick={() => handleGameClick(game.id)}>
                     <LazyImage
                       src={game.thumbnailFile?.s3Key || emptyGameImg}

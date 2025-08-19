@@ -106,7 +106,7 @@ export default function Categories() {
                       ${
                         !selectedCategory && !selectedSecondary
                           ? "bg-[#DC8B18] text-white"
-                          : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#C17600] dark:text-white dark:hover:bg-gray-800"
+                          : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#DC8B18] dark:text-white dark:hover:bg-gray-800"
                       }
                     `}
                     onClick={() => {
@@ -136,7 +136,7 @@ export default function Categories() {
                           ${
                             selectedCategory === cat.id
                               ? "bg-[#DC8B18] text-white"
-                              : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#C17600] dark:text-white dark:hover:bg-gray-800"
+                              : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#DC8B18] dark:text-white dark:hover:bg-gray-800"
                           }
                         `}
                         onClick={() => {
@@ -164,7 +164,7 @@ export default function Categories() {
                         ${
                           selectedSecondary === sec
                             ? "bg-[#DC8B18] text-white"
-                            : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#C17600] dark:text-white dark:hover:bg-gray-800"
+                            : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#DC8B18] dark:text-white dark:hover:bg-gray-800"
                         }
                       `}
                       onClick={() => {
@@ -201,7 +201,7 @@ export default function Categories() {
                       ${
                         !selectedCategory && !selectedSecondary
                           ? "bg-[#DC8B18] text-white dark:text-white tracking-wider"
-                          : "bg-transparent text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#C17600] dark:text-white dark:hover:text-[#C17600] tracking-wider"
+                          : "bg-transparent text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#DC8B18] dark:text-white dark:hover:text-[#DC8B18] tracking-wider"
                       }
                     `}
                     onClick={() => {
@@ -224,7 +224,7 @@ export default function Categories() {
                           ${
                             selectedCategory === cat.id
                               ? "bg-[#DC8B18] text-white shadow dark:text-white tracking-wider"
-                              : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#C17600] dark:text-white tracking-wider dark:hover:text-[#C17600]"
+                              : "text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#DC8B18] dark:text-white tracking-wider dark:hover:text-[#DC8B18]"
                           }
                         `}
                         onClick={() => {
@@ -254,7 +254,7 @@ export default function Categories() {
                 {secondary.map((sec) => (
                   <li key={sec}>
                     <button
-                      className={`w-full text-left text-lg px-4 py-2 rounded-lg font-semibold text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#C17600] dark:text-white tracking-wider transition dark:hover:text-[#C17600] cursor-pointer ${
+                      className={`w-full text-left text-lg px-4 py-2 rounded-lg font-semibold text-[#121C2D] hover:bg-[#F3E8FF] hover:text-[#DC8B18] dark:text-white tracking-wider transition dark:hover:text-[#DC8B18] cursor-pointer ${
                         selectedSecondary === sec
                           ? "bg-[#DC8B18] text-white"
                           : ""
@@ -311,7 +311,7 @@ export default function Categories() {
                       style={{ gridRow: `span ${Math.round(rowSpan * 2)}` }}
                       onClick={() => handleGameClick(game.id)}
                     >
-                      <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:shadow-[0_0px_20px_#C17600,0_0px_10px_rgba(193,118,0,0.8)]">
+                      <div className="relative h-full overflow-hidden rounded-[20px] transition-all duration-300 ease-in-out group-hover:shadow-[0_0px_20px_#DC8B18,0_0px_10px_rgba(220,139,24,0.8)]">
                       <div className="w-full h-full rounded-[16px] overflow-hidden">
                         <LazyImage
                           src={game.thumbnailFile?.s3Key}
