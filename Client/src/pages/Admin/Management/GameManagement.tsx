@@ -601,7 +601,7 @@ export default function GameManagement() {
                   <tr
                     key={game.id}
                     className={cn(
-                      "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition space-x-12",
+                      "border-b dark:border-[#23243a] hover:bg-[#b4730a]/5 transition space-x-12",
                       idx % 2 === 0 ? "dark:bg-[#18192b]" : "dark:bg-[#23243a]"
                     )}
                   >
