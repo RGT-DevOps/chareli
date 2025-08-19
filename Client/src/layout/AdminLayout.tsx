@@ -155,7 +155,7 @@ const AdminLayout: React.FC = () => {
                           `flex items-center p-2 rounded-lg transition-colors ${
                             isActive
                               ? "text-white bg-[#DC8B18]"
-                              : "hover:text-[#DC8B18] hover:bg-[#FFEFD9] dark:text-white dark:hover:text-[#C17600] text-[#121C2D]"
+                              : "hover:text-[#DC8B18] hover:bg-[#FDF1E1] dark:text-white dark:hover:text-[#DC8B18] text-[#121C2D]"
                           } ${isSidebarCollapsed ? "justify-center" : ""}`
                         }
                         onClick={() => {

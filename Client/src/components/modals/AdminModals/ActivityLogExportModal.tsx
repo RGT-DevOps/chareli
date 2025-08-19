@@ -425,7 +425,7 @@ const ActivityLogExportModal = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#D946EF] text-white hover:bg-[#c026d3] tracking-wider py-2 cursor-pointer">
+        <Button className="bg-[#DC8B18] text-white hover:bg-[#cc8015] tracking-wider py-2 cursor-pointer">
           <Download size={16} className="mr-2" />
           Export
         </Button>

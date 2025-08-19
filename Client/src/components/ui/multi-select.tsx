@@ -30,14 +30,18 @@ const MultiSelect = React.forwardRef<any, MultiSelectProps>(
     },
     ref
   ) => {
-    const selectedOptions = options.filter((option) => value.includes(option.value));
+    const selectedOptions = options.filter((option) =>
+      value.includes(option.value)
+    );
 
     return (
       <Select
         ref={ref}
         value={selectedOptions}
         onChange={(selectedOptions) => {
-          const values = selectedOptions ? selectedOptions.map((option: any) => option.value) : [];
+          const values = selectedOptions
+            ? selectedOptions.map((option: any) => option.value)
+            : [];
           onValueChange?.(values);
         }}
         options={options}
@@ -53,10 +57,10 @@ const MultiSelect = React.forwardRef<any, MultiSelectProps>(
           ...theme,
           colors: {
             ...theme.colors,
-            primary: '#D946EF',
-            primary75: '#D946EF',
-            primary50: '#F3E8FF',
-            primary25: '#F3E8FF',
+            primary: "#D946EF",
+            primary75: "#D946EF",
+            primary50: "#F3E8FF",
+            primary25: "#F3E8FF",
           },
         })}
         styles={{
@@ -66,29 +70,29 @@ const MultiSelect = React.forwardRef<any, MultiSelectProps>(
           }),
           menuList: (provided) => ({
             ...provided,
-            maxHeight: '200px',
+            maxHeight: "200px",
           }),
           multiValue: (provided) => ({
             ...provided,
-            backgroundColor: '#D946EF',
-            borderRadius: '6px',
+            backgroundColor: "#DC8B18",
+            borderRadius: "6px",
           }),
           multiValueLabel: (provided) => ({
             ...provided,
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: '500',
+            color: "white",
+            fontSize: "14px",
+            fontWeight: "500",
           }),
           multiValueRemove: (provided) => ({
             ...provided,
-            color: 'white',
-            backgroundColor: 'transparent',
-            ':hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              color: 'white',
+            color: "white",
+            backgroundColor: "transparent",
+            ":hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              color: "white",
             },
-            cursor: 'pointer',
-            borderRadius: '0 6px 6px 0',
+            cursor: "pointer",
+            borderRadius: "0 6px 6px 0",
           }),
         }}
         {...props}

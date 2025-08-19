@@ -131,14 +131,14 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
                 />
               </div>
               <div className="flex flex-col space-y-2">
-                <Label className="text-base">
-                  Role
-                </Label>
+                <Label className="text-base">Role</Label>
                 <Field name="role">
                   {({ field, form }: any) => (
                     <SearchableSelect
                       value={field.value}
-                      onValueChange={(value: string) => form.setFieldValue("role", value)}
+                      onValueChange={(value: string) =>
+                        form.setFieldValue("role", value)
+                      }
                       options={availableRoles}
                       placeholder="Select role"
                       searchPlaceholder="Search roles..."
@@ -164,7 +164,7 @@ export function InviteSheet({ children }: { children: React.ReactNode }) {
                 </SheetClose>
                 <Button
                   type="submit"
-                  className="w-fit h-12 bg-[#D946EF] text-white hover:bg-[#C026D3] dark:text-white dark:hover:bg-[#C026D3] cursor-pointer"
+                  className="w-fit h-12 bg-[#DC8B18] text-white hover:bg-[#DC8B18] dark:text-white dark:hover:bg-[#DC8B18] cursor-pointer"
                   disabled={isSubmitting || isPending || !isValid || !dirty}
                 >
                   {isSubmitting || isPending ? "Sending..." : "Send Invite"}

@@ -45,7 +45,7 @@ export function MostPlayedGames() {
   return (
     <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
       <div className="flex justify-between p-4 text-2xl">
-        <p className="dark:text-[#D946EF]">Most Played Games</p>
+        <p className="dark:text-[#DC8B18]">Most Played Games</p>
       </div>
       <div className="px-4 pb-4">
         <Table>
@@ -72,7 +72,7 @@ export function MostPlayedGames() {
                   colSpan={3}
                   className="text-center py-6 hover:bg-transparent"
                 >
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D946EF] mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#DC8B18] mx-auto"></div>
                 </TableCell>
               </TableRow>
             ) : !gamesToShow.length ? (
@@ -99,7 +99,7 @@ export function MostPlayedGames() {
                           alt={game.title}
                           className="w-full h-full object-cover"
                           loadingClassName="rounded-[16px]"
-                          spinnerColor="#D946EF"
+                          spinnerColor="#DC8B18"
                           rootMargin="50px"
                         />
                       </div>
@@ -107,7 +107,9 @@ export function MostPlayedGames() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <p className="pr-12">{game.analytics?.totalSessions || 0}</p>
+                    <p className="pr-12">
+                      {game.analytics?.totalSessions || 0}
+                    </p>
                   </TableCell>
                   <TableCell>
                     <p className="pr-12">
@@ -130,7 +132,7 @@ export function MostPlayedGames() {
               <div className="flex items-center gap-1 order-1 sm:order-2">
                 {/* Previous button */}
                 <button
-                  className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                  className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                     currentPage === 1
                       ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                       : "hover:bg-[#F3E8FF] text-black dark:text-white"
@@ -142,18 +144,18 @@ export function MostPlayedGames() {
                 </button>
 
                 {/* Mobile: Show only current page info */}
-                <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#D946EF]">
+                <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#DC8B18]">
                   <span className="text-sm text-black dark:text-white">
                     {currentPage} / {totalPages}
                   </span>
                 </div>
 
                 {/* Desktop: Show page numbers with smart truncation */}
-                <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#D946EF] p-1">
+                <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#DC8B18] p-1">
                   {(() => {
                     const pages = [];
                     const maxVisiblePages = 5;
-                    
+
                     if (totalPages <= maxVisiblePages) {
                       // Show all pages if total is small
                       for (let i = 1; i <= totalPages; i++) {
@@ -162,7 +164,7 @@ export function MostPlayedGames() {
                             key={i}
                             className={`w-8 h-8 rounded-full transition-colors ${
                               currentPage === i
-                                ? "bg-[#D946EF] text-white"
+                                ? "bg-[#DC8B18] text-white"
                                 : "hover:bg-[#F3E8FF] text-black dark:text-white"
                             }`}
                             onClick={() => setCurrentPage(i)}
@@ -175,7 +177,7 @@ export function MostPlayedGames() {
                       // Smart truncation for many pages
                       const startPage = Math.max(1, currentPage - 2);
                       const endPage = Math.min(totalPages, currentPage + 2);
-                      
+
                       // First page
                       if (startPage > 1) {
                         pages.push(
@@ -183,7 +185,7 @@ export function MostPlayedGames() {
                             key={1}
                             className={`w-8 h-8 rounded-full transition-colors ${
                               currentPage === 1
-                                ? "bg-[#D946EF] text-white"
+                                ? "bg-[#DC8B18] text-white"
                                 : "hover:bg-[#F3E8FF] text-black dark:text-white"
                             }`}
                             onClick={() => setCurrentPage(1)}
@@ -193,13 +195,16 @@ export function MostPlayedGames() {
                         );
                         if (startPage > 2) {
                           pages.push(
-                            <span key="start-ellipsis" className="px-2 text-gray-500">
+                            <span
+                              key="start-ellipsis"
+                              className="px-2 text-gray-500"
+                            >
                               ...
                             </span>
                           );
                         }
                       }
-                      
+
                       // Current range
                       for (let i = startPage; i <= endPage; i++) {
                         pages.push(
@@ -207,7 +212,7 @@ export function MostPlayedGames() {
                             key={i}
                             className={`w-8 h-8 rounded-full transition-colors ${
                               currentPage === i
-                                ? "bg-[#D946EF] text-white"
+                                ? "bg-[#DC8B18] text-white"
                                 : "hover:bg-[#F3E8FF] text-black dark:text-white"
                             }`}
                             onClick={() => setCurrentPage(i)}
@@ -216,12 +221,15 @@ export function MostPlayedGames() {
                           </button>
                         );
                       }
-                      
+
                       // Last page
                       if (endPage < totalPages) {
                         if (endPage < totalPages - 1) {
                           pages.push(
-                            <span key="end-ellipsis" className="px-2 text-gray-500">
+                            <span
+                              key="end-ellipsis"
+                              className="px-2 text-gray-500"
+                            >
                               ...
                             </span>
                           );
@@ -231,7 +239,7 @@ export function MostPlayedGames() {
                             key={totalPages}
                             className={`w-8 h-8 rounded-full transition-colors ${
                               currentPage === totalPages
-                                ? "bg-[#D946EF] text-white"
+                                ? "bg-[#DC8B18] text-white"
                                 : "hover:bg-[#F3E8FF] text-black dark:text-white"
                             }`}
                             onClick={() => setCurrentPage(totalPages)}
@@ -241,19 +249,21 @@ export function MostPlayedGames() {
                         );
                       }
                     }
-                    
+
                     return pages;
                   })()}
                 </div>
 
                 {/* Next button */}
                 <button
-                  className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                  className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                     currentPage === totalPages
                       ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                       : "hover:bg-[#F3E8FF] text-black dark:text-white"
                   }`}
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   ›

@@ -528,7 +528,7 @@ export function CreateGameSheet({
                     isUploading.thumbnail ||
                     isUploading.game
                   }
-                  className="w-24 h-12 bg-[#D946EF] text-white hover:bg-[#C026D3] dark:text-white dark:hover:bg-[#C026D3] cursor-pointer"
+                  className="w-24 h-12 bg-[#DC8B18] text-white hover:bg-[#DC8B18] dark:text-white dark:hover:bg-[#DC8B18] cursor-pointer"
                 >
                   {isSubmitting ? "Creating..." : "Create"}
                 </Button>

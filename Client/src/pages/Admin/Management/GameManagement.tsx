@@ -125,7 +125,7 @@ export default function GameManagement() {
   return (
     <div className="p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-[#D946EF] text-2xl sm:text-3xl font-worksans">
+        <h1 className="text-[#DC8B18] text-2xl sm:text-3xl font-worksans">
           All Games
         </h1>
         <div className="flex flex-wrap gap-3 justify-end ">
@@ -161,7 +161,7 @@ export default function GameManagement() {
               )}
             </>
           )}
-          
+
           {/* Hide reorder and create buttons for viewers */}
           {permissions.canManageGames && (
             <>
@@ -186,7 +186,7 @@ export default function GameManagement() {
                 <Button
                   className={`font-normal text-sm sm:text-base px-[16px] py-[14px] h-[48px] bg-white hover:bg-[#F8FAFC]  text-black border-[#E2E8F0] border-1 dark:border-none font-dmmono cursor-pointer ${
                     reorderHistoryOpen
-                      ? "bg-[#86198F] hover:bg-[#86198F] text-white"
+                      ? "bg-[#DC8B18] hover:bg-[#DC8B18] text-white"
                       : ""
                   }`}
                   onClick={() => setReorderHistoryOpen(!reorderHistoryOpen)}
@@ -196,7 +196,7 @@ export default function GameManagement() {
               )}
               {!reorderOpen && (
                 <CreateGameSheet>
-                  <Button className="bg-[#D946EF] text-white hover:bg-[#c026d3] tracking-wider py-2 sm:py-[14px] text-sm sm:text-base h-[48px] font-dmmono cursor-pointer">
+                  <Button className="bg-[#DC8B18] text-white hover:bg-[#DC8B18] tracking-wider py-2 sm:py-[14px] text-sm sm:text-base h-[48px] font-dmmono cursor-pointer">
                     Create New Game
                   </Button>
                 </CreateGameSheet>
@@ -206,7 +206,7 @@ export default function GameManagement() {
         </div>
       </div>
       {reorderOpen && (
-        <div className="flex bg-[#F5D0FE] dark:bg-[#F5D0FE]/70 text-[#86198F] text-sm sm:text-[18px] font-bolde justify-center items-center h-[52px] mb-[20px]">
+        <div className="flex bg-[#FDF1E1] dark:bg-[#FDF1E1]/70 text-[#DC8B18] text-sm sm:text-[18px] font-bolde justify-center items-center h-[52px] mb-[20px]">
           <p>Reorder-mode: Click game to reorder</p>
         </div>
       )}
@@ -270,7 +270,7 @@ export default function GameManagement() {
                   <tr
                     key={game.id}
                     className={cn(
-                      "border-b dark:border-[#23243a] hover:bg-[#f3e8ff]/40 dark:hover:bg-[#23243a]/40 transition  text-sm cursor-pointer space-x-12",
+                      "border-b dark:border-[#23243a] hover:bg-[#b4730a]/10 dark:hover:bg-[#b4730a]/10 transition  text-sm cursor-pointer space-x-12",
                       idx % 2 === 0 ? "dark:bg-[#18192b]" : "dark:bg-[#23243a]"
                     )}
                     onClick={() => {
@@ -298,14 +298,17 @@ export default function GameManagement() {
                     <td className="px-4 py-3 tracking-wider">
                       {game.category?.name ? (
                         <div className="relative group">
-                          <span 
+                          <span
                             className="block truncate max-w-[150px]"
-                            title={game.category.name.length > 20 ? game.category.name : undefined}
-                          >
-                            {game.category.name.length > 20 
-                              ? `${game.category.name.substring(0, 20)}...` 
-                              : game.category.name
+                            title={
+                              game.category.name.length > 20
+                                ? game.category.name
+                                : undefined
                             }
+                          >
+                            {game.category.name.length > 20
+                              ? `${game.category.name.substring(0, 20)}...`
+                              : game.category.name}
                           </span>
                           {game.category.name.length > 20 && (
                             <div className="absolute left-0 top-full mt-1 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg max-w-xs">
@@ -355,7 +358,7 @@ export default function GameManagement() {
                             <CiEdit className="cursor-pointer" />
                           </button>
                         )}
-                        
+
                         {/* View button - available for all users */}
                         <button
                           className="text-black hover:text-black p-1 dark:text-white cursor-pointer"
@@ -371,7 +374,7 @@ export default function GameManagement() {
                             <IoEyeOffOutline className="cursor-pointer" />
                           )}
                         </button>
-                        
+
                         {/* Delete button - only for users who can delete */}
                         {permissions.canDelete && (
                           <button
@@ -386,10 +389,12 @@ export default function GameManagement() {
                             <RiDeleteBin6Line className="cursor-pointer" />
                           </button>
                         )}
-                        
+
                         {/* Show "View Only" text for viewers when no actions are available */}
                         {permissions.isViewer && (
-                          <span className="text-gray-400 text-xs">View Only</span>
+                          <span className="text-gray-400 text-xs">
+                            View Only
+                          </span>
                         )}
                       </div>
                     </td>
@@ -409,7 +414,7 @@ export default function GameManagement() {
                 <div className="flex items-center gap-1 order-1 sm:order-2">
                   {/* Previous button */}
                   <button
-                    className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                    className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                       page === 1
                         ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                         : "hover:bg-[#F3E8FF] text-black dark:text-white"
@@ -421,18 +426,18 @@ export default function GameManagement() {
                   </button>
 
                   {/* Mobile: Show only current page info */}
-                  <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#D946EF]">
+                  <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#DC8B18]">
                     <span className="text-sm text-black dark:text-white">
                       {page} / {totalPages}
                     </span>
                   </div>
 
                   {/* Desktop: Show page numbers with smart truncation */}
-                  <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#D946EF] p-1">
+                  <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#DC8B18] p-1">
                     {(() => {
                       const pages = [];
                       const maxVisiblePages = 5;
-                      
+
                       if (totalPages <= maxVisiblePages) {
                         // Show all pages if total is small
                         for (let i = 1; i <= totalPages; i++) {
@@ -441,7 +446,7 @@ export default function GameManagement() {
                               key={i}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 page === i
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setPage(i)}
@@ -454,7 +459,7 @@ export default function GameManagement() {
                         // Smart truncation for many pages
                         const startPage = Math.max(1, page - 2);
                         const endPage = Math.min(totalPages, page + 2);
-                        
+
                         // First page
                         if (startPage > 1) {
                           pages.push(
@@ -462,7 +467,7 @@ export default function GameManagement() {
                               key={1}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 page === 1
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setPage(1)}
@@ -472,13 +477,16 @@ export default function GameManagement() {
                           );
                           if (startPage > 2) {
                             pages.push(
-                              <span key="start-ellipsis" className="px-2 text-gray-500">
+                              <span
+                                key="start-ellipsis"
+                                className="px-2 text-gray-500"
+                              >
                                 ...
                               </span>
                             );
                           }
                         }
-                        
+
                         // Current range
                         for (let i = startPage; i <= endPage; i++) {
                           pages.push(
@@ -486,7 +494,7 @@ export default function GameManagement() {
                               key={i}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 page === i
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setPage(i)}
@@ -495,12 +503,15 @@ export default function GameManagement() {
                             </button>
                           );
                         }
-                        
+
                         // Last page
                         if (endPage < totalPages) {
                           if (endPage < totalPages - 1) {
                             pages.push(
-                              <span key="end-ellipsis" className="px-2 text-gray-500">
+                              <span
+                                key="end-ellipsis"
+                                className="px-2 text-gray-500"
+                              >
                                 ...
                               </span>
                             );
@@ -510,7 +521,7 @@ export default function GameManagement() {
                               key={totalPages}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 page === totalPages
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setPage(totalPages)}
@@ -520,14 +531,14 @@ export default function GameManagement() {
                           );
                         }
                       }
-                      
+
                       return pages;
                     })()}
                   </div>
 
                   {/* Next button */}
                   <button
-                    className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                    className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                       page === totalPages
                         ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                         : "hover:bg-[#F3E8FF] text-black dark:text-white"
@@ -626,7 +637,7 @@ export default function GameManagement() {
                 <div className="flex items-center gap-1 order-1 sm:order-2">
                   {/* Previous button */}
                   <button
-                    className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                    className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                       historyPage === 1
                         ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                         : "hover:bg-[#F3E8FF] text-black dark:text-white"
@@ -638,18 +649,18 @@ export default function GameManagement() {
                   </button>
 
                   {/* Mobile: Show only current page info */}
-                  <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#D946EF]">
+                  <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#DC8B18]">
                     <span className="text-sm text-black dark:text-white">
                       {historyPage} / {historyTotalPages}
                     </span>
                   </div>
 
                   {/* Desktop: Show page numbers with smart truncation */}
-                  <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#D946EF] p-1">
+                  <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#DC8B18] p-1">
                     {(() => {
                       const pages = [];
                       const maxVisiblePages = 5;
-                      
+
                       if (historyTotalPages <= maxVisiblePages) {
                         // Show all pages if total is small
                         for (let i = 1; i <= historyTotalPages; i++) {
@@ -658,7 +669,7 @@ export default function GameManagement() {
                               key={i}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 historyPage === i
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setHistoryPage(i)}
@@ -670,8 +681,11 @@ export default function GameManagement() {
                       } else {
                         // Smart truncation for many pages
                         const startPage = Math.max(1, historyPage - 2);
-                        const endPage = Math.min(historyTotalPages, historyPage + 2);
-                        
+                        const endPage = Math.min(
+                          historyTotalPages,
+                          historyPage + 2
+                        );
+
                         // First page
                         if (startPage > 1) {
                           pages.push(
@@ -679,7 +693,7 @@ export default function GameManagement() {
                               key={1}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 historyPage === 1
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setHistoryPage(1)}
@@ -689,13 +703,16 @@ export default function GameManagement() {
                           );
                           if (startPage > 2) {
                             pages.push(
-                              <span key="start-ellipsis" className="px-2 text-gray-500">
+                              <span
+                                key="start-ellipsis"
+                                className="px-2 text-gray-500"
+                              >
                                 ...
                               </span>
                             );
                           }
                         }
-                        
+
                         // Current range
                         for (let i = startPage; i <= endPage; i++) {
                           pages.push(
@@ -703,7 +720,7 @@ export default function GameManagement() {
                               key={i}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 historyPage === i
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setHistoryPage(i)}
@@ -712,12 +729,15 @@ export default function GameManagement() {
                             </button>
                           );
                         }
-                        
+
                         // Last page
                         if (endPage < historyTotalPages) {
                           if (endPage < historyTotalPages - 1) {
                             pages.push(
-                              <span key="end-ellipsis" className="px-2 text-gray-500">
+                              <span
+                                key="end-ellipsis"
+                                className="px-2 text-gray-500"
+                              >
                                 ...
                               </span>
                             );
@@ -727,7 +747,7 @@ export default function GameManagement() {
                               key={historyTotalPages}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 historyPage === historyTotalPages
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setHistoryPage(historyTotalPages)}
@@ -737,19 +757,23 @@ export default function GameManagement() {
                           );
                         }
                       }
-                      
+
                       return pages;
                     })()}
                   </div>
 
                   {/* Next button */}
                   <button
-                    className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                    className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                       historyPage === historyTotalPages
                         ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                         : "hover:bg-[#F3E8FF] text-black dark:text-white"
                     }`}
-                    onClick={() => setHistoryPage(Math.min(historyTotalPages, historyPage + 1))}
+                    onClick={() =>
+                      setHistoryPage(
+                        Math.min(historyTotalPages, historyPage + 1)
+                      )
+                    }
                     disabled={historyPage === historyTotalPages}
                   >
                     ›

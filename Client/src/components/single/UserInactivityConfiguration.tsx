@@ -48,7 +48,7 @@ const UserInactivityConfiguration = forwardRef<UserInactivityConfigurationRef, U
 
     return (
       <div>
-          <h2 className="text-lg sm:text-xl font-worksans text-[#D946EF] mb-4">
+          <h2 className="text-lg sm:text-xl font-worksans text-[#DC8B18] mb-4">
             User inactivity timer
           </h2>
 
@@ -70,7 +70,7 @@ const UserInactivityConfiguration = forwardRef<UserInactivityConfigurationRef, U
                 type="button"
                 onClick={() => !disabled && !isLoadingConfig && setIsDropdownOpen(!isDropdownOpen)}
                 disabled={disabled || isLoadingConfig}
-                className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-left text-sm text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between hover:border-[#D946EF] focus:border-[#D946EF] focus:outline-none"
+                className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-left text-sm text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between hover:border-[#DC8B18] focus:border-[#DC8B18] focus:outline-none"
               >
                 <span>{selectedOption?.label || `${inactivityDays} days`}</span>
                 <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -85,7 +85,7 @@ const UserInactivityConfiguration = forwardRef<UserInactivityConfigurationRef, U
                       onClick={() => handleSelectDays(option.value)}
                       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 first:rounded-t-lg last:rounded-b-lg ${
                         inactivityDays === option.value 
-                          ? 'bg-[#D946EF] text-white hover:bg-[#C026D3]' 
+                          ? 'bg-[#DC8B18] text-white hover:bg-[#C026D3]' 
                           : 'text-gray-900 dark:text-white'
                       }`}
                     >

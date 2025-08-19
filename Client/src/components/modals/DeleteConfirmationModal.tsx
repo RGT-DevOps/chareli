@@ -26,12 +26,10 @@ export function DeleteConfirmationModal({
 }: DeleteConfirmationModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <CustomDialogContent 
-        className="bg-white dark:bg-[#334154] rounded-2xl shadow-lg p-4 sm:p-8 min-w-[320px] max-w-[90vw] w-full sm:w-[420px] border-none font-dmmono tracking-wide"
-      >
+      <CustomDialogContent className="bg-white dark:bg-[#334154] rounded-2xl shadow-lg p-4 sm:p-8 min-w-[320px] max-w-[90vw] w-full sm:w-[420px] border-none font-dmmono tracking-wide">
         {/* Custom Close Button */}
         <button
-          className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#C026D3] flex items-center justify-center shadow-lg hover:bg-[#a21caf] transition-colors z-10"
+          className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#DC8B18] flex items-center justify-center shadow-lg hover:bg-[#DC8B18] transition-colors z-10"
           onClick={() => onOpenChange(false)}
           aria-label="Close"
         >

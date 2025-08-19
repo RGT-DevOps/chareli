@@ -71,7 +71,7 @@ export function DashboardTimeFilter({ value, onChange }: DashboardTimeFilterProp
         <DropdownMenuTrigger asChild>
           <button className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#334154] border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#334155] transition-colors cursor-pointer">
             <span className="text-gray-600 dark:text-gray-400">Filter</span>
-            <span className="text-[#D946EF] font-medium">
+            <span className="text-[#DC8B18] font-medium">
               {getCurrentLabel()}
             </span>
             <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -83,16 +83,16 @@ export function DashboardTimeFilter({ value, onChange }: DashboardTimeFilterProp
               key={option.value}
               onClick={() => handlePeriodChange(option.value)}
               className={`cursor-pointer ${
-                value.period === option.value 
-                  ? 'bg-[#F3E8FF] text-[#D946EF] dark:bg-[#D946EF]/20' 
-                  : ''
+                value.period === option.value
+                  ? "bg-[#FDF1E1] text-[#DC8B18] dark:bg-[#DC8B18]/20"
+                  : ""
               }`}
             >
               {option.label}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
-      </DropdownMenu> 
+      </DropdownMenu>
 
       {/* Custom Date Range Dialog */}
       <Dialog open={isCustomOpen} onOpenChange={setIsCustomOpen}>
@@ -127,16 +127,13 @@ export function DashboardTimeFilter({ value, onChange }: DashboardTimeFilterProp
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsCustomOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsCustomOpen(false)}>
               Cancel
             </Button>
             <Button
               onClick={handleCustomDateApply}
               disabled={!tempStartDate || !tempEndDate}
-              className="bg-[#D946EF] hover:bg-[#C026D3] text-white"
+              className="bg-[#DC8B18] hover:bg-[#DC8B18] text-white"
             >
               Apply
             </Button>

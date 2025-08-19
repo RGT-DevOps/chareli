@@ -226,10 +226,15 @@ export default function Configuration() {
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
         </div>
       )}
-      
-      <SearchBarConfiguration ref={searchBarConfigRef} disabled={isSubmitting} />
-      
-      <h1 className="text-lg sm:text-xl font-worksans text-[#D946EF] mb-4">User Sign Up Configuration</h1>
+
+      <SearchBarConfiguration
+        ref={searchBarConfigRef}
+        disabled={isSubmitting}
+      />
+
+      <h1 className="text-lg sm:text-xl font-worksans text-[#DC8B18] mb-4">
+        User Sign Up Configuration
+      </h1>
       <div className="space-y-4">
         {/* Email Authentication Section */}
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
@@ -238,10 +243,13 @@ export default function Configuration() {
               checked={authSettings.email.enabled}
               onCheckedChange={handleEmailAuth}
               id="email-auth"
-              color="#D946EF"
+              color="#DC8B18"
               disabled={authSettings.both.enabled}
             />
-            <Label htmlFor="email-auth" className="ml-2 text-lg font-medium text-black dark:text-white">
+            <Label
+              htmlFor="email-auth"
+              className="ml-2 text-lg font-medium text-black dark:text-white"
+            >
               Email Authentication
             </Label>
           </div>
@@ -251,8 +259,10 @@ export default function Configuration() {
                 checked={authSettings.email.firstName}
                 onCheckedChange={handleEmailFirstName}
                 id="first-name-email"
-                disabled={!authSettings.email.enabled || authSettings.both.enabled}
-                color="#D946EF"
+                disabled={
+                  !authSettings.email.enabled || authSettings.both.enabled
+                }
+                color="#DC8B18"
               />
               <Label htmlFor="first-name-email" className="ml-2 text-base">
                 First Name
@@ -263,8 +273,10 @@ export default function Configuration() {
                 checked={authSettings.email.lastName}
                 onCheckedChange={handleEmailLastName}
                 id="last-name-email"
-                disabled={!authSettings.email.enabled || authSettings.both.enabled}
-                color="#D946EF"
+                disabled={
+                  !authSettings.email.enabled || authSettings.both.enabled
+                }
+                color="#DC8B18"
               />
               <Label htmlFor="last-name-email" className="ml-2 text-base">
                 Last Name
@@ -280,10 +292,13 @@ export default function Configuration() {
               checked={authSettings.sms.enabled}
               onCheckedChange={handleSmsAuth}
               id="sms-auth"
-              color="#D946EF"
+              color="#DC8B18"
               disabled={authSettings.both.enabled}
             />
-            <Label htmlFor="sms-auth" className="ml-2 text-lg font-medium text-black dark:text-white">
+            <Label
+              htmlFor="sms-auth"
+              className="ml-2 text-lg font-medium text-black dark:text-white"
+            >
               SMS Authentication
             </Label>
           </div>
@@ -293,8 +308,10 @@ export default function Configuration() {
                 checked={authSettings.sms.firstName}
                 onCheckedChange={handleSmsFirstName}
                 id="first-name-sms"
-                disabled={!authSettings.sms.enabled || authSettings.both.enabled}
-                color="#D946EF"
+                disabled={
+                  !authSettings.sms.enabled || authSettings.both.enabled
+                }
+                color="#DC8B18"
               />
               <Label htmlFor="first-name-sms" className="ml-2 text-base">
                 First Name
@@ -305,8 +322,10 @@ export default function Configuration() {
                 checked={authSettings.sms.lastName}
                 onCheckedChange={handleSmsLastName}
                 id="last-name-sms"
-                disabled={!authSettings.sms.enabled || authSettings.both.enabled}
-                color="#D946EF"
+                disabled={
+                  !authSettings.sms.enabled || authSettings.both.enabled
+                }
+                color="#DC8B18"
               />
               <Label htmlFor="last-name-sms" className="ml-2 text-base">
                 Last Name
@@ -322,13 +341,16 @@ export default function Configuration() {
               checked={authSettings.both.enabled}
               onCheckedChange={handleBoth}
               id="both"
-              color="#D946EF"
+              color="#DC8B18"
             />
-            <Label htmlFor="both" className="ml-2 text-lg font-medium text-black dark:text-white">
+            <Label
+              htmlFor="both"
+              className="ml-2 text-lg font-medium text-black dark:text-white"
+            >
               Both
             </Label>
           </div>
-          
+
           {/* OTP Delivery Method Selection */}
           {authSettings.both.enabled && (
             <div className="ml-6 mt-4">
@@ -342,9 +364,9 @@ export default function Configuration() {
                     id="otp-email"
                     name="otpDeliveryMethod"
                     value="email"
-                    checked={authSettings.both.otpDeliveryMethod === 'email'}
-                    onChange={() => handleOtpDeliveryMethod('email')}
-                    className="w-4 h-4 text-[#D946EF] bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
+                    checked={authSettings.both.otpDeliveryMethod === "email"}
+                    onChange={() => handleOtpDeliveryMethod("email")}
+                    className="w-4 h-4 text-[#DC8B18] bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
                   />
                   <Label htmlFor="otp-email" className="ml-2 text-base">
                     Email
@@ -356,9 +378,9 @@ export default function Configuration() {
                     id="otp-sms"
                     name="otpDeliveryMethod"
                     value="sms"
-                    checked={authSettings.both.otpDeliveryMethod === 'sms'}
-                    onChange={() => handleOtpDeliveryMethod('sms')}
-                    className="w-4 h-4 text-[#D946EF] bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
+                    checked={authSettings.both.otpDeliveryMethod === "sms"}
+                    onChange={() => handleOtpDeliveryMethod("sms")}
+                    className="w-4 h-4 text-[#DC8B18] bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
                   />
                   <Label htmlFor="otp-sms" className="ml-2 text-base">
                     SMS
@@ -370,9 +392,9 @@ export default function Configuration() {
                     id="otp-none"
                     name="otpDeliveryMethod"
                     value="none"
-                    checked={authSettings.both.otpDeliveryMethod === 'none'}
-                    onChange={() => handleOtpDeliveryMethod('none')}
-                    className="w-4 h-4 text-[#D946EF] bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
+                    checked={authSettings.both.otpDeliveryMethod === "none"}
+                    onChange={() => handleOtpDeliveryMethod("none")}
+                    className="w-4 h-4 text-[#DC8B18] bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
                   />
                   <Label htmlFor="otp-none" className="ml-2 text-base">
                     None (No OTP required)
@@ -384,12 +406,18 @@ export default function Configuration() {
         </div>
       </div>
       <DynamicPopupConfiguration />
-      <UserInactivityConfiguration ref={userInactivityConfigRef} disabled={isSubmitting} />
-      <PopularGamesConfiguration ref={popularGamesConfigRef} disabled={isSubmitting} />
-      
+      <UserInactivityConfiguration
+        ref={userInactivityConfigRef}
+        disabled={isSubmitting}
+      />
+      <PopularGamesConfiguration
+        ref={popularGamesConfigRef}
+        disabled={isSubmitting}
+      />
+
       <div className="flex justify-end mt-6 mb-4 px-2">
         <button
-          className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer font-medium text-sm sm:text-base min-w-[140px] justify-center shadow-lg"
+          className="bg-[#DC8B18] text-white px-6 py-3 rounded-lg hover:bg-[#C17600] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer font-medium text-sm sm:text-base min-w-[140px] justify-center shadow-lg"
           onClick={handleSave}
           disabled={isSubmitting || isLoadingConfig}
         >
@@ -399,7 +427,7 @@ export default function Configuration() {
               Saving...
             </>
           ) : (
-            'Save Configuration'
+            "Save Configuration"
           )}
         </button>
       </div>

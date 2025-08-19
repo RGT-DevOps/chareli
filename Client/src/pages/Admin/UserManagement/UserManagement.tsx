@@ -156,7 +156,7 @@ export default function UserManagement() {
   return (
     <div className="px-3">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-[#D946EF] text-2xl sm:text-3xl font-worksans">
+        <h1 className="text-[#DC8B18] text-2xl sm:text-3xl font-worksans">
           User Management
         </h1>
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-end">
@@ -174,7 +174,7 @@ export default function UserManagement() {
                   className="pl-10 bg-white dark:bg-[#1E293B] border-gray-300 dark:border-gray-600 h-12"
                 />
               </div>
-              
+
               <UserManagementFilterSheet
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
@@ -186,11 +186,13 @@ export default function UserManagement() {
                   className="border-[#475568] text-[#475568] flex items-center gap-2 dark:text-white py-5 cursor-pointer"
                 >
                   Filter
-                  <div className="text-[#D946EF] bg-[#FAE8FF] px-2 sm:px-3 py-1 rounded-full text-sm">
+                  <div className="text-[#DC8B18] bg-[#FDF1E1] px-2 sm:px-3 py-1 rounded-full text-sm">
                     {
                       Object.entries(filters).filter(([, value]) =>
                         typeof value === "object"
-                          ? Object.values(value).some((v) => v !== "" && v !== 0)
+                          ? Object.values(value).some(
+                              (v) => v !== "" && v !== 0
+                            )
                           : typeof value === "boolean"
                           ? value === true
                           : value !== ""
@@ -202,7 +204,7 @@ export default function UserManagement() {
               </UserManagementFilterSheet>
             </>
           )}
-          
+
           {permissions.canExport && (
             <ExportModal
               data={filteredUsers || []}
@@ -216,10 +218,10 @@ export default function UserManagement() {
       <div className="col-span-1 md:col-span-2 lg:col-span-4">
         <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
           <div className="flex justify-between p-4 text-3xl">
-            <p className="text-xl dark:text-[#D946EF]">Recent User Activity</p>
+            <p className="text-xl dark:text-[#DC8B18]">Recent User Activity</p>
             {/* <p className="text-xl cursor-pointer">View All</p> */}
           </div>
-          
+
           {/* table */}
           <div className="px-4 pb-4">
             {isLoading ? (
@@ -257,7 +259,7 @@ export default function UserManagement() {
                         .map((user, idx) => (
                           <TableRow
                             key={idx}
-                            className="font-worksans text-sm tracking-wider cursor-pointer hover:bg-[#f3e8ff] dark:hover:bg-[#23243a]"
+                            className="font-worksans text-sm tracking-wider cursor-pointer hover:bg-[#b4730a]/10 dark:hover:bg-[#b4730a]/10"
                             onClick={() =>
                               navigate(`/admin/management/${user.id}`, {
                                 state: { user },
@@ -310,7 +312,11 @@ export default function UserManagement() {
                             </TableCell>
                             <TableCell>
                               {/* Hide delete button for viewers or if admin trying to delete superadmin */}
-                              {permissions.canDelete && !(currentUser?.role.name === 'admin' && user.role?.name === 'superadmin') ? (
+                              {permissions.canDelete &&
+                              !(
+                                currentUser?.role.name === "admin" &&
+                                user.role?.name === "superadmin"
+                              ) ? (
                                 <Button
                                   className="bg-[#EF4444] hover:bg-[#dc2626] text-white p-2 h-8 w-8 cursor-pointer"
                                   onClick={(e) => {
@@ -322,11 +328,15 @@ export default function UserManagement() {
                                 </Button>
                               ) : permissions.isViewer ? (
                                 <div className="flex items-center justify-center h-8 w-8">
-                                  <span className="text-gray-400 text-xs">View Only</span>
+                                  <span className="text-gray-400 text-xs">
+                                    View Only
+                                  </span>
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-center h-8 w-8">
-                                  <span className="text-gray-400 text-xs">Protected</span>
+                                  <span className="text-gray-400 text-xs">
+                                    Protected
+                                  </span>
                                 </div>
                               )}
                             </TableCell>
@@ -340,7 +350,8 @@ export default function UserManagement() {
                     {Math.min(page * usersPerPage, filteredUsers?.length || 0)}{" "}
                     from {filteredUsers?.length || 0} data
                   </span>
-                  {Math.ceil((filteredUsers?.length || 0) / usersPerPage) > 1 && (
+                  {Math.ceil((filteredUsers?.length || 0) / usersPerPage) >
+                    1 && (
                     <div className="flex items-center gap-1 order-1 sm:order-2">
                       {/* Previous button */}
                       <button
@@ -358,7 +369,10 @@ export default function UserManagement() {
                       {/* Mobile: Show only current page info */}
                       <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#D946EF]">
                         <span className="text-sm text-black dark:text-white">
-                          {page} / {Math.ceil((filteredUsers?.length || 0) / usersPerPage)}
+                          {page} /{" "}
+                          {Math.ceil(
+                            (filteredUsers?.length || 0) / usersPerPage
+                          )}
                         </span>
                       </div>
 
@@ -366,9 +380,11 @@ export default function UserManagement() {
                       <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#D946EF] p-1">
                         {(() => {
                           const pages = [];
-                          const totalPages = Math.ceil((filteredUsers?.length || 0) / usersPerPage);
+                          const totalPages = Math.ceil(
+                            (filteredUsers?.length || 0) / usersPerPage
+                          );
                           const maxVisiblePages = 5;
-                          
+
                           if (totalPages <= maxVisiblePages) {
                             // Show all pages if total is small
                             for (let i = 1; i <= totalPages; i++) {
@@ -390,7 +406,7 @@ export default function UserManagement() {
                             // Smart truncation for many pages
                             const startPage = Math.max(1, page - 2);
                             const endPage = Math.min(totalPages, page + 2);
-                            
+
                             // First page
                             if (startPage > 1) {
                               pages.push(
@@ -408,13 +424,16 @@ export default function UserManagement() {
                               );
                               if (startPage > 2) {
                                 pages.push(
-                                  <span key="start-ellipsis" className="px-2 text-gray-500">
+                                  <span
+                                    key="start-ellipsis"
+                                    className="px-2 text-gray-500"
+                                  >
                                     ...
                                   </span>
                                 );
                               }
                             }
-                            
+
                             // Current range
                             for (let i = startPage; i <= endPage; i++) {
                               pages.push(
@@ -431,12 +450,15 @@ export default function UserManagement() {
                                 </button>
                               );
                             }
-                            
+
                             // Last page
                             if (endPage < totalPages) {
                               if (endPage < totalPages - 1) {
                                 pages.push(
-                                  <span key="end-ellipsis" className="px-2 text-gray-500">
+                                  <span
+                                    key="end-ellipsis"
+                                    className="px-2 text-gray-500"
+                                  >
                                     ...
                                   </span>
                                 );
@@ -456,7 +478,7 @@ export default function UserManagement() {
                               );
                             }
                           }
-                          
+
                           return pages;
                         })()}
                       </div>
@@ -464,12 +486,25 @@ export default function UserManagement() {
                       {/* Next button */}
                       <button
                         className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
-                          page === Math.ceil((filteredUsers?.length || 0) / usersPerPage)
+                          page ===
+                          Math.ceil((filteredUsers?.length || 0) / usersPerPage)
                             ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                             : "hover:bg-[#F3E8FF] text-black dark:text-white"
                         }`}
-                        onClick={() => setPage(Math.min(Math.ceil((filteredUsers?.length || 0) / usersPerPage), page + 1))}
-                        disabled={page === Math.ceil((filteredUsers?.length || 0) / usersPerPage)}
+                        onClick={() =>
+                          setPage(
+                            Math.min(
+                              Math.ceil(
+                                (filteredUsers?.length || 0) / usersPerPage
+                              ),
+                              page + 1
+                            )
+                          )
+                        }
+                        disabled={
+                          page ===
+                          Math.ceil((filteredUsers?.length || 0) / usersPerPage)
+                        }
                       >
                         ›
                       </button>
@@ -492,9 +527,15 @@ export default function UserManagement() {
         description={
           userToDelete ? (
             <span>
-              Are you sure you want to delete <strong>{userToDelete.firstName} {userToDelete.lastName}</strong>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <strong>
+                {userToDelete.firstName} {userToDelete.lastName}
+              </strong>
+              ? This action cannot be undone.
             </span>
-          ) : ""
+          ) : (
+            ""
+          )
         }
         confirmButtonText="Delete User"
         loadingText="Deleting..."

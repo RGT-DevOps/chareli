@@ -106,7 +106,7 @@ export default function UserActivityLog() {
     <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-4">
       <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-4">
-          <p className="text-xl md:text-2xl dark:text-[#D946EF]">
+          <p className="text-xl md:text-2xl dark:text-[#DC8B18]">
             User Activity Log
           </p>
           {(permissions.canFilter || permissions.canExport) && (
@@ -122,11 +122,13 @@ export default function UserActivityLog() {
                     className="border-[#475568] text-[#475568] flex items-center justify-center gap-2 dark:text-white py-3 sm:py-5 cursor-pointer w-full sm:w-auto"
                   >
                     <span className="text-sm sm:text-base">Filter</span>
-                    <div className="text-[#D946EF] bg-[#FAE8FF] px-2 py-1 rounded-full text-xs sm:text-sm">
+                    <div className="text-[#DC8B18] bg-[#FDF1E1] px-2 py-1 rounded-full text-xs sm:text-sm">
                       {
                         Object.entries(filters).filter(([, value]) =>
                           typeof value === "object"
-                            ? Object.values(value).some((v) => v !== "" && v !== 0)
+                            ? Object.values(value).some(
+                                (v) => v !== "" && v !== 0
+                              )
                             : typeof value === "boolean"
                             ? value === true
                             : value !== ""
@@ -263,30 +265,32 @@ export default function UserActivityLog() {
                 <div className="flex items-center gap-1 order-1 sm:order-2">
                   {/* Previous button */}
                   <button
-                    className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                    className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                       activityPage === 1
                         ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                         : "hover:bg-[#F3E8FF] text-black dark:text-white"
                     }`}
-                    onClick={() => setActivityPage(Math.max(1, activityPage - 1))}
+                    onClick={() =>
+                      setActivityPage(Math.max(1, activityPage - 1))
+                    }
                     disabled={activityPage === 1}
                   >
                     ‹
                   </button>
 
                   {/* Mobile: Show only current page info */}
-                  <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#D946EF]">
+                  <div className="sm:hidden flex items-center gap-1 px-3 py-1 rounded-full border border-[#DC8B18]">
                     <span className="text-sm text-black dark:text-white">
                       {activityPage} / {totalActivityPages}
                     </span>
                   </div>
 
                   {/* Desktop: Show page numbers with smart truncation */}
-                  <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#D946EF] p-1">
+                  <div className="hidden sm:flex items-center gap-1 rounded-full border border-[#DC8B18] p-1">
                     {(() => {
                       const pages = [];
                       const maxVisiblePages = 5;
-                      
+
                       if (totalActivityPages <= maxVisiblePages) {
                         // Show all pages if total is small
                         for (let i = 1; i <= totalActivityPages; i++) {
@@ -295,7 +299,7 @@ export default function UserActivityLog() {
                               key={i}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 activityPage === i
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setActivityPage(i)}
@@ -307,8 +311,11 @@ export default function UserActivityLog() {
                       } else {
                         // Smart truncation for many pages
                         const startPage = Math.max(1, activityPage - 2);
-                        const endPage = Math.min(totalActivityPages, activityPage + 2);
-                        
+                        const endPage = Math.min(
+                          totalActivityPages,
+                          activityPage + 2
+                        );
+
                         // First page
                         if (startPage > 1) {
                           pages.push(
@@ -316,7 +323,7 @@ export default function UserActivityLog() {
                               key={1}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 activityPage === 1
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setActivityPage(1)}
@@ -326,13 +333,16 @@ export default function UserActivityLog() {
                           );
                           if (startPage > 2) {
                             pages.push(
-                              <span key="start-ellipsis" className="px-2 text-gray-500">
+                              <span
+                                key="start-ellipsis"
+                                className="px-2 text-gray-500"
+                              >
                                 ...
                               </span>
                             );
                           }
                         }
-                        
+
                         // Current range
                         for (let i = startPage; i <= endPage; i++) {
                           pages.push(
@@ -340,7 +350,7 @@ export default function UserActivityLog() {
                               key={i}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 activityPage === i
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
                               onClick={() => setActivityPage(i)}
@@ -349,12 +359,15 @@ export default function UserActivityLog() {
                             </button>
                           );
                         }
-                        
+
                         // Last page
                         if (endPage < totalActivityPages) {
                           if (endPage < totalActivityPages - 1) {
                             pages.push(
-                              <span key="end-ellipsis" className="px-2 text-gray-500">
+                              <span
+                                key="end-ellipsis"
+                                className="px-2 text-gray-500"
+                              >
                                 ...
                               </span>
                             );
@@ -364,29 +377,35 @@ export default function UserActivityLog() {
                               key={totalActivityPages}
                               className={`w-8 h-8 rounded-full transition-colors ${
                                 activityPage === totalActivityPages
-                                  ? "bg-[#D946EF] text-white"
+                                  ? "bg-[#DC8B18] text-white"
                                   : "hover:bg-[#F3E8FF] text-black dark:text-white"
                               }`}
-                              onClick={() => setActivityPage(totalActivityPages)}
+                              onClick={() =>
+                                setActivityPage(totalActivityPages)
+                              }
                             >
                               {totalActivityPages}
                             </button>
                           );
                         }
                       }
-                      
+
                       return pages;
                     })()}
                   </div>
 
                   {/* Next button */}
                   <button
-                    className={`w-8 h-8 rounded-full transition-colors border border-[#D946EF] ${
+                    className={`w-8 h-8 rounded-full transition-colors border border-[#DC8B18] ${
                       activityPage === totalActivityPages
                         ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                         : "hover:bg-[#F3E8FF] text-black dark:text-white"
                     }`}
-                    onClick={() => setActivityPage(Math.min(totalActivityPages, activityPage + 1))}
+                    onClick={() =>
+                      setActivityPage(
+                        Math.min(totalActivityPages, activityPage + 1)
+                      )
+                    }
                     disabled={activityPage === totalActivityPages}
                   >
                     ›

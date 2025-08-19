@@ -46,7 +46,7 @@ const AdminNavbar: React.FC = () => {
         onClick={() => navigate("/")}
         className="cursor-pointer flex flex-col justify-center items-center"
       >
-        <img src={ArcadeLogo} alt="logo" />
+        <img src={ArcadeLogo} alt="logo" className="h-14" />
       </div>
 
       {/* right side */}
