@@ -19,7 +19,7 @@ import moon from "../../assets/moon.svg";
 
 import { SignUpModal } from "../modals/SignUpModal";
 import { LoginModal } from "../modals/LoginModal";
-import { Menu} from "lucide-react";
+import { CircleUserRound, Menu} from "lucide-react";
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -281,10 +281,10 @@ const Navbar: React.FC = () => {
               onClick={() => setIsStatsModalOpen(true)}
             /> */}
 
-            {/* <CircleUserRound
+            <CircleUserRound
               className="cursor-pointer text-[#DC8B18] w-6 h-6"
               onClick={() => setIsProfileModalOpen(true)}
-            /> */}
+            />
 
             {/* Logout Button */}
             <Button
