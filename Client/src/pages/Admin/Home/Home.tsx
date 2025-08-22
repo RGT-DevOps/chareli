@@ -148,7 +148,7 @@ export default function Home() {
       <div className="w-full mt-4">
         <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full">
           <div className="justify-between items-center flex p-3">
-            <p className="text-base sm:text-xl lg:text-2xl">Click insights</p>
+            <p className="text-base sm:text-xl lg:text-2xl">Click insights (Buttons)</p>
             <DashboardTimeFilter
               value={barChartTimeRange}
               onChange={setBarChartTimeRange}
