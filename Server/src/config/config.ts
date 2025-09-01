@@ -103,7 +103,7 @@ function getEnv(key: string, defaultValue?: string): string {
 const config: Config = {
   env: getEnv('NODE_ENV', 'development'),
   app: { clientUrl: getEnv('CLIENT_URL', 'http://localhost:5173') },
-  storageProvider: getEnv('STORAGE_PROVIDER', 's3') as 'r2' | 's3' | 'local',
+  storageProvider: getEnv('STORAGE_PROVIDER', 'r2') as 'r2' | 's3' | 'local',
   port: parseInt(getEnv('PORT', '5000'), 10),
   database: {
     host: process.env.DB_HOST || 'localhost',
