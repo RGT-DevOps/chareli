@@ -21,6 +21,7 @@ export default function GamePlay() {
   const { data: game, isLoading, error } = useGameById(gameId || "");
   const { mutate: createAnalytics } = useCreateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
 
   const handleOpenSignUpModal = () => {
     setIsSignUpModalOpen(true);
@@ -40,6 +41,35 @@ export default function GamePlay() {
     setLoadProgress(0);
     setTimeRemaining(null);
   }, [gameId]);
+
+  // Scroll management: Keep users at the top (main game area) when they arrive
+  useEffect(() => {
+    // Scroll to top when component mounts or gameId changes
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Also ensure the game container is visible
+    if (gameContainerRef.current) {
+      gameContainerRef.current.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+  }, [gameId]);
+
+  // Prevent auto-scroll when page loads
+  useEffect(() => {
+    // Override any potential scroll restoration
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    
+    // Force scroll to top on initial load
+    window.scrollTo(0, 0);
+    
+    return () => {
+      // Restore scroll restoration when component unmounts
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (game?.gameFile?.s3Key) {
@@ -184,7 +214,7 @@ export default function GamePlay() {
         </div>
       ) : game?.gameFile?.s3Key ? (
         <>
-          <div className={expanded ? "fixed inset-0 z-40 bg-black" : "relative"}>
+          <div ref={gameContainerRef} className={expanded ? "fixed inset-0 z-40 bg-black" : "relative"}>
             <div
               className={`relative ${
                 expanded
