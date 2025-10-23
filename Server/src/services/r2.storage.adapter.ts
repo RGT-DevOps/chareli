@@ -12,7 +12,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import mime from 'mime-types';
 
-import { IStorageService, UploadResult } from './storage.interface';
+import { IStorageService, UploadResult, ProgressCallback } from './storage.interface';
 import config from '../config/config';
 import logger from '../utils/logger';
 
@@ -118,37 +118,50 @@ export class R2StorageAdapter implements IStorageService {
   }
 
   /**
+   * Helper to count total files in directory recursively
+   */
+  private async countFiles(dirPath: string): Promise<number> {
+    let count = 0;
+    const items = await fs.readdir(dirPath, { withFileTypes: true });
+    
+    for (const item of items) {
+      const fullPath = path.join(dirPath, item.name);
+      if (item.isDirectory()) {
+        count += await this.countFiles(fullPath);
+      } else {
+        count++;
+      }
+    }
+    
+    return count;
+  }
+
+  /**
    * @inheritdoc
    */
-  async uploadDirectory(localPath: string, remotePath: string): Promise<void> {
+  async uploadDirectory(
+    localPath: string, 
+    remotePath: string,
+    onProgress?: ProgressCallback
+  ): Promise<void> {
     try {
-      const files = await fs.readdir(localPath, { withFileTypes: true });
-
-      for (const file of files) {
-        const fullLocalPath = path.join(localPath, file.name);
-        const fullRemotePath = path
-          .join(remotePath, file.name)
-          .replace(/\\/g, '/');
-
-        if (file.isDirectory()) {
-          // Recursively upload subdirectories
-          await this.uploadDirectory(fullLocalPath, fullRemotePath);
-        } else {
-          // Upload the file
-          const fileContent = await fs.readFile(fullLocalPath);
-          const contentType =
-            mime.lookup(fullLocalPath) || 'application/octet-stream';
-
-          const command = new PutObjectCommand({
-            Bucket: this.bucket,
-            Key: fullRemotePath,
-            Body: fileContent,
-            ContentType: contentType,
-          });
-
-          await this.s3Client.send(command);
-        }
+      // Count total files if progress callback provided
+      let totalFiles = 0;
+      let uploadedFiles = 0;
+      
+      if (onProgress) {
+        totalFiles = await this.countFiles(localPath);
+        logger.info(`Counted ${totalFiles} files to upload from ${localPath}`);
       }
+
+      await this.uploadDirectoryRecursive(
+        localPath, 
+        remotePath, 
+        totalFiles,
+        uploadedFiles,
+        onProgress
+      );
+      
       logger.info(
         `Successfully uploaded directory "${localPath}" to R2 at "${remotePath}"`
       );
@@ -162,6 +175,59 @@ export class R2StorageAdapter implements IStorageService {
         `Failed to upload directory to R2: ${(error as Error).message}`
       );
     }
+  }
+
+  /**
+   * Recursive helper for uploadDirectory with progress tracking
+   */
+  private async uploadDirectoryRecursive(
+    localPath: string,
+    remotePath: string,
+    totalFiles: number,
+    uploadedFiles: number,
+    onProgress?: ProgressCallback
+  ): Promise<number> {
+    const files = await fs.readdir(localPath, { withFileTypes: true });
+
+    for (const file of files) {
+      const fullLocalPath = path.join(localPath, file.name);
+      const fullRemotePath = path
+        .join(remotePath, file.name)
+        .replace(/\\/g, '/');
+
+      if (file.isDirectory()) {
+        // Recursively upload subdirectories
+        uploadedFiles = await this.uploadDirectoryRecursive(
+          fullLocalPath,
+          fullRemotePath,
+          totalFiles,
+          uploadedFiles,
+          onProgress
+        );
+      } else {
+        // Upload the file
+        const fileContent = await fs.readFile(fullLocalPath);
+        const contentType =
+          mime.lookup(fullLocalPath) || 'application/octet-stream';
+
+        const command = new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: fullRemotePath,
+          Body: fileContent,
+          ContentType: contentType,
+        });
+
+        await this.s3Client.send(command);
+        uploadedFiles++;
+        
+        // Report progress
+        if (onProgress && totalFiles > 0) {
+          onProgress(uploadedFiles, totalFiles);
+        }
+      }
+    }
+    
+    return uploadedFiles;
   }
 
   /**

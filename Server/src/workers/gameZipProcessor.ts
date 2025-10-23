@@ -96,7 +96,25 @@ export async function processGameZip(job: Job<GameZipProcessingJobData>): Promis
       gamePath 
     });
     
-    await storageService.uploadDirectory(processedZip.extractedPath, gamePath);
+    // Upload with progress tracking (50% to 80% = 30% range)
+    await storageService.uploadDirectory(
+      processedZip.extractedPath, 
+      gamePath,
+      (uploaded, total) => {
+        // Map file progress (0-100%) to job progress range (50-80%)
+        const fileProgress = (uploaded / total) * 100;
+        const jobProgress = 50 + Math.floor((fileProgress / 100) * 30);
+        
+        // Only update if progress changed significantly (every 5%)
+        const currentProgress = Math.floor(jobProgress / 5) * 5;
+        
+        console.log(`📤 [WORKER] Upload progress: ${uploaded}/${total} files (${jobProgress}%)`, { gameId });
+        
+        job.updateProgress(jobProgress);
+        websocketService.emitGameProcessingProgress(gameId, jobProgress);
+      }
+    );
+    
     console.log('✅ [WORKER] Files uploaded to permanent storage:', { gameId, gamePath });
 
     await job.updateProgress(80);

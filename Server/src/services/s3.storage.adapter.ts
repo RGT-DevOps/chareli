@@ -110,7 +110,7 @@ export class S3StorageAdapter implements IStorageService {
     };
   }
 
-  async uploadDirectory(localPath: string, remotePath: string): Promise<void> {
+  async uploadDirectory(localPath: string, remotePath: string, onProgress?: any): Promise<void> {
     const files = await fs.readdir(localPath, { withFileTypes: true });
     for (const file of files) {
       const fullLocalPath = path.join(localPath, file.name);

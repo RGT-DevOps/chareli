@@ -78,7 +78,7 @@ export class LocalStorageAdapter implements IStorageService {
     }
   }
 
-  async uploadDirectory(localPath: string, remotePath: string): Promise<void> {
+  async uploadDirectory(localPath: string, remotePath: string, onProgress?: any): Promise<void> {
     const destinationPath = path.join(UPLOAD_DIR, remotePath);
     await fs.cp(localPath, destinationPath, { recursive: true });
     logger.info(
