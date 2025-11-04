@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BackendRoute } from '../../../backend/constants';
+import { backendService } from '../../../backend/api.service';
 import SearchBarConfiguration, { type SearchBarConfigurationRef } from '../../../components/single/SearchBarConfiguration';
 import DynamicPopupConfiguration from '../../../components/single/DynamicPopupConfiguration';
 import UserInactivityConfiguration, { type UserInactivityConfigurationRef } from '../../../components/single/UserInactivityConfiguration';
@@ -224,14 +225,29 @@ export default function Configuration() {
         });
       }
 
-      // Save bulk free time settings
+      // Save bulk free time settings and update all games
       if (bulkFreeTimeConfigRef.current) {
         const bulkFreeTimeSettings = bulkFreeTimeConfigRef.current.getSettings();
+        
+        // Save the configuration
         await createConfig({
           key: 'bulk_free_time_settings',
           value: bulkFreeTimeSettings,
           description: 'Default free game time configuration'
         });
+        
+        // Update all games with the new free time
+        try {
+          await backendService.post('/api/games/bulk-update-free-time', {
+            freeTime: bulkFreeTimeSettings.defaultFreeTime
+          });
+          
+          // Invalidate games queries to refresh the cache
+          queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
+        } catch (bulkUpdateError) {
+          console.error('Error updating games in bulk:', bulkUpdateError);
+          // Don't fail the whole save if bulk update fails
+        }
       }
 
       toast.success('Configuration saved successfully!');
