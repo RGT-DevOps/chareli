@@ -11,6 +11,7 @@ import DynamicPopupConfiguration from '../../../components/single/DynamicPopupCo
 import UserInactivityConfiguration, { type UserInactivityConfigurationRef } from '../../../components/single/UserInactivityConfiguration';
 import PopularGamesConfiguration, { type PopularGamesConfigurationRef } from '../../../components/single/PopularGamesConfiguration';
 import AboutMissionConfiguration, { type AboutMissionConfigurationRef } from '../../../components/single/AboutMissionConfiguration';
+import BulkFreeTimeConfiguration, { type BulkFreeTimeConfigurationRef } from '../../../components/single/BulkFreeTimeConfiguration';
 
 interface AuthMethodSettings {
   enabled: boolean;
@@ -50,6 +51,7 @@ export default function Configuration() {
   const userInactivityConfigRef = useRef<UserInactivityConfigurationRef>(null);
   const popularGamesConfigRef = useRef<PopularGamesConfigurationRef>(null);
   const aboutMissionConfigRef = useRef<AboutMissionConfigurationRef>(null);
+  const bulkFreeTimeConfigRef = useRef<BulkFreeTimeConfigurationRef>(null);
   const queryClient = useQueryClient();
   const { mutateAsync: createConfig } = useCreateSystemConfig();
   const { data: configData, isLoading: isLoadingConfig } = useSystemConfigByKey('authentication_settings');
@@ -219,6 +221,16 @@ export default function Configuration() {
           key: 'about_mission_settings',
           value: aboutMissionSettings,
           description: 'About Us and Mission text configuration'
+        });
+      }
+
+      // Save bulk free time settings
+      if (bulkFreeTimeConfigRef.current) {
+        const bulkFreeTimeSettings = bulkFreeTimeConfigRef.current.getSettings();
+        await createConfig({
+          key: 'bulk_free_time_settings',
+          value: bulkFreeTimeSettings,
+          description: 'Default free game time configuration'
         });
       }
 
@@ -399,6 +411,7 @@ export default function Configuration() {
       <UserInactivityConfiguration ref={userInactivityConfigRef} disabled={isSubmitting} />
       <PopularGamesConfiguration ref={popularGamesConfigRef} disabled={isSubmitting} />
       <AboutMissionConfiguration ref={aboutMissionConfigRef} disabled={isSubmitting} />
+      <BulkFreeTimeConfiguration ref={bulkFreeTimeConfigRef} disabled={isSubmitting} />
       
       <div className="flex justify-end mt-6 mb-4 px-2">
         <button

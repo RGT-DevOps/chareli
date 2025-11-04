@@ -1550,3 +1550,78 @@ export const retryGameProcessing = async (
     next(error);
   }
 };
+
+/**
+ * @swagger
+ * /games/bulk-update-free-time:
+ *   post:
+ *     summary: Bulk update free time for all games
+ *     description: Update the free game time (config field) for all games at once. Accessible by admins.
+ *     tags: [Games]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - freeTime
+ *             properties:
+ *               freeTime:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Free game time in minutes to apply to all games
+ *     responses:
+ *       200:
+ *         description: Successfully updated all games
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal server error
+ */
+export const bulkUpdateFreeTime = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { freeTime } = req.body;
+    
+    if (freeTime === undefined || freeTime === null) {
+      return next(ApiError.badRequest('freeTime is required'));
+    }
+    
+    const freeTimeNumber = parseInt(freeTime);
+    
+    if (isNaN(freeTimeNumber) || freeTimeNumber < 0) {
+      return next(ApiError.badRequest('freeTime must be a non-negative number'));
+    }
+    
+    // Update all games' config field (free time) using query builder
+    const result = await gameRepository
+      .createQueryBuilder()
+      .update(Game)
+      .set({ config: freeTimeNumber })
+      .execute();
+    
+    logger.info(`Bulk updated free time to ${freeTimeNumber} minutes for all games. Affected: ${result.affected || 0} games`);
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully updated free time to ${freeTimeNumber} minutes for all games`,
+      data: {
+        freeTime: freeTimeNumber,
+        gamesUpdated: result.affected || 0
+      }
+    });
+  } catch (error) {
+    logger.error('Error in bulkUpdateFreeTime:', error);
+    next(error);
+  }
+};

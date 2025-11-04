@@ -10,7 +10,8 @@ import {
   uploadGameFilesForUpdate,
   generatePresignedUrl,
   getGameProcessingStatus,
-  retryGameProcessing
+  retryGameProcessing,
+  bulkUpdateFreeTime
 } from '../controllers/gameController';
 import { authenticate, isAdmin, optionalAuthenticate } from '../middlewares/authMiddleware';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validationMiddleware';
@@ -32,6 +33,7 @@ router.use(authenticate);
 router.use(isAdmin);
 
 router.post('/presigned-url', generatePresignedUrl);
+router.post('/bulk-update-free-time', bulkUpdateFreeTime);
 router.post('/', uploadGameFiles, createGame);
 router.put('/:id', validateParams(gameIdParamSchema), uploadGameFilesForUpdate, updateGame);
 router.delete('/:id', validateParams(gameIdParamSchema), deleteGame);
