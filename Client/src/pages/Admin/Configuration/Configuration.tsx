@@ -6,11 +6,13 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BackendRoute } from '../../../backend/constants';
+import { backendService } from '../../../backend/api.service';
 import SearchBarConfiguration, { type SearchBarConfigurationRef } from '../../../components/single/SearchBarConfiguration';
 import DynamicPopupConfiguration from '../../../components/single/DynamicPopupConfiguration';
 import UserInactivityConfiguration, { type UserInactivityConfigurationRef } from '../../../components/single/UserInactivityConfiguration';
 import PopularGamesConfiguration, { type PopularGamesConfigurationRef } from '../../../components/single/PopularGamesConfiguration';
 import AboutMissionConfiguration, { type AboutMissionConfigurationRef } from '../../../components/single/AboutMissionConfiguration';
+import BulkFreeTimeConfiguration, { type BulkFreeTimeConfigurationRef } from '../../../components/single/BulkFreeTimeConfiguration';
 
 interface AuthMethodSettings {
   enabled: boolean;
@@ -50,6 +52,7 @@ export default function Configuration() {
   const userInactivityConfigRef = useRef<UserInactivityConfigurationRef>(null);
   const popularGamesConfigRef = useRef<PopularGamesConfigurationRef>(null);
   const aboutMissionConfigRef = useRef<AboutMissionConfigurationRef>(null);
+  const bulkFreeTimeConfigRef = useRef<BulkFreeTimeConfigurationRef>(null);
   const queryClient = useQueryClient();
   const { mutateAsync: createConfig } = useCreateSystemConfig();
   const { data: configData, isLoading: isLoadingConfig } = useSystemConfigByKey('authentication_settings');
@@ -220,6 +223,31 @@ export default function Configuration() {
           value: aboutMissionSettings,
           description: 'About Us and Mission text configuration'
         });
+      }
+
+      // Save bulk free time settings and update all games
+      if (bulkFreeTimeConfigRef.current) {
+        const bulkFreeTimeSettings = bulkFreeTimeConfigRef.current.getSettings();
+        
+        // Save the configuration
+        await createConfig({
+          key: 'bulk_free_time_settings',
+          value: bulkFreeTimeSettings,
+          description: 'Default free game time configuration'
+        });
+        
+        // Update all games with the new free time
+        try {
+          await backendService.post('/api/games/bulk-update-free-time', {
+            freeTime: bulkFreeTimeSettings.defaultFreeTime
+          });
+          
+          // Invalidate games queries to refresh the cache
+          queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
+        } catch (bulkUpdateError) {
+          console.error('Error updating games in bulk:', bulkUpdateError);
+          // Don't fail the whole save if bulk update fails
+        }
       }
 
       toast.success('Configuration saved successfully!');
@@ -399,6 +427,7 @@ export default function Configuration() {
       <UserInactivityConfiguration ref={userInactivityConfigRef} disabled={isSubmitting} />
       <PopularGamesConfiguration ref={popularGamesConfigRef} disabled={isSubmitting} />
       <AboutMissionConfiguration ref={aboutMissionConfigRef} disabled={isSubmitting} />
+      <BulkFreeTimeConfiguration ref={bulkFreeTimeConfigRef} disabled={isSubmitting} />
       
       <div className="flex justify-end mt-6 mb-4 px-2">
         <button
