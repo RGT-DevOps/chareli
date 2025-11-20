@@ -151,7 +151,7 @@ jobs:
         with:
           task-definition-family: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ github.sha }}
+          image: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
