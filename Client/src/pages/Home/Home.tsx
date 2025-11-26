@@ -65,11 +65,6 @@ function Home() {
 
   return (
     <div className="font-dmmono">
-      <div className="p-4 pt-6">
-        <h1 className="text-[#6A7282] dark:text-[#FEFEFE] text-4xl font-worksans tracking-wide mb-8">
-          Play Free Online Arcade Games on Arcades Box
-        </h1>
-      </div>
       <Suspense fallback={<SectionFallback title="Popular games" />}>
         <PopularSection
           searchQuery={searchQuery}
