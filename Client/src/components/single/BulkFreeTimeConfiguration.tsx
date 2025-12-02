@@ -63,7 +63,11 @@ const BulkFreeTimeConfiguration = forwardRef<
         {configData?.value?.defaultFreeTime !== undefined && (
           <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-md">
             <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              Current: {configData.value.defaultFreeTime} mins
+              Current:{" "}
+              {configData?.value?.disableFreeTimeForGuests
+                ? "Unlimited"
+                : configData.value.defaultFreeTime}{" "}
+              mins
             </span>
           </div>
         )}
@@ -82,7 +86,7 @@ const BulkFreeTimeConfiguration = forwardRef<
             min="0"
             value={defaultFreeTime}
             onChange={(e) => setDefaultFreeTime(parseInt(e.target.value) || 0)}
-            disabled={disabled}
+            disabled={disabled || disableFreeTimeForGuests}
             className="max-w-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-black dark:text-white"
             placeholder="e.g. 30"
           />
