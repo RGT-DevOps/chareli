@@ -40,18 +40,21 @@ export default function GamePlay() {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const { isAuthenticated } = useAuth();
   const { data: freeTimeConfig } = useSystemConfigByKey(
-    'bulk_free_time_settings'
+    "bulk_free_time_settings"
   );
   const { mutate: likeGame, isPending: isLiking } = useLikeGame();
   const { mutate: unlikeGame, isPending: isUnliking } = useUnlikeGame();
-  const [hasLiked, setHasLiked] = useState(false);
+  const [hasLiked, setHasLiked] = useState(game?.likeCount ?? 0);
+  const [likeCount, setLikeCount] = useState(game?.likeCount ?? 100);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Sync hasLiked state with game data
   useEffect(() => {
     if (game?.hasLiked !== undefined) {
       setHasLiked(game.hasLiked);
+      setLikeCount(game.likeCount);
     }
-  }, [game?.hasLiked]);
+  }, [game?.hasLiked, game?.likeCount]);
 
   // Handle like button click
   const handleLikeClick = () => {
@@ -63,21 +66,30 @@ export default function GamePlay() {
 
     if (!gameId) return;
 
-    // Optimistic update
-    setHasLiked(!hasLiked);
+    // Trigger animation
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 400); // Animation duration
 
     if (hasLiked) {
+      // Optimistic update
+      setHasLiked(false);
+      setLikeCount(likeCount - 1);
       unlikeGame(gameId, {
         onError: () => {
           // Revert on error
           setHasLiked(true);
+          setLikeCount(likeCount + 1);
         },
       });
     } else {
+      // Optimistic update
+      setHasLiked(true);
+      setLikeCount(likeCount + 1);
       likeGame(gameId, {
         onError: () => {
           // Revert on error
           setHasLiked(false);
+          setLikeCount(likeCount - 1);
         },
       });
     }
@@ -506,28 +518,36 @@ export default function GamePlay() {
                   <button
                     onClick={handleLikeClick}
                     disabled={isLiking || isUnliking}
-                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer ${
-                      hasLiked
-                        ? 'bg-blue-500/30 border-blue-400/50 hover:bg-blue-500/40'
-                        : 'bg-white/10 border-white/20 hover:bg-white/20'
-                    } ${
-                      isLiking || isUnliking
-                        ? 'opacity-50 cursor-not-allowed'
-                        : ''
-                    }`}
+                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer bg-white/10 border-white/20 hover:bg-white/20`}
+                    // hasLiked
+                    //   ? "bg-blue-500/30 border-blue-400/50 hover:bg-blue-500/40"
                     title={
                       isAuthenticated
                         ? hasLiked
-                          ? 'Unlike'
-                          : 'Like'
-                        : 'Sign in to like'
+                          ? "Unlike"
+                          : "Like"
+                        : "Sign in to like"
                     }
                   >
-                    <span role="img" aria-label="thumbs up" className="text-lg">
+                    <span
+                      role="img"
+                      aria-label="thumbs up"
+                      className={`text-lg ${
+                        isAnimating ? "animate-scale-bounce" : ""
+                      }`}
+                      style={
+                        !isAnimating
+                          ? {
+                              transform: hasLiked ? "scale(1.1)" : "scale(1)",
+                              transition: "transform 2s ease-in-out",
+                            }
+                          : undefined
+                      }
+                    >
                       👍
                     </span>
                     <span className="text-white text-sm font-medium font-worksans">
-                      {game.likeCount?.toLocaleString() || '100'}
+                      {likeCount.toLocaleString()}
                     </span>
                   </button>
                   <div className="flex items-center space-x-3">
