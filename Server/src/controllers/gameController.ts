@@ -587,7 +587,7 @@ export const getGameById = async (
       similarGames = await gameRepository.find({
         where: {
           categoryId: game.categoryId,
-          id: Not(id), // Exclude the current game
+          id: Not(game.id), // Exclude the current game using its actual UUID
           status: GameStatus.ACTIVE,
         },
         relations: ['thumbnailFile', 'gameFile'],
