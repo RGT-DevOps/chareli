@@ -45,6 +45,7 @@ export const useUnlikeGame = () => {
     onSuccess: (_, gameId) => {
       // Invalidate game queries to refetch updated data
       queryClient.invalidateQueries({ queryKey: [BackendRoute.GAME_BY_ID, gameId] });
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.GAMES] });
     },
   });
 };
