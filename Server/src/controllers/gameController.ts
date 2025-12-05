@@ -21,6 +21,8 @@ import config from '../config/config';
 import path from 'path';
 import { moveFileToPermanentStorage } from '../utils/fileUtils';
 import { generateUniqueSlug } from '../utils/slugify';
+import { cacheService } from '../services/cache.service';
+import { cacheInvalidationService } from '../services/cache-invalidation.service';
 // import { processImage } from '../services/file.service';
 
 const gameRepository = AppDataSource.getRepository(Game);
@@ -612,6 +614,17 @@ export const getGameById = async (
   try {
     const { id } = req.params;
 
+    // Try cache first
+    const cached = await cacheService.getGameById(id);
+    if (cached) {
+      logger.debug(`Cache hit for game ${id}`);
+      void res.status(200).json({
+        success: true,
+        data: cached,
+      });
+      return;
+    }
+
     // Check if identifier is a UUID or slug
     const isUUID =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -685,15 +698,21 @@ export const getGameById = async (
       hasLiked = !!userLike;
     }
 
+    // Prepare response data
+    const responseData = {
+      ...game,
+      likeCount: calculateLikeCount(game, userLikesCount),
+      userLikesCount,
+      hasLiked,
+      similarGames: similarGames,
+    };
+
+    // Cache the response for future requests
+    await cacheService.setGameById(id, responseData);
+
     res.status(200).json({
       success: true,
-      data: {
-        ...game,
-        likeCount: calculateLikeCount(game, userLikesCount),
-        userLikesCount,
-        hasLiked,
-        similarGames: similarGames,
-      },
+      data: responseData,
     });
   } catch (error) {
     next(error);
@@ -953,6 +972,12 @@ export const createGame = async (
       const s3Key = savedGame.thumbnailFile.s3Key;
       savedGame.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
     }
+
+    // Invalidate caches after game creation
+    await cacheInvalidationService.invalidateGameCreation(
+      savedGame.id,
+      savedGame.categoryId
+    );
 
     res.status(201).json({
       success: true,
@@ -1309,6 +1334,12 @@ export const updateGame = async (
       updatedGame.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
     }
 
+    // Invalidate caches after game update
+    await cacheInvalidationService.invalidateGameUpdate(
+      updatedGame.id,
+      updatedGame.categoryId
+    );
+
     res.status(200).json({
       success: true,
       data: updatedGame,
@@ -1391,7 +1422,11 @@ export const deleteGame = async (
       }
     }
 
+    // Delete the game
     await gameRepository.remove(game);
+
+    // Invalidate caches after game deletion
+    await cacheInvalidationService.invalidateGameDeletion(id, game.categoryId);
 
     res.status(200).json({
       success: true,
