@@ -272,6 +272,15 @@ export const getAllGames = async (
 
     // Handle special filters
     if (filter === 'recently_added') {
+      // Try cache first
+      const cacheKey = 'filter:recently_added';
+      const cached = await cacheService.getGamesList(1, 10, cacheKey);
+      if (cached) {
+        logger.debug('Cache hit for recently_added filter');
+        res.status(200).json(cached);
+        return;
+      }
+
       // Get the last 10 games added, ordered by creation date
       queryBuilder
         .andWhere('game.status = :status', { status: GameStatus.ACTIVE })
@@ -292,11 +301,24 @@ export const getAllGames = async (
         }
       });
 
-      res.status(200).json({
-        data: games,
-      });
+      const responseData = { data: games };
+
+      // Cache for 2 minutes (120s)
+      await cacheService.setGamesList(1, 10, responseData, cacheKey, 120);
+      logger.debug('Cached recently_added filter');
+
+      res.status(200).json(responseData);
       return;
     } else if (filter === 'popular') {
+      // Try cache first for popular filter
+      const cacheKey = 'filter:popular';
+      const cached = await cacheService.getGamesList(1, 20, cacheKey);
+      if (cached) {
+        logger.debug('Cache hit for popular filter');
+        res.status(200).json(cached);
+        return;
+      }
+
       const systemConfigRepository = AppDataSource.getRepository(SystemConfig);
       const popularConfig = await systemConfigRepository.findOne({
         where: { key: 'popular_games_settings' },
@@ -341,15 +363,19 @@ export const getAllGames = async (
             }
           });
 
-          res.status(200).json({
-            data: orderedGames,
-          });
+          const responseData = { data: orderedGames };
+
+          // Cache for 5 minutes (300s) - manual selection changes infrequently
+          await cacheService.setGamesList(1, 20, responseData, cacheKey, 300);
+          logger.debug('Cached popular filter (manual mode)');
+
+          res.status(200).json(responseData);
           return;
         } else {
           // Manual mode with no games selected - return empty array
-          res.status(200).json({
-            data: [],
-          });
+          const responseData = { data: [] };
+          await cacheService.setGamesList(1, 20, responseData, cacheKey, 300);
+          res.status(200).json(responseData);
           return;
         }
       } else {
