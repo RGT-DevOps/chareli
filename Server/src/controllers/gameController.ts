@@ -245,6 +245,24 @@ export const getAllGames = async (
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = limit ? parseInt(limit as string, 10) : undefined;
 
+    // Try cache for standard list queries (not special filters)
+    if (!filter && cacheService.isEnabled()) {
+      const filterKey = [status, categoryId, search, createdById]
+        .filter(Boolean)
+        .join(':');
+      const cached = await cacheService.getGamesList(
+        pageNumber,
+        limitNumber || 10,
+        filterKey
+      );
+
+      if (cached) {
+        logger.debug(`Cache hit for games list page ${pageNumber}`);
+        res.status(200).json(cached);
+        return;
+      }
+    }
+
     let queryBuilder = gameRepository
       .createQueryBuilder('game')
       .leftJoinAndSelect('game.category', 'category')
@@ -538,9 +556,25 @@ export const getAllGames = async (
 
     const totalPages = limitNumber ? Math.ceil(total / limitNumber) : 1;
 
-    res.status(200).json({
+    const responseData = {
       data: games,
-    });
+    };
+
+    // Cache the response for standard queries (not special filters)
+    if (!filter && cacheService.isEnabled()) {
+      const filterKey = [status, categoryId, search, createdById]
+        .filter(Boolean)
+        .join(':');
+      await cacheService.setGamesList(
+        pageNumber,
+        limitNumber || 10,
+        responseData,
+        filterKey
+      );
+      logger.debug(`Cached games list page ${pageNumber}`);
+    }
+
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
