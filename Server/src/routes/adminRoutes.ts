@@ -1,12 +1,134 @@
 import { Router } from 'express';
 import { cacheService } from '../services/cache.service';
 import { authenticate, isAdmin } from '../middlewares/authMiddleware';
+import {
+  getDashboardAnalytics,
+  getGamesWithAnalytics,
+  getGameAnalyticsById,
+  getUserAnalyticsById,
+  getGamesPopularityMetrics,
+  runInactiveUsersCheck,
+  getUserActivityLog,
+} from '../controllers/adminDashboardController';
 
 const router = Router();
 
 // Apply authentication and admin role requirement to all routes
 router.use(authenticate, isAdmin);
 
+/**
+ * @swagger
+ * /admin/dashboard:
+ *   get:
+ *     summary: Get admin dashboard analytics
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard analytics retrieved successfully
+ */
+router.get('/dashboard', getDashboardAnalytics);
+
+/**
+ * @swagger
+ * /admin/games-popularity:
+ *   get:
+ *     summary: Get popularity metrics for all games
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Games popularity metrics retrieved successfully
+ */
+router.get('/games-popularity', getGamesPopularityMetrics);
+
+/**
+ * @swagger
+ * /admin/games-analytics:
+ *   get:
+ *     summary: Get all games with their analytics
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Games with analytics retrieved successfully
+ */
+router.get('/games-analytics', getGamesWithAnalytics);
+
+/**
+ * @swagger
+ * /admin/games/{id}/analytics:
+ *   get:
+ *     summary: Get analytics for a specific game
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Game ID
+ *     responses:
+ *       200:
+ *         description: Game analytics retrieved successfully
+ */
+router.get('/games/:id/analytics', getGameAnalyticsById);
+
+/**
+ * @swagger
+ * /admin/users/{id}/analytics:
+ *   get:
+ *     summary: Get analytics for a specific user
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User analytics retrieved successfully
+ */
+router.get('/users/:id/analytics', getUserAnalyticsById);
+
+/**
+ * @swagger
+ * /admin/user-activity-log:
+ *   get:
+ *     summary: Get user activity log
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User activity log retrieved successfully
+ */
+router.get('/user-activity-log', getUserActivityLog);
+
+/**
+ * @swagger
+ * /admin/check-inactive-users:
+ *   post:
+ *     summary: Manually trigger the check for inactive users
+ *     tags: [Admin - System]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Inactive users check completed successfully
+ */
+router.post('/check-inactive-users', runInactiveUsersCheck);
+
+// Cache Routes
 /**
  * @swagger
  * /admin/cache/stats:
