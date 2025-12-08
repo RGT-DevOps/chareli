@@ -18,7 +18,10 @@ export const AppDataSource = new DataSource({
 
 export const initializeDatabase = async (): Promise<void> => {
   try {
-    await AppDataSource.initialize();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Database connection timed out')), 5000)
+    );
+    await Promise.race([AppDataSource.initialize(), timeout]);
     console.log('Database connection established');
   } catch (error) {
     console.error('Error connecting to database:', error);
