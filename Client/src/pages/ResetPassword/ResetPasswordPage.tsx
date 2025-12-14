@@ -68,7 +68,12 @@ export function ResetPasswordPage() {
           // const response = await backendService.get(
           //   `${BackendRoute.AUTH_RESET_PASSWORD}/${token}?_=${Date.now()}`
           // );
-          const response = await verifyToken(token); // Using the new verifyToken hook
+          if (!token) {
+            setIsTokenValid(false);
+            setIsTokenChecking(false);
+            return;
+          }
+          const response = await verifyToken.mutateAsync(token); // Using the new verifyToken hook
           if (response) {
             // Token verification successful - don't log sensitive data
             logger.debug('Reset token verified successfully');
@@ -78,7 +83,7 @@ export function ResetPasswordPage() {
           }
           setIsTokenChecking(false);
         } catch (error) {
-          logger.error('Token verification failed');
+          logger.error('Token verification failed', error);
           setIsTokenValid(false);
           setIsTokenChecking(false);
           // toast.error("Invalid or expired reset token");
@@ -103,7 +108,7 @@ export function ResetPasswordPage() {
         navigate('/?openLogin=true');
       }, 2000);
     } catch (err) {
-      logger.error('Password reset failed');
+      logger.error('Password reset failed', err);
       // Optionally, set an error state to display to the user
       // setError('Failed to reset password. Please try again.');
     }
