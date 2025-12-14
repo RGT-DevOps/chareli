@@ -9,7 +9,6 @@ import '@uppy/dashboard/dist/style.min.css';
 
 // AWS recommends multipart upload for files >= 100MB
 const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB in bytes
-const MULTIPART_CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
 
 interface UploadedFile {
   name: string;
@@ -37,9 +36,7 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
   onUploadError,
 }) => {
   const [uppy, setUppy] = useState<any>(null);
-  const [isUploading, setIsUploading] = useState(false);
-
-  console.log(isUploading);
+  const [_isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     // Initialize Uppy
