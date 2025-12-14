@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Uppy from '@uppy/core';
 import AwsS3 from '@uppy/aws-s3';
 import { Dashboard } from '@uppy/react';
 import imageCompression from 'browser-image-compression';
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
+import logger from '../../utils/logger';
 
 // AWS recommends multipart upload for files >= 100MB
 const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100MB in bytes
@@ -36,13 +37,18 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
   onUploadError,
 }) => {
   const [uppy, setUppy] = useState<any>(null);
+  // Memoize accept array to prevent re-initialization on every render
+  // We use the joined string as dependency to avoid issues with new array references
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableAccept = useMemo(() => accept, [accept?.join(',')]);
+  // const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     // Initialize Uppy
     const uppyInstance = new Uppy({
       id: `uppy-${fileType}-${Date.now()}`, // Make ID unique to prevent conflicts
       restrictions: {
-        allowedFileTypes: accept,
+        allowedFileTypes: stableAccept,
         maxFileSize:
           maxFileSize ||
           (fileType === 'thumbnail' ? 10 * 1024 * 1024 : Infinity),
@@ -311,11 +317,11 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
       getUploadParameters: async (file: any) => {
         const uploadStartTime = Date.now();
         try {
-          console.log(
-            `🔄 [SINGLE-PART] Getting presigned URL for: ${file.name}, fileType: ${fileType}`
-          );
+          logger.debug(`Getting presigned URL for file: ${file.name}`);
 
           const token = localStorage.getItem('token');
+          // Don't log token existence - security risk
+
           const baseURL =
             import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
           const response = await fetch(`${baseURL}/api/games/presigned-url`, {
@@ -331,18 +337,19 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
             }),
           });
 
-          console.log('📡 Response status:', response.status);
+          logger.debug('Presigned URL response received');
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Response error:', errorText);
+            logger.error('Failed to get presigned URL');
             throw new Error(
               `HTTP error! status: ${response.status}, message: ${errorText}`
             );
           }
 
           const result = await response.json();
-          console.log(
+          
+          logger.debug(
             `✅ [SINGLE-PART] Got presigned URL, took ${
               Date.now() - uploadStartTime
             }ms`
@@ -358,6 +365,8 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
           file.meta.publicUrl = publicUrl;
           file.meta.key = key;
 
+          logger.debug(`Presigned URL obtained for: ${file.name}`);
+
           return {
             method: 'PUT',
             url: uploadUrl,
@@ -367,7 +376,7 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
             },
           };
         } catch (error: any) {
-          console.error('❌ Error fetching presigned URL:', error);
+          logger.error('Error fetching presigned URL');
           onUploadError?.(error.message || 'Failed to get upload URL');
           throw error;
         }
@@ -381,6 +390,8 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
 
     // Handle upload start
     uppyInstance.on('upload', (data: any) => {
+      logger.debug(`Upload started for ${fileType}`);
+      // setIsUploading(true);
       const file = data?.fileIDs?.[0]
         ? uppyInstance.getFile(data.fileIDs[0])
         : null;
@@ -388,7 +399,7 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
         file && file.size && file.size >= MULTIPART_THRESHOLD
           ? 'MULTIPART'
           : 'SINGLE-PART';
-      console.log(
+      logger.debug(
         `🚀 Starting ${uploadStrategy} upload for ${fileType}, ` +
           `file size: ${
             file && file.size ? (file.size / 1024 / 1024).toFixed(2) : 'unknown'
@@ -406,47 +417,49 @@ export const UppyUpload: React.FC<UppyUploadProps> = ({
     uppyInstance.on('upload-success', (file: any) => {
       if (!file) return;
 
+
       const uploadTime = file.meta?.uploadStartTime
         ? Date.now() - file.meta.uploadStartTime
         : 0;
       const uploadStrategy =
         file.size >= MULTIPART_THRESHOLD ? 'MULTIPART' : 'SINGLE-PART';
 
-      console.log(
+      logger.debug(
         `✅ ${uploadStrategy} upload successful: ${file.name}, ` +
           `duration: ${(uploadTime / 1000).toFixed(2)}s, ` +
           `speed: ${(file.size / 1024 / 1024 / (uploadTime / 1000)).toFixed(
             2
           )} MB/s`
       );
-
+      
       const uploadedFile: UploadedFile = {
         name: file.name || '',
         publicUrl: file.meta?.publicUrl || '',
         key: file.meta?.key || '',
       };
-
-      console.log('📤 Calling onFileUploaded with:', uploadedFile);
       onFileUploaded(uploadedFile);
     });
 
     // Handle file removal (for replacement functionality)
     uppyInstance.on('file-removed', (file: any) => {
       if (!file) return;
-      console.log(`🗑️ File removed: ${file.name}`);
+      logger.debug(`File removed: ${file.name}`);
+      // setIsUploading(false);
       onFileReplaced?.();
     });
 
     // Handle upload errors
     uppyInstance.on('upload-error', (file: any, error: any) => {
       console.error(`❌ Upload failed: ${file?.name}`, error);
+      // setIsUploading(false);
       onUploadError?.(error?.message || 'Upload failed');
     });
 
     // Handle complete uploads
     uppyInstance.on('complete', (result: any) => {
       const successfulCount = result?.successful?.length || 0;
-      console.log(`🎉 Upload complete! Files: ${successfulCount}`);
+      logger.debug(`Upload complete! Files: ${successfulCount}`);
+      // setIsUploading(false);
     });
 
     setUppy(uppyInstance);
