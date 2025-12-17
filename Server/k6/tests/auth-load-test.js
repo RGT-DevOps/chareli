@@ -42,11 +42,14 @@ export default function () {
   group('POST /auth/register - User Registration', () => {
     const payload = {
       email: randomEmail(),
-      phoneNumber: randomPhone(),
-      username: `user_${randomString(8)}`,
       password: 'TestPassword123!',
-      confirmPassword: 'TestPassword123!',
+      username: `user_${randomString(8)}`,
+      firstName: `Test${randomString(4)}`,
+      lastName: `User${randomString(4)}`,
+      hasAcceptedTerms: true,
     };
+
+    registrationAttempts.add(1);
 
     const startTime = Date.now();
     const response = http.post(
@@ -56,20 +59,22 @@ export default function () {
     );
     authDuration.add(Date.now() - startTime);
 
-    registrationAttempts.add(1);
-
-    validateResponse(
+    const success = validateResponse(
       response,
       {
-        'registration returns 200/201': (r) =>
+        'registration returns 200 or 201': (r) =>
           r.status === 200 || r.status === 201,
-        'registration returns success': (r) => {
+        'registration has data': (r) => {
           const body = parseBody(r);
-          return body && body.success === true;
+          return body && body.data;
         },
       },
       'User Registration'
     );
+
+    if (success) {
+      registrationSuccesses.add(1);
+    }
 
     randomSleep(1, 3);
   });
