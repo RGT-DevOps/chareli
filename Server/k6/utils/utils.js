@@ -186,11 +186,11 @@ export function validateResponse(
 
   if (!success) {
     errorRate.add(1);
+    const bodyPreview = response.body
+      ? response.body.substring(0, 200)
+      : 'No response body';
     console.error(
-      `${operationName} failed: ${response.status} - ${response.body.substring(
-        0,
-        200
-      )}`
+      `${operationName} failed: ${response.status} - ${bodyPreview}`
     );
   } else {
     errorRate.add(0);
