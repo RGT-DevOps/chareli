@@ -138,34 +138,7 @@ export default function (data) {
     });
   }
 
-  // Test 3: Get Game by Position (only test positions we know exist)
-  if (gameIds && gameIds.length > 0) {
-    group('GET /games/position/:position - Get Game by Position', () => {
-      // Use a position from 1 to the number of games we have
-      const maxPosition = Math.min(gameIds.length, 20);
-      const position = Math.floor(Math.random() * maxPosition) + 1;
-
-      const response = token
-        ? authenticatedGet(`${baseUrl}/games/position/${position}`, token)
-        : http.get(`${baseUrl}/games/position/${position}`);
-
-      validateResponse(
-        response,
-        {
-          'game by position returns 200': (r) => r.status === 200,
-          'game by position has data': (r) => {
-            const body = parseBody(r);
-            return body && body.data;
-          },
-        },
-        'Get Game by Position'
-      );
-
-      randomSleep(1, 2);
-    });
-  }
-
-  // Test 4: Search Games
+  // Test 3: Search Games (removed position test - positions have gaps)
   group('GET /games?search=... - Search Games', () => {
     const searchTerms = ['space', 'dragon', 'puzzle', 'race', 'adventure'];
     const term = randomItem(searchTerms);
