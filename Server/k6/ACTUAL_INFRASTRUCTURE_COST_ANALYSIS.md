@@ -151,19 +151,19 @@ Total CloudWatch: $0.50
 
 **ElastiCache Redis:**
 
-Assuming cache.t3.small: $0.034/hour
+Actual: **cache.t4g.micro** (Graviton2): $0.016/hour
 ```
-Test duration cost: $0.034 × 0.5 = $0.02
+Test duration cost: $0.016 × 0.5 = $0.008 ≈ $0.01
 ```
 
-(Monthly cost $24.48 already budgeted)
+(Monthly cost ~$11.52 already budgeted) ✅ Even cheaper!
 
 **k6 Test Runner (EC2):**
 ```
 c5.4xlarge Spot: ~$0.20/hour × 0.5 hours = $0.10
 ```
 
-### Single 30-Min Test at 20k VUs: **$6.32**
+### Single 30-Min Test at 20k VUs: **$6.31**
 
 | Component | Cost |
 |-----------|------|
@@ -172,9 +172,9 @@ c5.4xlarge Spot: ~$0.20/hour × 0.5 hours = $0.10
 | ALB (Fixed) | $0.01 |
 | Data Transfer | $3.07 |
 | CloudWatch | $0.50 |
-| ElastiCache | $0.02 |
+| ElastiCache (t4g.micro) | $0.01 |
 | k6 Runner | $0.10 |
-| **TOTAL** | **$6.32** |
+| **TOTAL** | **$6.31** |
 
 ---
 
