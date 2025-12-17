@@ -23,6 +23,7 @@ import { moveFileToPermanentStorage } from '../utils/fileUtils';
 import { generateUniqueSlug } from '../utils/slugify';
 import { cacheService } from '../services/cache.service';
 import { cacheInvalidationService } from '../services/cache-invalidation.service';
+import { redisService } from '../services/redis.service';
 import { multipartUploadHelpers } from '../utils/multipartUpload';
 // import { processImage } from '../services/file.service';
 
@@ -1956,7 +1957,7 @@ export const bulkUpdateFreeTime = async (
 };
 
 /**
- * Like a game
+ * Like a game (async with Redis)
  */
 export const likeGame = async (
   req: Request,
@@ -1990,50 +1991,24 @@ export const likeGame = async (
       );
     }
 
-    // Check if user already liked this game
-    const existingLike = await gameLikeRepository.findOne({
-      where: {
-        userId,
-        gameId: game.id,
-      },
-    });
+    // Update Redis immediately (fast response)
+    await redisService.setGameLike(userId, game.id);
 
-    if (existingLike) {
-      // Already liked, just return current state (idempotent)
-      const userLikesCount = await gameLikeRepository.count({
-        where: { gameId: game.id },
-      });
-
-      return void res.status(200).json({
-        success: true,
-        message: 'Game already liked',
-        data: {
-          likeCount: calculateLikeCount(game, userLikesCount),
-          userLikesCount,
-          hasLiked: true,
-        },
-      });
-    }
-
-    // Create like
-    const like = gameLikeRepository.create({
+    // Queue DB sync job (async)
+    await queueService.addLikeProcessingJob({
       userId,
       gameId: game.id,
+      action: 'like',
     });
 
-    await gameLikeRepository.save(like);
-
-    // Get updated counts
-    const userLikesCount = await gameLikeRepository.count({
-      where: { gameId: game.id },
-    });
+    // Get like count from Redis
+    const likeCount = await redisService.getGameLikeCount(game.id);
 
     res.status(200).json({
       success: true,
       message: 'Game liked successfully',
       data: {
-        likeCount: calculateLikeCount(game, userLikesCount),
-        userLikesCount,
+        likeCount,
         hasLiked: true,
       },
     });
@@ -2043,7 +2018,7 @@ export const likeGame = async (
 };
 
 /**
- * Unlike a game
+ * Unlike a game (async with Redis)
  */
 export const unlikeGame = async (
   req: Request,
@@ -2077,44 +2052,24 @@ export const unlikeGame = async (
       );
     }
 
-    // Find and delete the like
-    const like = await gameLikeRepository.findOne({
-      where: {
-        userId,
-        gameId: game.id,
-      },
+    // Update Redis immediately (fast response)
+    await redisService.removeGameLike(userId, game.id);
+
+    // Queue DB sync job (async)
+    await queueService.addLikeProcessingJob({
+      userId,
+      gameId: game.id,
+      action: 'unlike',
     });
 
-    if (!like) {
-      // Not liked, just return current state (idempotent)
-      const userLikesCount = await gameLikeRepository.count({
-        where: { gameId: game.id },
-      });
-
-      return void res.status(200).json({
-        success: true,
-        message: 'Game not liked',
-        data: {
-          likeCount: calculateLikeCount(game, userLikesCount),
-          userLikesCount,
-          hasLiked: false,
-        },
-      });
-    }
-
-    await gameLikeRepository.remove(like);
-
-    // Get updated counts
-    const userLikesCount = await gameLikeRepository.count({
-      where: { gameId: game.id },
-    });
+    // Get like count from Redis
+    const likeCount = await redisService.getGameLikeCount(game.id);
 
     res.status(200).json({
       success: true,
       message: 'Game unliked successfully',
       data: {
-        likeCount: calculateLikeCount(game, userLikesCount),
-        userLikesCount,
+        likeCount,
         hasLiked: false,
       },
     });
