@@ -46,6 +46,7 @@ export default function () {
       username: `user_${randomString(8)}`,
       firstName: `Test${randomString(4)}`,
       lastName: `User${randomString(4)}`,
+      phoneNumber: randomPhone(),
       hasAcceptedTerms: true,
     };
 
