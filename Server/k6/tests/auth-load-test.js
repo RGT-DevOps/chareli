@@ -82,7 +82,7 @@ export default function () {
   // Test 2: User Login
   group('POST /auth/login - User Login', () => {
     const payload = {
-      email: config.testUserCredentials.email,
+      identifier: config.testUserCredentials.email,
       password: config.testUserCredentials.password,
     };
 
@@ -182,7 +182,7 @@ export default function () {
   group('POST /auth/refresh-token - Refresh Token', () => {
     // First, login to get tokens
     const loginPayload = {
-      email: config.testUserCredentials.email,
+      identifier: config.testUserCredentials.email,
       password: config.testUserCredentials.password,
     };
 
