@@ -372,6 +372,8 @@ export default function (data) {
     randomSleep(0.5, 1);
   });
 
+  sleep(1);
+}
 
 export function handleSummary(data) {
   return {
