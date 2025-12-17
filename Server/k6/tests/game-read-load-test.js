@@ -234,8 +234,144 @@ export default function (data) {
     randomSleep(0.5, 1.5);
   });
 
-  sleep(1);
-}
+  // Test 7: Special Filter - Recently Added
+  group('GET /games?filter=recently_added - Recently Added Games', () => {
+    const response = http.get(`${baseUrl}/games?filter=recently_added`);
+
+    validateResponse(
+      response,
+      {
+        'recently added returns 200': (r) => r.status === 200,
+        'recently added has data array': (r) => {
+          const body = parseBody(r);
+          return body && Array.isArray(body.data);
+        },
+        'recently added limits to 10 or fewer': (r) => {
+          const body = parseBody(r);
+          return body && body.data.length <= 10;
+        },
+      },
+      'Recently Added Filter'
+    );
+
+    randomSleep(1, 2);
+  });
+
+  // Test 8: Special Filter - Popular Games
+  group('GET /games?filter=popular - Popular Games', () => {
+    const response = http.get(`${baseUrl}/games?filter=popular`);
+
+    validateResponse(
+      response,
+      {
+        'popular games returns 200': (r) => r.status === 200,
+        'popular games has data array': (r) => {
+          const body = parseBody(r);
+          return body && Array.isArray(body.data);
+        },
+      },
+      'Popular Games Filter'
+    );
+
+    randomSleep(1, 2);
+  });
+
+  // Test 9: Special Filter - Recommended Games (requires auth)
+  if (token) {
+    group('GET /games?filter=recommended - Recommended Games', () => {
+      const response = authenticatedGet(
+        `${baseUrl}/games?filter=recommended&limit=20`,
+        token
+      );
+
+      validateResponse(
+        response,
+        {
+          'recommended games returns 200': (r) => r.status === 200,
+          'recommended games has data array': (r) => {
+            const body = parseBody(r);
+            return body && Array.isArray(body.data);
+          },
+        },
+        'Recommended Games Filter'
+      );
+
+      randomSleep(1, 2);
+    });
+  }
+
+  // Test 10: Status Filter - Active Games
+  group('GET /games?status=active - Filter Active Games', () => {
+    const response = http.get(`${baseUrl}/games?status=active&limit=20`);
+
+    validateResponse(
+      response,
+      {
+        'active games returns 200': (r) => r.status === 200,
+        'active games has data': (r) => {
+          const body = parseBody(r);
+          return body && Array.isArray(body.data);
+        },
+      },
+      'Status Filter (Active)'
+    );
+
+    randomSleep(1, 2);
+  });
+
+  // Test 11: Combined Filters
+  group('GET /games - Combined Filters Test', () => {
+    const combinations = [
+      '?status=active&limit=10',
+      '?status=active&search=game&limit=15',
+      '?page=1&limit=20&sortBy=createdAt&sortOrder=desc',
+      '?status=active&page=1&limit=10',
+    ];
+
+    const params = randomItem(combinations);
+    const response = http.get(`${baseUrl}/games${params}`);
+
+    validateResponse(
+      response,
+      {
+        'combined filters returns 200': (r) => r.status === 200,
+        'combined filters has data': (r) => {
+          const body = parseBody(r);
+          return body && Array.isArray(body.data);
+        },
+      },
+      'Combined Filters'
+    );
+
+    randomSleep(0.5, 1.5);
+  });
+
+  // Test 12: Sort Orders
+  group('GET /games - Sort Order Test', () => {
+    const sortOptions = [
+      '?sortBy=createdAt&sortOrder=asc&limit=20',
+      '?sortBy=createdAt&sortOrder=desc&limit=20',
+      '?sortBy=position&sortOrder=asc&limit=20',
+    ];
+
+    const params = randomItem(sortOptions);
+    const response = http.get(`${baseUrl}/games${params}`);
+
+    validateResponse(
+      response,
+      {
+        'sort order returns 200': (r) => r.status === 200,
+        'sort order has data': (r) => {
+          const body = parseBody(r);
+          return body && Array.isArray(body.data);
+        },
+      },
+      'Sort Order'
+    );
+
+    randomSleep(0.5, 1);
+  });
+
 
 export function handleSummary(data) {
   return {
