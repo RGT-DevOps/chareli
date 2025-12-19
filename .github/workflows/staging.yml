@@ -118,6 +118,7 @@ jobs:
           VITE_OFFICIAL_DOMAIN: ${{ vars.VITE_OFFICIAL_DOMAIN }}
           VITE_PAGES_DEV_DOMAIN: ${{ vars.VITE_PAGES_DEV_DOMAIN }}
           VITE_CLOUDFLARE_ZONE: ${{ vars.VITE_CLOUDFLARE_ZONE }}
+          VITE_ENABLE_CACHE_DASHBOARD: "true"
         run: npm run build
 
       - name: Archive Frontend Build
