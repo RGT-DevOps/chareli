@@ -116,7 +116,37 @@ class JsonCdnService {
   }
 
   /**
-   * Get user likes count for a game
+   * Get user likes count for multiple games in a single query (batch optimization)
+   */
+  private async getBatchUserLikesCount(
+    gameIds: string[]
+  ): Promise<Map<string, number>> {
+    if (gameIds.length === 0) {
+      return new Map();
+    }
+
+    const gameLikeRepository = AppDataSource.getRepository(GameLike);
+
+    // Single query to get all like counts
+    const likeCounts = await gameLikeRepository
+      .createQueryBuilder('gameLike')
+      .select('gameLike.gameId', 'gameId')
+      .addSelect('COUNT(*)', 'count')
+      .where('gameLike.gameId IN (:...gameIds)', { gameIds })
+      .groupBy('gameLike.gameId')
+      .getRawMany();
+
+    // Convert to Map for O(1) lookup
+    const likeCountMap = new Map<string, number>();
+    for (const row of likeCounts) {
+      likeCountMap.set(row.gameId, parseInt(row.count, 10));
+    }
+
+    return likeCountMap;
+  }
+
+  /**
+   * Get user likes count for a single game (used for individual game updates)
    */
   private async getUserLikesCount(gameId: string): Promise<number> {
     const gameLikeRepository = AppDataSource.getRepository(GameLike);
@@ -198,28 +228,30 @@ class JsonCdnService {
         },
       });
 
+      // Get all user likes in a single batch query
+      const gameIds = games.map((g) => g.id);
+      const userLikesMap = await this.getBatchUserLikesCount(gameIds);
+
       // Transform file s3Key to public URLs and add likeCount
-      const gamesWithUrls = await Promise.all(
-        games.map(async (game) => {
-          const userLikesCount = await this.getUserLikesCount(game.id);
-          return {
-            ...game,
-            likeCount: this.calculateLikeCount(game, userLikesCount),
-            thumbnailFile: game.thumbnailFile
-              ? {
-                  ...game.thumbnailFile,
-                  s3Key: this.r2Adapter.getPublicUrl(game.thumbnailFile.s3Key),
-                }
-              : null,
-            gameFile: game.gameFile
-              ? {
-                  ...game.gameFile,
-                  s3Key: this.r2Adapter.getPublicUrl(game.gameFile.s3Key),
-                }
-              : null,
-          };
-        })
-      );
+      const gamesWithUrls = games.map((game) => {
+        const userLikesCount = userLikesMap.get(game.id) || 0;
+        return {
+          ...game,
+          likeCount: this.calculateLikeCount(game, userLikesCount),
+          thumbnailFile: game.thumbnailFile
+            ? {
+                ...game.thumbnailFile,
+                s3Key: this.r2Adapter.getPublicUrl(game.thumbnailFile.s3Key),
+              }
+            : null,
+          gameFile: game.gameFile
+            ? {
+                ...game.gameFile,
+                s3Key: this.r2Adapter.getPublicUrl(game.gameFile.s3Key),
+              }
+            : null,
+        };
+      });
 
       const json = {
         games: gamesWithUrls,
@@ -281,28 +313,30 @@ class JsonCdnService {
         },
       });
 
+      // Get all user likes in a single batch query
+      const gameIds = games.map((g) => g.id);
+      const userLikesMap = await this.getBatchUserLikesCount(gameIds);
+
       // Transform file s3Key to public URLs and add likeCount
-      const gamesWithUrls = await Promise.all(
-        games.map(async (game) => {
-          const userLikesCount = await this.getUserLikesCount(game.id);
-          return {
-            ...game,
-            likeCount: this.calculateLikeCount(game, userLikesCount),
-            thumbnailFile: game.thumbnailFile
-              ? {
-                  ...game.thumbnailFile,
-                  s3Key: this.r2Adapter.getPublicUrl(game.thumbnailFile.s3Key),
-                }
-              : null,
-            gameFile: game.gameFile
-              ? {
-                  ...game.gameFile,
-                  s3Key: this.r2Adapter.getPublicUrl(game.gameFile.s3Key),
-                }
-              : null,
-          };
-        })
-      );
+      const gamesWithUrls = games.map((game) => {
+        const userLikesCount = userLikesMap.get(game.id) || 0;
+        return {
+          ...game,
+          likeCount: this.calculateLikeCount(game, userLikesCount),
+          thumbnailFile: game.thumbnailFile
+            ? {
+                ...game.thumbnailFile,
+                s3Key: this.r2Adapter.getPublicUrl(game.thumbnailFile.s3Key),
+              }
+            : null,
+          gameFile: game.gameFile
+            ? {
+                ...game.gameFile,
+                s3Key: this.r2Adapter.getPublicUrl(game.gameFile.s3Key),
+              }
+            : null,
+        };
+      });
 
       const json = {
         games: gamesWithUrls,
@@ -365,7 +399,7 @@ class JsonCdnService {
         return;
       }
 
-      // Get user likes count
+      // Get user likes count for this specific game
       const userLikesCount = await this.getUserLikesCount(gameId);
 
       // Transform file s3Key to public URLs and add likeCount
