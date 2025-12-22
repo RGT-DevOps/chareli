@@ -1355,7 +1355,7 @@ export const getUserActivityLog = async (
         response.limit = limitNumber;
         response.totalPages = 0;
       }
-      return res.status(200).json(response);
+      res.status(200).json(response);
     }
 
     // OPTIMIZATION: Batch fetch all analytics data in a single query using window functions
@@ -1447,7 +1447,7 @@ export const getUserActivityLog = async (
     const analyticsMap = new Map();
     analyticsResults.forEach((result: any) => {
       analyticsMap.set(result.user_id, {
-        activityType: result.activity_type,
+        activityType: result.activityType,
         gameTitle: result.game_title,
         gameStartTime: result.game_start_time,
         gameEndTime: result.game_end_time,
