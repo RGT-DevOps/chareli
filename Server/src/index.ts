@@ -6,7 +6,7 @@ import logger from './utils/logger';
 import fs from 'fs';
 import path from 'path';
 import { authService } from './services/auth.service';
-import { initializeScheduledJobs } from './jobs';
+import { initializeScheduledJobs, startJsonCdnRefreshJob } from './jobs';
 import { redisService } from './services/redis.service';
 import { initializeGameZipWorker } from './workers/gameZipProcessor';
 import { initializeThumbnailWorker } from './workers/thumbnailProcessor';
@@ -77,6 +77,9 @@ const startServer = async () => {
 
       // Initialize scheduled jobs
       initializeScheduledJobs();
+
+      // Initialize JSON CDN refresh job
+      startJsonCdnRefreshJob();
     } catch (dbError) {
       if (config.env === 'development') {
         logger.warn(
