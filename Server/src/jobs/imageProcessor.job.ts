@@ -1,4 +1,4 @@
-import { Job } from 'bull';
+import { Job } from 'bullmq';
 import { AppDataSource } from '../config/database';
 import { File } from '../entities/Files';
 import { processUploadedImage } from '../services/file.service';
@@ -27,7 +27,7 @@ export async function processImageJob(
 
   try {
     // Update job progress
-    await job.progress(10);
+    await job.updateProgress(10);
 
     // Check if file exists and hasn't been processed yet
     const fileRecord = await fileRepository.findOne({ where: { id: fileId } });
@@ -42,13 +42,13 @@ export async function processImageJob(
       return;
     }
 
-    await job.progress(20);
+    await job.updateProgress(20);
 
     // Process the image and generate variants
     logger.info(`Processing image: ${s3Key}`);
     const { variants, dimensions } = await processUploadedImage(s3Key);
 
-    await job.progress(80);
+    await job.updateProgress(80);
 
     // Update database with variants and dimensions
     fileRecord.variants = variants;
@@ -58,7 +58,7 @@ export async function processImageJob(
 
     await fileRepository.save(fileRecord);
 
-    await job.progress(100);
+    await job.updateProgress(100);
 
     const duration = Date.now() - startTime;
     logger.info(
