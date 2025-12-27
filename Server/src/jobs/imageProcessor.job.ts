@@ -46,7 +46,28 @@ export async function processImageJob(
 
     // Process the image and generate variants
     logger.info(`Processing image: ${s3Key}`);
-    const { variants, dimensions } = await processUploadedImage(s3Key);
+
+    let variants, dimensions;
+    try {
+      const result = await processUploadedImage(s3Key);
+      variants = result.variants;
+      dimensions = result.dimensions;
+    } catch (error: any) {
+      // Check if this is a "file not found" error
+      if (error.message?.includes('does not exist') || error.message?.includes('NoSuchKey')) {
+        logger.warn(`⚠️  File ${s3Key} does not exist in R2, skipping processing`);
+
+        // Mark as processed with error to prevent future attempts
+        fileRecord.processingError = 'File does not exist in R2 storage';
+        fileRecord.isProcessed = true; // Mark as processed so we don't retry
+        await fileRepository.save(fileRecord);
+
+        return; // Skip this file gracefully
+      }
+
+      // For other errors, re-throw to trigger retry logic
+      throw error;
+    }
 
     await job.updateProgress(80);
 
