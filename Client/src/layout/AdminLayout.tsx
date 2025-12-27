@@ -92,6 +92,12 @@ const AdminLayout: React.FC = () => {
       path: '/admin/cache',
       requiresConfig: false,
     });
+    menuItems.push({
+      title: 'Image Reprocessing',
+      icon: <ImageIcon size={20} />,
+      path: '/admin/image-reprocessing',
+      requiresConfig: false,
+    });
   }
 
   const toggleSidebar = () => {
