@@ -14,8 +14,11 @@
     <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
     <link rel="dns-prefetch" href="https://connect.facebook.net">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Performance: Preconnect to critical origins -->
+    <!-- API for data fetching (90ms LCP savings) -->
+    <link rel="preconnect" href="https://api.arcadesbox.com" crossorigin>
+
+    <!-- Google Fonts - only gstatic needed for font files -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- CDN (for production) - Preconnect for faster image loading -->
@@ -190,7 +193,6 @@
 
     <!-- Speed Vitals Performance Monitoring -->
     <script data-rum-site-id="d609beeb-0dcd-4229-9946-16b3705c7bda" src="https://assets.speedvitals.com/vitals.min.js" defer></script>
-    <script data-rum-site-id="170420d9-f4a0-4216-ae66-bab4138b94f7" src="https://assets.speedvitals.com/vitals.min.js" defer></script>
   </head>
 
   <body class="">
