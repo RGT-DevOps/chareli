@@ -25,9 +25,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { TbUser } from 'react-icons/tb';
-import { AiOutlineMail } from 'react-icons/ai';
+import { Eye, EyeOff, User, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getVisitorSessionId } from '../../utils/sessionUtils';
 import { useUserCountry } from '../../hooks/useUserCountry';
@@ -304,7 +302,7 @@ export function SignUpModal({
                                 E-Mail
                               </Label>
                               <div className="relative">
-                                <AiOutlineMail
+                                <Mail
                                   size={15}
                                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                                 />
@@ -398,7 +396,7 @@ export function SignUpModal({
                                     First Name
                                   </Label>
                                   <div className="relative">
-                                    <TbUser
+                                    <User
                                       size={15}
                                       className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                                     />
@@ -426,7 +424,7 @@ export function SignUpModal({
                                     Last Name
                                   </Label>
                                   <div className="relative">
-                                    <TbUser
+                                    <User
                                       size={15}
                                       className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                                     />
@@ -469,9 +467,9 @@ export function SignUpModal({
                           }
                         >
                           {showPassword ? (
-                            <FaEyeSlash size={15} />
+                            <EyeOff size={15} />
                           ) : (
-                            <FaEye size={15} />
+                            <Eye size={15} />
                           )}
                         </button>
                         <Field
@@ -512,9 +510,9 @@ export function SignUpModal({
                           }
                         >
                           {showConfirmPassword ? (
-                            <FaEyeSlash size={15} />
+                            <EyeOff size={15} />
                           ) : (
-                            <FaEye size={15} />
+                            <EyeOff size={15} />
                           )}
                         </button>
                         <Field

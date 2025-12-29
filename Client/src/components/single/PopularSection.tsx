@@ -1,7 +1,7 @@
 import { Card } from '../../components/ui/card';
 import { Input } from '../ui/input';
 import { LazyImage } from '../../components/ui/LazyImage';
-import { IoIosSearch } from 'react-icons/io';
+import { Search } from 'lucide-react';
 import { useGames } from '../../backend/games.service';
 import { useGameClickHandler } from '../../hooks/useGameClickHandler';
 import { useUISettings } from '../../hooks/useUISettings';
@@ -39,7 +39,7 @@ const PopularSection = ({
         {uiSettings.showSearchBar && (
           <div className="flex justify-end mb-8">
             <div className="relative w-full md:w-[400px]">
-              <IoIosSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] text-xl pointer-events-none" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] w-5 h-5 pointer-events-none" />
               <Input
                 className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#64748A] focus:border-[#64748A] focus:outline-none shadow-[0_0_8px_rgba(100,116,138,0.2)]
                             placeholder:text-[#64748A] bg-white/5
@@ -67,7 +67,7 @@ const PopularSection = ({
         </h2>
         {uiSettings.showSearchBar && (
           <div className="relative w-full md:w-[400px]">
-            <IoIosSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] text-xl pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748A] w-5 h-5 pointer-events-none" />
             <Input
               className="pl-12 w-full h-12 rounded-2xl text-[#64748A] tracking-wider border-2 border-[#64748A] focus:border-[#64748A] focus:outline-none shadow-[0_0_8px_rgba(100,116,138,0.2)]
                           placeholder:text-[#64748A] bg-white/5
