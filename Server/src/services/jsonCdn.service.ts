@@ -66,6 +66,7 @@ class JsonCdnService {
         this.generateAllGameDetailsJson(),
         this.generatePopularGamesJson(),
         this.generateSitemap(),
+        this.generateRobotsTxt(),
       ]);
 
       const duration = Date.now() - startTime;
@@ -517,6 +518,30 @@ class JsonCdnService {
       );
     } catch (error) {
       logger.error('Error generating sitemap:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate robots.txt to disallow all crawlers
+   */
+  private async generateRobotsTxt(): Promise<void> {
+    try {
+      const robotsTxt = `User-agent: *
+Disallow: /
+`;
+
+      const buffer = Buffer.from(robotsTxt, 'utf-8');
+      const fullKey = 'cdn/robots.txt';
+
+      await this.r2Adapter.uploadWithExactKey(fullKey, buffer, 'text/plain', {
+        generatedAt: new Date().toISOString(),
+        size: buffer.length.toString(),
+      });
+
+      logger.info('Generated robots.txt for CDN subdomain');
+    } catch (error) {
+      logger.error('Error generating robots.txt:', error);
       throw error;
     }
   }
