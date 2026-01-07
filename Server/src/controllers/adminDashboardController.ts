@@ -9,7 +9,9 @@ import { ApiError } from '../middlewares/errorHandler';
 import { Between, FindOptionsWhere, In, LessThan, IsNull, Not } from 'typeorm';
 import { checkInactiveUsers } from '../jobs/userInactivityCheck';
 import { storageService } from '../services/storage.service';
+import { cacheService } from '../services/cache.service';
 import { PerformanceTimer } from '../utils/performance';
+import logger from '../utils/logger';
 
 const userRepository = AppDataSource.getRepository(User);
 const gameRepository = AppDataSource.getRepository(Game);
@@ -52,6 +54,15 @@ export const getDashboardAnalytics = async (
       : country
       ? [country as string]
       : [];
+
+    // Check cache first (TTL: 3 minutes)
+    const cacheKey = `${period || 'last24hours'}:${countries.sort().join(',')}`;
+    const cached = await cacheService.getAnalytics('dashboard', cacheKey);
+    if (cached) {
+      logger.debug(`[CACHE HIT] Dashboard analytics for ${cacheKey}`);
+      res.status(200).json(cached);
+      return;
+    }
 
     let now = new Date();
     let currentPeriodStart: Date;
@@ -140,34 +151,39 @@ export const getDashboardAnalytics = async (
 
     // Among those users, count how many also played games today (last 24 hours) for 30+ seconds
     // Track all users: authenticated (userId) + anonymous (sessionId)
+    // Optimized: Using EXISTS subquery instead of self-join for better performance
     let returningUsersQuery = analyticsRepository
       .createQueryBuilder('a1')
       .select('COUNT(DISTINCT COALESCE(CAST(a1.userId AS VARCHAR), a1.sessionId))', 'count')
-      .innerJoin('analytics', 'a2', 'COALESCE(CAST(a1.userId AS VARCHAR), a1.sessionId) = COALESCE(CAST(a2.userId AS VARCHAR), a2.sessionId)')
       .leftJoin('a1.user', 'user1')
-      .leftJoin('a2.user', 'user2')
       .where('a1.createdAt > :twentyFourHoursAgo', { twentyFourHoursAgo })
       .andWhere('a1.gameId IS NOT NULL')
       .andWhere('a1.startTime IS NOT NULL')
       .andWhere('a1.endTime IS NOT NULL')
       .andWhere('a1.duration >= :minDuration', { minDuration: 30 })
-      .andWhere('a2.createdAt BETWEEN :start AND :end', {
+      .andWhere(`EXISTS (
+        SELECT 1 FROM internal.analytics a2
+        LEFT JOIN public.users user2 ON a2.user_id = user2.id
+        WHERE COALESCE(CAST(a2.user_id AS VARCHAR), a2.session_id) = COALESCE(CAST(a1.userId AS VARCHAR), a1.sessionId)
+        AND a2."createdAt" BETWEEN :start AND :end
+        AND a2.game_id IS NOT NULL
+        AND a2."startTime" IS NOT NULL
+        AND a2."endTime" IS NOT NULL
+        AND a2.duration >= 30
+        ${countries.length > 0 ? 'AND user2.country = ANY(:countries)' : ''}
+      )`, {
         start: fortyEightHoursAgo,
         end: twentyFourHoursAgo,
-      })
-      .andWhere('a2.gameId IS NOT NULL')
-      .andWhere('a2.startTime IS NOT NULL')
-      .andWhere('a2.endTime IS NOT NULL')
-      .andWhere('a2.duration >= :minDuration2', { minDuration2: 30 });
+        ...(countries.length > 0 ? { countries } : {}),
+      });
 
-    // Add country filter if provided
+    // Add country filter for the outer query if provided
     if (countries.length > 0) {
       returningUsersQuery = returningUsersQuery
-        .andWhere('user1.country IN (:...countries)', { countries })
-        .andWhere('user2.country IN (:...countries)', { countries });
+        .andWhere('user1.country IN (:...countriesOuter)', { countriesOuter: countries });
     }
 
-    const timer2 = new PerformanceTimer('returningUsersQuery (self-join)');
+    const timer2 = new PerformanceTimer('returningUsersQuery (EXISTS subquery)');
     const returningUsersResult = await returningUsersQuery.getRawOne();
     timer2.end();
 
@@ -1041,7 +1057,8 @@ export const getDashboardAnalytics = async (
           )
         : 0;
 
-    res.status(200).json({
+    // Build response object
+    const responseData = {
       success: true,
       data: {
         dailyActiveUsers: {
@@ -1118,7 +1135,13 @@ export const getDashboardAnalytics = async (
         },
         retentionRate,
       },
-    });
+    };
+
+    // Cache the response (TTL: 3 minutes = 180 seconds)
+    await cacheService.setAnalytics('dashboard', cacheKey, responseData, undefined, 180);
+    logger.debug(`[CACHE SET] Dashboard analytics for ${cacheKey}`);
+
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -2139,6 +2162,10 @@ export const getGamesPopularityMetrics = async (
           popularity = 'up';
         }
 
+        const totalPlays = parseInt(overallMetrics?.totalPlays) || 0;
+        const avgPlayTime = parseFloat(overallMetrics?.averagePlayTime) || 0;
+        const totalTime = Math.round(totalPlays * avgPlayTime); // Total time in seconds
+
         return {
           id: game.id,
           title: game.title,
@@ -2147,10 +2174,9 @@ export const getGamesPopularityMetrics = async (
             : null,
           status: game.status,
           metrics: {
-            totalPlays: parseInt(overallMetrics?.totalPlays) || 0,
-            averagePlayTime: Math.round(
-              (overallMetrics?.averagePlayTime || 0) / 60
-            ), // Convert to minutes
+            totalPlays,
+            totalTime, // Total time in seconds
+            averagePlayTime: Math.round(avgPlayTime / 60), // Convert to minutes
             popularity,
             mostPlayedAt: mostPlayedAtPosition
               ? {
@@ -2162,6 +2188,13 @@ export const getGamesPopularityMetrics = async (
         };
       })
     );
+
+    // Sort by total time first, then sessions as tiebreaker (highest first)
+    gamesMetrics.sort((a, b) => {
+      const timeDiff = b.metrics.totalTime - a.metrics.totalTime;
+      if (timeDiff !== 0) return timeDiff;
+      return b.metrics.totalPlays - a.metrics.totalPlays;
+    });
 
     res.status(200).json({
       success: true,
