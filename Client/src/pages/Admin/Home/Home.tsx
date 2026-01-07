@@ -70,7 +70,7 @@ export default function Home() {
         />
 
         {/* Game activity */}
-        <GameActivity />
+        <GameActivity filters={{ timeRange: statsTimeRange, countries: countryFilter }} />
 
         <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6 mt-6">
           <MostPlayedGames />
