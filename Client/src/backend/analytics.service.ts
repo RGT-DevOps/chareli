@@ -351,6 +351,7 @@ export interface DashboardTimeRange {
 export interface DashboardFilters {
   timeRange?: DashboardTimeRange;
   countries?: string[];
+  timezone?: string;
 }
 
 /**
@@ -375,6 +376,9 @@ export const useDashboardAnalytics = (filters?: DashboardFilters) => {
         filters.countries.forEach((country) =>
           params.append('country', country)
         );
+      }
+      if (filters?.timezone) {
+        params.append('timezone', filters.timezone);
       }
       const url = `${BackendRoute.ADMIN_DASHBOARD}${
         params.toString() ? `?${params.toString()}` : ''
@@ -621,13 +625,31 @@ export const useCurrentUserStats = () => {
     refetchOnWindowFocus: false,
   });
 };
-export const useGamesWithPopularity = () => {
+export const useGamesWithPopularity = (filters?: DashboardFilters) => {
   return useQuery({
-    queryKey: [BackendRoute.ADMIN_GAMES_ANALYTICS_POPULARITY],
+    queryKey: [BackendRoute.ADMIN_GAMES_ANALYTICS_POPULARITY, filters],
     queryFn: async () => {
-      const response = await backendService.get(
-        BackendRoute.ADMIN_GAMES_ANALYTICS_POPULARITY
-      );
+      const params = new URLSearchParams();
+      if (filters?.timeRange) {
+        if (filters.timeRange.period)
+          params.append('period', filters.timeRange.period);
+        if (filters.timeRange.startDate)
+          params.append('startDate', filters.timeRange.startDate);
+        if (filters.timeRange.endDate)
+          params.append('endDate', filters.timeRange.endDate);
+      }
+      if (filters?.countries && filters.countries.length > 0) {
+        filters.countries.forEach((country) =>
+          params.append('country', country)
+        );
+      }
+      if (filters?.timezone) {
+        params.append('timezone', filters.timezone);
+      }
+      const url = `${BackendRoute.ADMIN_GAMES_ANALYTICS_POPULARITY}${
+        params.toString() ? `?${params.toString()}` : ''
+      }`;
+      const response = await backendService.get(url);
       return response;
     },
     refetchOnWindowFocus: false,

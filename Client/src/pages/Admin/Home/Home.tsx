@@ -4,6 +4,7 @@ import { Card } from '../../../components/ui/card';
 import { AcceptInvitationModal } from '../../../components/modals/AdminModals/AcceptInvitationModal';
 import { DashboardTimeFilter } from '../../../components/single/DashboardTimeFilter';
 import { DashboardCountryFilter } from '../../../components/single/DashboardCountryFilter';
+import { DashboardTimezoneFilter } from '../../../components/single/DashboardTimezoneFilter';
 import StatsCard from './StatsCard';
 import PieChart from '../../../components/charts/piechart';
 import { useState } from 'react';
@@ -24,11 +25,11 @@ import { UserTypeBreakdown } from '../../../components/charts/UserTypeBreakdown'
 export default function Home() {
   const permissions = usePermissions();
   const [isAcceptInviteOpen, setIsAcceptInviteOpen] = useState(false);
-  // Separate state for stats cards filter
   const [statsTimeRange, setStatsTimeRange] = useState<DashboardTimeRange>({
     period: 'last24hours',
   });
   const [countryFilter, setCountryFilter] = useState<string[]>([]);
+  const [timezoneFilter, setTimezoneFilter] = useState<string>('Europe/Nicosia');
   // Separate state for insights filter
   const [insightsTimeRange, setInsightsTimeRange] =
     useState<DashboardTimeRange>({ period: 'last30days' });
@@ -60,17 +61,21 @@ export default function Home() {
                 value={countryFilter}
                 onChange={setCountryFilter}
               />
+              <DashboardTimezoneFilter
+                value={timezoneFilter}
+                onChange={setTimezoneFilter}
+              />
             </div>
           )}
         </div>
       </div>
       <div className="px-6">
         <StatsCard
-          filters={{ timeRange: statsTimeRange, countries: countryFilter }}
+          filters={{ timeRange: statsTimeRange, countries: countryFilter, timezone: timezoneFilter }}
         />
 
         {/* Game activity */}
-        <GameActivity />
+        <GameActivity filters={{ timeRange: statsTimeRange, countries: countryFilter, timezone: timezoneFilter }} />
 
         <div className="col-span-1 md:col-span-2 lg:col-span-4 mb-6 mt-6">
           <MostPlayedGames />
@@ -232,41 +237,3 @@ function SignupClickInsights({ timeRange }: { timeRange: DashboardTimeRange }) {
 
   return <PieChart data={chartData} totalClicks={totalClicks} />;
 }
-
-// // Separate component for signup click insights
-// function SignupClickInsights({ filters }: { filters: { timeRange: DashboardTimeRange } }) {
-//   // Use the new filter-based API for signup analytics
-//   const signupFilters = {
-//     timeRange: filters.timeRange
-//   };
-
-//   const { data: signupAnalytics, isLoading: analyticsLoading } = useSignupAnalyticsData(signupFilters);
-//   const { data: dashboardAnalytics, isLoading: usersLoading } = useDashboardAnalytics({ timeRange: filters.timeRange });
-
-//   if (analyticsLoading || usersLoading) {
-//     return <div className="text-center py-4">Loading...</div>;
-//   }
-
-//   if (!signupAnalytics || !dashboardAnalytics) {
-//     return <div className="text-center py-4">No data available</div>;
-//   }
-
-//   // For clicks insight, we need users who completed first login in the selected period
-//   // The dashboard API returns users who REGISTERED in the period, but we need users who FIRST LOGGED IN
-//   const registeredInPeriod = dashboardAnalytics?.totalRegisteredUsers?.current || 0;
-
-//   // Use the periodClicks from signup analytics (already filtered by time range)
-//   const totalClicks = signupAnalytics?.periodClicks || 0;
-
-//   // For now, use registered users as a proxy for verified users
-//   // This is the closest we can get with current data structure
-//   const verifiedCount = registeredInPeriod;
-//   const didntVerifyCount = Math.max(0, totalClicks - verifiedCount);
-
-//   const chartData = [
-//     { name: "Didn't verify", value: didntVerifyCount, fill: "#FFAA33" },
-//     { name: "Verified users", value: verifiedCount, fill: "#C17600" }
-//   ];
-
-//   return <PieChart data={chartData} />;
-// }

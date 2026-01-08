@@ -10,15 +10,21 @@ import {
 } from "../../../components/ui/table";
 import { FaChevronUp, FaChevronDown } from "react-icons/fa6";
 import { RiGamepadLine } from "react-icons/ri";
-import { useGamesWithPopularity } from "../../../backend/analytics.service";
+import { useGamesWithPopularity, type DashboardFilters } from "../../../backend/analytics.service";
 import { NoResults } from "../../../components/single/NoResults";
 import GameThumbnail from "./GameThumbnail";
+import { formatTime } from "../../../utils/main";
 
-export default function GameActivity() {
-  const { data: gamesAnalytics, isError, isLoading } = useGamesWithPopularity();
+interface GameActivityProps {
+  filters?: DashboardFilters;
+}
+
+export default function GameActivity({ filters }: GameActivityProps) {
+  const { data: gamesAnalytics, isError, isLoading } = useGamesWithPopularity(filters);
 
   const gamesPerPage = 4;
   const [gamePage, setGamePage] = useState(1);
+  const [sortBy, setSortBy] = useState<'time' | 'sessions'>('time');
 
   if (isLoading) {
     return (
@@ -91,16 +97,48 @@ export default function GameActivity() {
   }
 
   const allGames = gamesAnalytics?.data || [];
-  const totalGamePages = Math.ceil(allGames.length / gamesPerPage);
+
+  // Sort games based on selected sort option
+  const sortedGames = [...allGames].sort((a: any, b: any) => {
+    if (sortBy === 'time') {
+      return (b.metrics?.totalTime || 0) - (a.metrics?.totalTime || 0);
+    }
+    return (b.metrics?.totalPlays || 0) - (a.metrics?.totalPlays || 0);
+  });
+
+  const totalGamePages = Math.ceil(sortedGames.length / gamesPerPage);
   const startIdx = (gamePage - 1) * gamesPerPage;
   const endIdx = startIdx + gamesPerPage;
-  const gamesToShow = allGames.slice(startIdx, endIdx);
+  const gamesToShow = sortedGames.slice(startIdx, endIdx);
 
   return (
     <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-4">
       <Card className="bg-[#F1F5F9] dark:bg-[#121C2D] shadow-none border-none w-full pl-4">
         <div className="justify-between items-center flex p-3">
           <p className="text-lg md:text-2xl">Game Activity</p>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 mr-2">Sort by:</span>
+            <button
+              onClick={() => { setSortBy('time'); setGamePage(1); }}
+              className={`px-3 py-1 rounded text-sm transition-colors ${
+                sortBy === 'time'
+                  ? 'bg-[#6A7282] text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Time
+            </button>
+            <button
+              onClick={() => { setSortBy('sessions'); setGamePage(1); }}
+              className={`px-3 py-1 rounded text-sm transition-colors ${
+                sortBy === 'sessions'
+                  ? 'bg-[#6A7282] text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Sessions
+            </button>
+          </div>
         </div>
         <Table>
           <TableHeader>
@@ -157,7 +195,7 @@ export default function GameActivity() {
                   </TableCell>
                   <TableCell>
                     <p className="font-dmmono pr-8">
-                      {game.metrics.averagePlayTime} min
+                      {formatTime(game.metrics.averagePlayTime * 60)}
                     </p>
                   </TableCell>
                   <TableCell>
@@ -225,7 +263,7 @@ export default function GameActivity() {
                   {(() => {
                     const pages = [];
                     const maxVisiblePages = 5;
-                    
+
                                           if (totalGamePages <= maxVisiblePages) {
                         // Show all pages if total is small
                         for (let i = 1; i <= totalGamePages; i++) {
@@ -247,7 +285,7 @@ export default function GameActivity() {
                       // Smart truncation for many pages
                       const startPage = Math.max(1, gamePage - 2);
                       const endPage = Math.min(totalGamePages, gamePage + 2);
-                      
+
                                               // First page
                         if (startPage > 1) {
                           pages.push(
@@ -271,7 +309,7 @@ export default function GameActivity() {
                           );
                         }
                       }
-                      
+
                                               // Current range
                         for (let i = startPage; i <= endPage; i++) {
                           pages.push(
@@ -288,7 +326,7 @@ export default function GameActivity() {
                             </button>
                           );
                         }
-                      
+
                       // Last page
                       if (endPage < totalGamePages) {
                         if (endPage < totalGamePages - 1) {
@@ -313,7 +351,7 @@ export default function GameActivity() {
                           );
                       }
                     }
-                    
+
                     return pages;
                   })()}
                 </div>
