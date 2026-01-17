@@ -170,7 +170,7 @@ export default function ViewGame() {
                 const slug = (game as any).game?.slug;
                 // Construct the public gameplay URL
                 const gameplayUrl = slug
-                  ? `${window.location.origin}/games/${slug}`
+                  ? `${window.location.origin}/gameplay/${slug}`
                   : null;
                 return (
                   <a
