@@ -164,7 +164,7 @@ export default function ViewGame() {
             </div>
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] dark:text-white">
-                Game Code
+                Gameplay URL
               </h3>
               {(() => {
                 const slug = (game as any).game?.slug;
