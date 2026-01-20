@@ -125,7 +125,10 @@ export const getAllCategories = async (
           FROM games g
           LEFT JOIN files f ON g."thumbnailFileId" = f.id
           LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL AND a.duration >= 30
+          LEFT JOIN users u ON a."user_id" = u.id
+          LEFT JOIN roles r ON u."roleId" = r.id
           WHERE g."categoryId" = $1
+          AND (r.name = 'player' OR a."user_id" IS NULL)
           GROUP BY g.id, g.title, f."s3Key"
           ORDER BY total_sessions DESC
           LIMIT 3
@@ -240,7 +243,10 @@ export const getCategoryById = async (
         COUNT(DISTINCT a."user_id") as unique_players
       FROM games g
       LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL
+      LEFT JOIN users u ON a."user_id" = u.id
+      LEFT JOIN roles r ON u."roleId" = r.id
       WHERE g."categoryId" = $1
+      AND (r.name = 'player' OR a."user_id" IS NULL)
       GROUP BY g.id, g.title
       ORDER BY total_sessions DESC, total_time_played DESC
     `;
