@@ -145,7 +145,7 @@ const AdminLayout: React.FC = () => {
   // Admin route cursor override logic removed - using normal system cursors throughout
 
   return (
-    <div className="admin-layout min-h-screen bg-white dark:bg-[#0f1221] text-gray-900 dark:text-white transition-colors duration-300">
+    <div className="admin-layout min-h-screen bg-[#fef7ed] dark:bg-[#0f1221] text-gray-900 dark:text-white transition-colors duration-300">
       <div ref={navbarRef} className="fixed top-0 left-0 right-0 z-50">
         <AdminNavbar />
       </div>
@@ -162,7 +162,7 @@ const AdminLayout: React.FC = () => {
             top: `${navbarHeight}px`,
           }}
         >
-          <aside className="h-full bg-white/95 dark:bg-[#0f1221]/95 backdrop-blur-sm transition-colors duration-300">
+          <aside className="h-full bg-[#fef7ed] dark:bg-[#0f1221]/95 backdrop-blur-sm transition-colors duration-300 border-r border-gray-200 dark:border-gray-800">
             <div className="flex flex-col h-full relative">
               <nav className="flex-1">
                 <ul className="space-y-5 px-2 py-4">
@@ -224,7 +224,7 @@ const AdminLayout: React.FC = () => {
         <main
           className={`flex-1 transition-all duration-300 ${
             isSidebarCollapsed ? 'lg:ml-16' : 'ml-0 lg:ml-60'
-          } bg-white dark:bg-[#0f1221] overflow-y-auto relative`}
+          } bg-[#fef7ed] dark:bg-[#0f1221] overflow-y-auto relative`}
           style={{ minHeight: `calc(100vh - ${navbarHeight}px)` }}
           onClick={() => {
             if (!isSidebarCollapsed && window.innerWidth < 1024) {

@@ -58,7 +58,7 @@ export default function ViewGame() {
       </button>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left: Game Card */}
-        <div className="bg-[#F1F5F9] dark:bg-[#334154] rounded-2xl p-6 flex flex-col items-center w-full md:w-1/3">
+        <div className="bg-transparent dark:bg-[#334154] rounded-2xl p-6 flex flex-col items-center w-full md:w-1/3">
           <div className="w-28 h-28 rounded-full overflow-hidden mb-4 bg-gray-100">
             <LazyImage
               src={(game as any)?.game.thumbnailFile?.url || gameImg}
@@ -135,7 +135,7 @@ export default function ViewGame() {
         </div>
         {/* Right: Details */}
         <div className="flex-1 flex flex-col gap-6">
-          <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-6">
+          <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-6">
             <h3 className="text-base font-normal mb-2 text-[#475568] tracking-wider dark:text-white">
               Overview
             </h3>
@@ -144,7 +144,7 @@ export default function ViewGame() {
             </p>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
+            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] tracking-wider text-base dark:text-white">
                 Game Category
               </h3>
@@ -152,7 +152,7 @@ export default function ViewGame() {
                 {(game as any).game?.category?.name || "-"}
               </p>
             </div>
-            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
+            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] dark:text-white">
                 Position
               </h3>
@@ -162,7 +162,7 @@ export default function ViewGame() {
                   : "Not assigned"}
               </p>
             </div>
-            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
+            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] dark:text-white">
                 Gameplay URL
               </h3>
@@ -192,7 +192,7 @@ export default function ViewGame() {
             </p>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
+            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
               <div className="bg-[#6A7282] rounded-full px-3 py-3 items-center">
                 <FiClock className="w-8 h-8  text-white dark:text-[#OF1621]" />
               </div>
@@ -205,7 +205,7 @@ export default function ViewGame() {
                 </span>
               </div>
             </div>
-            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
+            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
               <div className="bg-[#6A7282] rounded-full px-3 py-3">
                 <LuGamepad2 className="w-8 h-8 text-white dark:text-[#OF1621]" />
               </div>
@@ -218,7 +218,7 @@ export default function ViewGame() {
                 </span>
               </div>
             </div>
-            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1 flex gap-4">
+            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1 flex gap-4">
               <div className="bg-[#6A7282] rounded-full px-3 py-3">
                 <TbCalendarClock className="w-8 h-8 text-white dark:text-[#OF1621]" />
               </div>

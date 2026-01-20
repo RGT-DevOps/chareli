@@ -421,12 +421,15 @@ export const getAllGames = async (
           .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
           .leftJoinAndSelect('game.gameFile', 'gameFile')
           .leftJoinAndSelect('game.createdBy', 'createdBy')
-          .leftJoin('analytics', 'a', 'a.gameId = game.id')
+          .leftJoin(Analytics, 'a', 'a.gameId = game.id')
+          .leftJoin('a.user', 'user')
+          .leftJoin('user.role', 'role')
           .addSelect([
             'COUNT(DISTINCT a.userId) as playerCount',
             'SUM(a.duration) as totalPlayTime',
             'COUNT(a.id) as sessionCount',
           ])
+          .andWhere("(role.name = 'player' OR a.userId IS NULL OR a.id IS NULL)")
           .groupBy('game.id')
           .addGroupBy('category.id')
           .addGroupBy('thumbnailFile.id')

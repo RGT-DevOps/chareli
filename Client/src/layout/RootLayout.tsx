@@ -26,19 +26,36 @@ const AnalyticsTracker = () => {
         const url = `${baseURL}/api/analytics/homepage-visit`;
         const isDevelopment = baseURL.includes('localhost') || baseURL.includes('127.0.0.1');
 
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         if (isDevelopment) {
           // Use regular fetch for development (sendBeacon has CORS issues on localhost)
           fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ sessionId }),
           }).catch(() => {}); // Silently fail
         } else {
           // Use sendBeacon for production (works during page unload)
-          const data = new Blob([JSON.stringify({ sessionId })], {
-            type: 'application/json',
-          });
-          navigator.sendBeacon(url, data);
+          // Note: sendBeacon doesn't support custom headers like Authorization
+          // So we fall back to fetch with keepalive: true if token exists
+          if (token) {
+             fetch(url, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ sessionId }),
+              keepalive: true,
+            }).catch(() => {});
+          } else {
+             const data = new Blob([JSON.stringify({ sessionId })], {
+              type: 'application/json',
+            });
+            navigator.sendBeacon(url, data);
+          }
         }
 
         // Mark as tracked for this session
