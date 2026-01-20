@@ -44,7 +44,7 @@ export default function GameCategories() {
     <div className="p-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <h1 className="text-lg sm:text-3xl font-worksans text-[#6A7282] dark:text-white">
-          Game category
+          Game Category
         </h1>
         {permissions.canManageGames && (
           <button
@@ -131,7 +131,7 @@ export default function GameCategories() {
                       {cat.topGames.map((game: any, index: number) => (
                         <div key={game.id} className="flex items-center justify-between text-xs">
                           <span className="truncate max-w-[150px] text-gray-700 dark:text-gray-300">
-                            {index + 1}. {game.title}
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'} {game.title}
                           </span>
                           <span className="text-gray-500 font-mono">
                             {game.sessionCount}

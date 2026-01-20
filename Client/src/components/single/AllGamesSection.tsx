@@ -328,7 +328,7 @@ const AllGamesSection = ({ searchQuery }: AllGamesSectionProps) => {
       </div>
 
       <div className="">
-        <Card className="border-hidden shadow-none p-0 dark:bg-[#0f1221]">
+        <Card className="border-hidden shadow-none p-0 bg-transparent dark:bg-[#0f1221]">
           {gamesLoading || (isFetching && games.length === 0) ? (
             <GamesSkeleton count={9} showCategories={true} />
           ) : gamesError ? (
