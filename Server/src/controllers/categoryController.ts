@@ -124,7 +124,7 @@ export const getAllCategories = async (
             COUNT(DISTINCT a.id) as total_sessions
           FROM games g
           LEFT JOIN files f ON g."thumbnailFileId" = f.id
-          LEFT JOIN analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL AND a.duration >= 30
+          LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL AND a.duration >= 30
           WHERE g."categoryId" = $1
           GROUP BY g.id, g.title, f."s3Key"
           ORDER BY total_sessions DESC
@@ -239,7 +239,7 @@ export const getCategoryById = async (
         COALESCE(SUM(EXTRACT(EPOCH FROM (a."endTime" - a."startTime"))), 0) as total_time_played,
         COUNT(DISTINCT a."user_id") as unique_players
       FROM games g
-      LEFT JOIN analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL
+      LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL
       WHERE g."categoryId" = $1
       GROUP BY g.id, g.title
       ORDER BY total_sessions DESC, total_time_played DESC
