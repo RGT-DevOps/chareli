@@ -48,6 +48,11 @@ interface FormValues {
   position?: number;
   thumbnailFile?: UploadedFile;
   gameFile?: UploadedFile;
+  metadata?: {
+    howToPlay?: string;
+    features?: string; // Comma-separated before parsing
+    tags?: string; // Comma-separated before parsing
+  };
 }
 
 const validationSchema = yupObject({
@@ -162,6 +167,24 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
       setCurrentStep('Processing update...');
 
       // Send file keys instead of files (similar to CreateGame)
+      // Parse metadata fields (comma-separated strings to arrays)
+      const metadata: any = {};
+      if (values.metadata?.howToPlay) {
+        metadata.howToPlay = values.metadata.howToPlay;
+      }
+      if (values.metadata?.features) {
+        metadata.features = values.metadata.features
+          .split(',')
+          .map((f: string) => f.trim())
+          .filter((f: string) => f.length > 0);
+      }
+      if (values.metadata?.tags) {
+        metadata.tags = values.metadata.tags
+          .split(',')
+          .map((t: string) => t.trim())
+          .filter((t: string) => t.length > 0);
+      }
+
       const gameData = {
         title: values.title,
         description: values.description,
@@ -170,6 +193,8 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
         position: values.position,
         thumbnailFileKey: values.thumbnailFile?.key,
         gameFileKey: values.gameFile?.key,
+        // Add metadata if any fields were provided
+        ...(Object.keys(metadata).length > 0 && { metadata }),
       };
 
       // Don't log game data - may contain sensitive information
@@ -227,6 +252,12 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
     config: game.config,
     categoryId: game.categoryId || '',
     position: game.position || undefined,
+    metadata: {
+      howToPlay: game.metadata?.howToPlay || '',
+      // Convert arrays to comma-separated strings for form display
+      features: game.metadata?.features?.join(', ') || '',
+      tags: game.metadata?.tags?.join(', ') || '',
+    },
   };
 
   return (
@@ -375,6 +406,66 @@ export function EditSheet({ open, onOpenChange, gameId }: EditSheetProps) {
                     component="div"
                     className="text-red-500 mt-1 font-worksans text-sm tracking-wider"
                   />
+                </div>
+
+                {/* How To Play (SEO Metadata) */}
+                <div>
+                  <Label
+                    htmlFor="metadata.howToPlay"
+                    className="text-base mb-2 block dark:text-white"
+                  >
+                    How To Play (Optional)
+                  </Label>
+                  <Field
+                    as="textarea"
+                    id="metadata.howToPlay"
+                    name="metadata.howToPlay"
+                    className="w-full min-h-[100px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider text-gray-700 focus:border-[#6A7282] focus:outline-none resize-none"
+                    placeholder="Explain how to play this game (for SEO)"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-worksans">
+                    Instructions on how to play - helps with SEO
+                  </p>
+                </div>
+
+                {/* Features (SEO Metadata) */}
+                <div>
+                  <Label
+                    htmlFor="metadata.features"
+                    className="text-base mb-2 block dark:text-white"
+                  >
+                    Features (Optional)
+                  </Label>
+                  <Field
+                    as="textarea"
+                    id="metadata.features"
+                    name="metadata.features"
+                    className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider text-gray-700 focus:border-[#6A7282] focus:outline-none resize-none"
+                    placeholder="Enter features separated by commas, e.g., Multiplayer, HD Graphics, Cross-platform"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-worksans">
+                    Comma-separated list of game features
+                  </p>
+                </div>
+
+                {/* Tags (SEO Metadata) */}
+                <div>
+                  <Label
+                    htmlFor="metadata.tags"
+                    className="text-base mb-2 block dark:text-white"
+                  >
+                    Tags (Optional)
+                  </Label>
+                  <Field
+                    as="textarea"
+                    id="metadata.tags"
+                    name="metadata.tags"
+                    className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider text-gray-700 focus:border-[#6A7282] focus:outline-none resize-none"
+                    placeholder="Enter tags separated by commas, e.g., action, fps, shooter, multiplayer"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-worksans">
+                    Comma-separated SEO tags/keywords
+                  </p>
                 </div>
 
                 {/* Game Upload */}

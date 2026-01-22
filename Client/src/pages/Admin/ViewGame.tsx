@@ -24,6 +24,7 @@ import { formatTime } from "../../utils/main";
 import { usePermissions } from "../../hooks/usePermissions";
 import { GameBreadcrumb } from "../../components/single/GameBreadcrumb";
 import { GameInfoSection } from "../../components/single/GameInfoSection";
+import { SEOEditSheet } from "../../components/single/SEOEditSheet";
 
 export default function ViewGame() {
   const permissions = usePermissions();
@@ -41,6 +42,7 @@ export default function ViewGame() {
   const [editOpen, setEditOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
+  const [showSEOEdit, setShowSEOEdit] = useState(false);
 
   if (isLoading) {
     return (
@@ -297,10 +299,7 @@ export default function ViewGame() {
             <Button
               variant="outline"
               className="flex items-center gap-2 border-2 border-gray-300 dark:border-gray-600"
-              onClick={() => {
-                // TODO: Implement SEO edit functionality
-                toast.info("SEO editor coming soon!");
-              }}
+              onClick={() => setShowSEOEdit(true)}
             >
               <CiEdit className="w-4 h-4" />
               Edit SEO Content
@@ -374,6 +373,13 @@ export default function ViewGame() {
       <EditSheet
         open={editOpen}
         onOpenChange={setEditOpen}
+        gameId={gameId || ""}
+      />
+
+      {/* SEO Edit Sheet */}
+      <SEOEditSheet
+        open={showSEOEdit}
+        onOpenChange={setShowSEOEdit}
         gameId={gameId || ""}
       />
     </div>

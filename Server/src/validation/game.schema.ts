@@ -19,6 +19,13 @@ export const createGameSchema = yup.object({
     .number()
     .integer('Position must be an integer')
     .min(1, 'Position must be at least 1'),
+  metadata: yup.object({
+    howToPlay: yup.string().trim().nullable(),
+    features: yup.array().of(yup.string().trim()).nullable(),
+    tags: yup.array().of(yup.string().trim()).nullable(),
+    seoKeywords: yup.string().trim().nullable(),
+    schemaVersion: yup.string().trim().nullable(),
+  }).nullable(),
 });
 
 /**
@@ -42,6 +49,13 @@ export const updateGameSchema = yup
       .number()
       .integer('Position must be an integer')
       .min(1, 'Position must be at least 1'),
+    metadata: yup.object({
+      howToPlay: yup.string().trim().nullable(),
+      features: yup.array().of(yup.string().trim()).nullable(),
+      tags: yup.array().of(yup.string().trim()).nullable(),
+      seoKeywords: yup.string().trim().nullable(),
+      schemaVersion: yup.string().trim().nullable(),
+    }).nullable(),
   })
   .test(
     'at-least-one-field',
