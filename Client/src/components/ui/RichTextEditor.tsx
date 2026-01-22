@@ -152,7 +152,11 @@ export function RichTextEditor({
       {/* Editor Content */}
       <EditorContent
         editor={editor}
-        className="prose dark:prose-invert max-w-none p-4 min-h-[150px] focus:outline-none"
+        className="prose prose-sm dark:prose-invert max-w-none p-4 min-h-[150px] focus-within:outline-none
+          prose-headings:font-dmmono prose-p:font-worksans prose-li:font-worksans
+          prose-ul:list-disc prose-ol:list-decimal
+          prose-ul:pl-6 prose-ol:pl-6
+          dark:prose-headings:text-white dark:prose-p:text-gray-300 dark:prose-li:text-gray-300"
       />
     </div>
   );
