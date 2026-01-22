@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { DeleteConfirmationModal } from "../../components/modals/DeleteConfirmationModal";
 import { ToggleGameStatusModal } from "../../components/modals/ToggleGameStatusModal";
 import { useState } from "react";
-import { EditSheet } from "../../components/single/Edit-Sheet";
+
 import { formatTime } from "../../utils/main";
 import { usePermissions } from "../../hooks/usePermissions";
 import { GameBreadcrumb } from "../../components/single/GameBreadcrumb";
@@ -50,7 +50,7 @@ export default function ViewGame() {
     navigate("/admin/game-management");
   };
 
-  const [editOpen, setEditOpen] = useState(false);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
 
@@ -120,7 +120,7 @@ export default function ViewGame() {
                 <Button
                   variant="outline"
                   className="flex items-center justify-center gap-2 w-full border-2 border-[white] text-[#475568] bg-transparent dark:border-2 dark:border-white dark:text-white cursor-pointer"
-                  onClick={() => setEditOpen(true)}
+                  onClick={() => navigate(`/admin/edit-game/${gameId}`)}
                 >
                   Edit <CiEdit className="dark:text-white" />
                 </Button>
@@ -186,18 +186,7 @@ export default function ViewGame() {
                     />
                   </div>
                 )}
-                {(game as any).game.metadata.features && (game as any).game.metadata.features.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h4 className="text-xs font-semibold text-[#475568] dark:text-gray-400 mb-2 tracking-wider">
-                      FEATURES
-                    </h4>
-                    <ul className="list-disc list-inside text-[#475568] dark:text-white font-worksans text-sm space-y-1">
-                      {(game as any).game.metadata.features.map((feature: string, idx: number) => (
-                        <li key={idx}>{feature}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+
                 {(() => {
                   const tags = ensureArray((game as any).game.metadata?.tags);
                   return tags.length > 0 ? (
@@ -326,10 +315,10 @@ export default function ViewGame() {
             <Button
               variant="outline"
               className="flex items-center gap-2 border-2 border-gray-300 dark:border-gray-600"
-              onClick={() => navigate(`/admin/edit-game-seo/${gameId}`)}
+              onClick={() => navigate(`/admin/edit-game/${gameId}`)}
             >
               <CiEdit className="w-4 h-4" />
-              Edit SEO Content
+              Edit Game
             </Button>
           )}
         </div>
@@ -375,7 +364,7 @@ export default function ViewGame() {
               } successfully`
             );
             setShowDisableModal(false);
-          } catch (error) {
+          } catch {
             toast.error("Failed to update game status");
           }
         }}
@@ -390,7 +379,7 @@ export default function ViewGame() {
             await deleteGame.mutateAsync(gameId || "");
             toast.success("Game deleted successfully");
             navigate("/admin/game-management");
-          } catch (error) {
+          } catch {
             toast.error("Failed to delete game");
           }
         }}
@@ -398,11 +387,7 @@ export default function ViewGame() {
       />
 
       {/* Edit Sheet */}
-      <EditSheet
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        gameId={gameId || ""}
-      />
+
     </div>
   );
 }

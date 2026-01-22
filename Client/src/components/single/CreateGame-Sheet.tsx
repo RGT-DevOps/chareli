@@ -10,6 +10,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { SearchableSelect } from '../ui/searchable-select';
+import { Badge } from '../ui/badge';
+import { RichTextEditor } from '../ui/RichTextEditor';
 // import uploadImg from "../../assets/fetch-upload.svg";
 import { useCreateGame } from '../../backend/games.service';
 import { useCategories } from '../../backend/category.service';
@@ -27,6 +29,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '../ui/sheet';
+import { X } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface UploadedFile {
   name: string;
@@ -42,10 +46,10 @@ interface FormValues {
   position?: number;
   thumbnailFile?: UploadedFile;
   gameFile?: UploadedFile;
+  developer?: string;
   metadata?: {
     howToPlay?: string;
-    features?: string; // Comma-separated before parsing
-    tags?: string; // Comma-separated before parsing
+    tags?: string[];
   };
 }
 
@@ -67,6 +71,7 @@ const validationSchema = yupObject({
     publicUrl: yupString().required(),
     key: yupString().required(),
   }),
+  developer: yupString().optional(),
 });
 
 // Initial values
@@ -75,6 +80,11 @@ const initialValues: FormValues = {
   description: '',
   config: 1,
   categoryId: '',
+  developer: '',
+  metadata: {
+    howToPlay: '',
+    tags: [],
+  },
 };
 
 export function CreateGameSheet({
@@ -97,6 +107,7 @@ export function CreateGameSheet({
     thumbnail: false,
     game: false,
   });
+  const [newTag, setNewTag] = useState('');
 
   // Stable callback functions to prevent re-renders
   const handleThumbnailUploaded = React.useCallback((file: UploadedFile) => {
@@ -175,27 +186,21 @@ export function CreateGameSheet({
       setCurrentStep('Creating game record...');
 
       // Send file keys instead of files
-      // Parse metadata fields (comma-separated strings to arrays)
-      const metadata:  any = {};
-      if (values.metadata?.howToPlay) {
-        metadata.howToPlay = values.metadata.howToPlay;
-      }
-      if (values.metadata?.features) {
-        metadata.features = values.metadata.features
-          .split(',')
-          .map((f: string) => f.trim())
-          .filter((f: string) => f.length > 0);
-      }
-      if (values.metadata?.tags) {
-        metadata.tags = values.metadata.tags
-          .split(',')
-          .map((t: string) => t.trim())
-          .filter((t: string) => t.length > 0);
-      }
+      const metadata: any = {
+        developer: values.developer || undefined,
+        howToPlay: values.metadata?.howToPlay ? DOMPurify.sanitize(values.metadata.howToPlay, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote'],
+          ALLOWED_ATTR: ['href', 'class'],
+        }) : undefined,
+        tags: values.metadata?.tags && values.metadata.tags.length > 0 ? values.metadata.tags : undefined,
+      };
 
       const gameData = {
         title: values.title,
-        description: values.description,
+        description: values.description ? DOMPurify.sanitize(values.description, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote'],
+          ALLOWED_ATTR: ['href', 'class'],
+        }) : undefined,
         config: values.config,
         categoryId: values.categoryId,
         position: values.position,
@@ -314,7 +319,8 @@ export function CreateGameSheet({
         if (!open && formikRef.current) {
           formikRef.current.resetForm();
           setUploadedFiles({ thumbnail: null, game: null });
-          setShowProgress(false);
+          setNewTag('');
+          setShowProgress(false); // Reset progress state
           setProgress(0);
           setCurrentStep('');
         }
@@ -337,7 +343,7 @@ export function CreateGameSheet({
           onSubmit={handleSubmit}
           innerRef={formikRef}
         >
-          {({ isSubmitting, isValid, dirty }) => (
+          {({ isSubmitting, isValid, dirty, values, setFieldValue }) => (
             <Form className="grid grid-cols-1 gap-6 pl-4 pr-4">
               {/* Thumbnail Upload - Full Width */}
               <div>
@@ -428,25 +434,48 @@ export function CreateGameSheet({
                 />
               </div>
 
+              {/* Developer Input */}
+              <div>
+                <Label
+                  htmlFor="developer"
+                  className="text-base mb-2 block dark:text-white"
+                >
+                  Developer (Optional)
+                </Label>
+                <Field
+                  as={Input}
+                  id="developer"
+                  name="developer"
+                  className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#6A7282] focus:outline-none font-worksans tracking-wider text-sm"
+                  placeholder="Enter developer name"
+                />
+                <ErrorMessage
+                  name="developer"
+                  component="div"
+                  className="text-red-500 mt-1 font-worksans text-sm tracking-wider"
+                />
+              </div>
+
               {/* Description */}
               <div>
                 <Label
                   htmlFor="description"
                   className="text-base mb-2 block dark:text-white"
                 >
-                  Short Description (Optional)
+                  Game Description (Optional)
                 </Label>
-                <Field
-                  as="textarea"
-                  id="description"
-                  name="description"
-                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider  text-gray-700 focus:border-gray-500 focus:outline-none resize-none"
-                  placeholder="Description"
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-worksans">
+                  Rich text editor - supports formatting, lists, and links
+                </p>
+                <RichTextEditor
+                  content={values.description}
+                  onChange={(html) => setFieldValue('description', html)}
+                  placeholder="Enter game description with formatting..."
                 />
                 <ErrorMessage
                   name="description"
                   component="div"
-                  className="text-red-500  mt-1 font-worksans text-sm tracking-wider"
+                  className="text-red-500 mt-1 font-worksans text-sm tracking-wider"
                 />
               </div>
 
@@ -458,55 +487,71 @@ export function CreateGameSheet({
                 >
                   How To Play (Optional)
                 </Label>
-                <Field
-                  as="textarea"
-                  id="metadata.howToPlay"
-                  name="metadata.howToPlay"
-                  className="w-full min-h-[100px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider text-gray-700 focus:border-gray-500 focus:outline-none resize-none"
-                  placeholder="Explain how to play this game (for SEO)"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-worksans">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-worksans">
                   Instructions on how to play - helps with SEO
                 </p>
+                <RichTextEditor
+                  content={values.metadata?.howToPlay || ''}
+                  onChange={(html) => setFieldValue('metadata.howToPlay', html)}
+                  placeholder="Explain how to play this game..."
+                />
               </div>
 
-              {/* Features (SEO Metadata) */}
-              <div>
-                <Label
-                  htmlFor="metadata.features"
-                  className="text-base mb-2 block dark:text-white"
-                >
-                  Features (Optional)
-                </Label>
-                <Field
-                  as="textarea"
-                  id="metadata.features"
-                  name="metadata.features"
-                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider text-gray-700 focus:border-gray-500 focus:outline-none resize-none"
-                  placeholder="Enter features separated by commas, e.g., Multiplayer, HD Graphics, Cross-platform"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-worksans">
-                  Comma-separated list of game features
-                </p>
-              </div>
+
 
               {/* Tags (SEO Metadata) */}
               <div>
-                <Label
-                  htmlFor="metadata.tags"
-                  className="text-base mb-2 block dark:text-white"
-                >
-                  Tags (Optional)
-                </Label>
-                <Field
-                  as="textarea"
-                  id="metadata.tags"
-                  name="metadata.tags"
-                  className="w-full min-h-[80px] rounded-md border border-[#CBD5E0] dark:text-white dark:bg-[#121C2D] bg-[#F1F5F9] px-3 py-2 font-worksans text-sm tracking-wider text-gray-700 focus:border-gray-500 focus:outline-none resize-none"
-                  placeholder="Enter tags separated by commas, e.g., action, fps, shooter, multiplayer"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-worksans">
-                  Comma-separated SEO tags/keywords
+                <Label className="text-base mb-2 block dark:text-white">Tags (Optional)</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const currentTags = values.metadata?.tags || [];
+                        if (newTag.trim() && !currentTags.includes(newTag.trim())) {
+                          setFieldValue('metadata.tags', [...currentTags, newTag.trim()]);
+                          setNewTag('');
+                        }
+                      }
+                    }}
+                    placeholder="Add a tag..."
+                    className="bg-[#F1F5F9] dark:bg-[#121C2D]"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const currentTags = values.metadata?.tags || [];
+                      if (newTag.trim() && !currentTags.includes(newTag.trim())) {
+                        setFieldValue('metadata.tags', [...currentTags, newTag.trim()]);
+                        setNewTag('');
+                      }
+                    }}
+                    variant="outline"
+                  >
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(values.metadata?.tags || []).map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentTags = values.metadata?.tags || [];
+                          setFieldValue('metadata.tags', currentTags.filter((_, i) => i !== index));
+                        }}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-worksans">
+                  SEO tags/keywords
                 </p>
               </div>
 

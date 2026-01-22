@@ -148,7 +148,7 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
         {/* Admin Edit Button */}
         {!hideEditButton && permissions.hasAdminAccess && (
           <button
-            onClick={() => navigate(`/admin/view-game/${game.id}`)}
+            onClick={() => navigate(`/admin/edit-game/${game.id}`)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 text-sm font-worksans"
           >
             <LuPenLine className="w-4 h-4" />
