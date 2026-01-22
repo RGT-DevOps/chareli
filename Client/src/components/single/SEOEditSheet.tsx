@@ -69,13 +69,24 @@ export function SEOEditSheet({ open, onOpenChange, gameId }: SEOEditSheetProps) 
 
   if (!game) return null;
 
+  // Helper function to ensure tags is always an array
+  const ensureArray = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    // If it's an object with numeric keys (converted from array), convert back to array
+    if (typeof value === 'object') {
+      return Object.values(value).filter((v): v is string => typeof v === 'string');
+    }
+    return [];
+  };
+
   const initialValues: FormValues = {
     developer: game.metadata?.developer || '',
     releaseDate: new Date(game.createdAt).toISOString().split('T')[0],
     platform: 'Browser (desktop, mobile, tablet)',
     description: game.description || '',
     howToPlay: game.metadata?.howToPlay || '',
-    tags: game.metadata?.tags || [],
+    tags: ensureArray(game.metadata?.tags),
   };
 
   return (
