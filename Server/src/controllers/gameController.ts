@@ -733,33 +733,86 @@ export const getGameById = async (
       game.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
     }
 
-    // Find similar games (same category, different ID, active status)
-    let similarGames: Game[] = [];
+    // Find recommended games (2 from same category + 3 from different categories)
+    let recommendedGames: Game[] = [];
 
     if (game.categoryId) {
-      similarGames = await gameRepository.find({
-        where: {
-          categoryId: game.categoryId,
-          id: Not(game.id), // Exclude the current game using its actual UUID
-          status: GameStatus.ACTIVE,
-        },
-        relations: ['thumbnailFile', 'gameFile'],
-        take: 5, // Limit to 5 similar games
-        order: { createdAt: 'DESC' }, // Get the newest games first
-      });
+      // Get 2 random games from the same category
+      // Using subquery to avoid DISTINCT + ORDER BY RANDOM() conflict
+      const sameCategoryGames = await gameRepository
+        .createQueryBuilder('game')
+        .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
+        .leftJoinAndSelect('game.gameFile', 'gameFile')
+        .where('game.categoryId = :categoryId', { categoryId: game.categoryId })
+        .andWhere('game.id != :gameId', { gameId: game.id })
+        .andWhere('game.status = :status', { status: GameStatus.ACTIVE })
+        .orderBy('game.createdAt', 'DESC') // Use deterministic ordering
+        .take(10) // Get more than needed
+        .getMany();
 
-      // Transform similar games' file and thumbnail URLs to direct storage URLs
-      similarGames.forEach((similarGame) => {
-        if (similarGame.gameFile) {
-          const s3Key = similarGame.gameFile.s3Key;
-          similarGame.gameFile.s3Key = storageService.getPublicUrl(s3Key);
+      // Shuffle and take 2 (Fisher-Yates shuffle)
+      const shuffledSame = sameCategoryGames.sort(() => Math.random() - 0.5).slice(0, 2);
+
+      // Get 3 random games from different categories
+      const differentCategoryGames = await gameRepository
+        .createQueryBuilder('game')
+        .leftJoinAndSelect('game.thumbnailFile', 'thumbnailFile')
+        .leftJoinAndSelect('game.gameFile', 'gameFile')
+        .where('game.categoryId != :categoryId', { categoryId: game.categoryId })
+        .andWhere('game.id != :gameId', { gameId: game.id })
+        .andWhere('game.status = :status', { status: GameStatus.ACTIVE })
+        .orderBy('game.createdAt', 'DESC') // Use deterministic ordering
+        .take(15) // Get more than needed
+        .getMany();
+
+      // Shuffle and take 3
+      const shuffledDifferent = differentCategoryGames.sort(() => Math.random() - 0.5).slice(0, 3);
+
+      // Combine the results
+      recommendedGames = [...shuffledSame, ...shuffledDifferent];
+
+      // Transform recommended games' file and thumbnail URLs to direct storage URLs
+      recommendedGames.forEach((recommendedGame) => {
+        if (recommendedGame.gameFile) {
+          const s3Key = recommendedGame.gameFile.s3Key;
+          recommendedGame.gameFile.s3Key = storageService.getPublicUrl(s3Key);
         }
-        if (similarGame.thumbnailFile) {
-          const s3Key = similarGame.thumbnailFile.s3Key;
-          similarGame.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
+        if (recommendedGame.thumbnailFile) {
+          const s3Key = recommendedGame.thumbnailFile.s3Key;
+          recommendedGame.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
         }
       });
     }
+
+    // Calculate game statistics from Analytics table (excluding admin plays)
+    const analyticsRepository = AppDataSource.getRepository(Analytics);
+    const statsQuery = analyticsRepository
+      .createQueryBuilder('analytics')
+      .leftJoin('analytics.user', 'user')
+      .leftJoin('user.role', 'role')
+      .where('analytics.gameId = :gameId', { gameId: game.id })
+      .andWhere("(role.name = 'player' OR analytics.userId IS NULL)"); // Exclude admin plays
+
+    const [totalSessions, uniquePlayersResult, avgDurationResult] = await Promise.all([
+      // Total sessions count
+      statsQuery.getCount(),
+
+      // Unique players count - use database column names (user_id, session_id)
+      statsQuery
+        .select('COUNT(DISTINCT COALESCE(analytics.user_id::text, analytics.session_id))', 'count')
+        .getRawOne(),
+
+      // Average session duration (in seconds)
+      statsQuery
+        .select('AVG(analytics.duration)', 'avgDuration')
+        .getRawOne(),
+    ]);
+
+    const statistics = {
+      totalSessions,
+      uniquePlayers: parseInt(uniquePlayersResult?.count || '0', 10),
+      averageSessionDuration: Math.round(parseFloat(avgDurationResult?.avgDuration || '0')),
+    };
 
     // Get cached like count (avoid CPU-intensive calculation)
     const gameLikeCacheRepository = AppDataSource.getRepository(GameLikeCache);
@@ -790,7 +843,8 @@ export const getGameById = async (
       ...game,
       likeCount,
       hasLiked,
-      similarGames: similarGames,
+      statistics,
+      recommendedGames,
     };
 
     // Cache the response for future requests
@@ -1189,6 +1243,7 @@ export const updateGame = async (
       position,
       thumbnailFileKey: rawThumbnailFileKey,
       gameFileKey: rawGameFileKey,
+      metadata, // Add metadata to destructured fields
     } = req.body;
 
     // Decode HTML entities in file keys if provided
@@ -1439,6 +1494,29 @@ export const updateGame = async (
     if (description !== undefined) game.description = description;
     if (status) game.status = status as GameStatus;
     if (config !== undefined) game.config = config;
+
+    // Update metadata if provided
+    if (metadata !== undefined) {
+      // Ensure tags is always an array (not an object)
+      if (metadata.tags) {
+        if (Array.isArray(metadata.tags)) {
+          // Already an array, ensure it's a proper array (not object with numeric keys)
+          metadata.tags = [...metadata.tags];
+        } else if (typeof metadata.tags === 'object' && metadata.tags !== null) {
+          // Convert object with numeric keys back to array
+          metadata.tags = Object.values(metadata.tags).filter((v): v is string => typeof v === 'string');
+        } else {
+          // Invalid format, set to empty array
+          metadata.tags = [];
+        }
+      }
+      
+      // Merge with existing metadata to preserve other fields
+      game.metadata = {
+        ...game.metadata,
+        ...metadata,
+      };
+    }
 
     await queryRunner.manager.save(game);
 

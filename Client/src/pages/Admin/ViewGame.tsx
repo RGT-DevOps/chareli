@@ -13,30 +13,47 @@ import { useGameAnalyticsById } from "../../backend/analytics.service";
 import {
   useToggleGameStatus,
   useDeleteGame,
+  useGameById,
 } from "../../backend/games.service";
 import { toast } from "sonner";
 import { DeleteConfirmationModal } from "../../components/modals/DeleteConfirmationModal";
 import { ToggleGameStatusModal } from "../../components/modals/ToggleGameStatusModal";
 import { useState } from "react";
-import { EditSheet } from "../../components/single/Edit-Sheet";
+
 import { formatTime } from "../../utils/main";
 import { usePermissions } from "../../hooks/usePermissions";
+import { GameBreadcrumb } from "../../components/single/GameBreadcrumb";
+import { GameInfoSection } from "../../components/single/GameInfoSection";
+import DOMPurify from 'dompurify';
 
 export default function ViewGame() {
   const permissions = usePermissions();
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { data: game, isLoading } = useGameAnalyticsById(gameId || "");
+  const { data: gameData } = useGameById(gameId || ""); // Fetch full game data for likeCount
   const toggleStatus = useToggleGameStatus();
   const deleteGame = useDeleteGame();
+
+  // Helper function to ensure tags is always an array
+  const ensureArray = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    // If it's an object with numeric keys (converted from array), convert back to array
+    if (typeof value === 'object') {
+      return Object.values(value).filter((v): v is string => typeof v === 'string');
+    }
+    return [];
+  };
 
   const handleBack = () => {
     navigate("/admin/game-management");
   };
 
-  const [editOpen, setEditOpen] = useState(false);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
+
 
   if (isLoading) {
     return (
@@ -103,7 +120,7 @@ export default function ViewGame() {
                 <Button
                   variant="outline"
                   className="flex items-center justify-center gap-2 w-full border-2 border-[white] text-[#475568] bg-transparent dark:border-2 dark:border-white dark:text-white cursor-pointer"
-                  onClick={() => setEditOpen(true)}
+                  onClick={() => navigate(`/admin/edit-game/${gameId}`)}
                 >
                   Edit <CiEdit className="dark:text-white" />
                 </Button>
@@ -135,16 +152,66 @@ export default function ViewGame() {
         </div>
         {/* Right: Details */}
         <div className="flex-1 flex flex-col gap-6">
-          <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-6">
+          <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-6">
             <h3 className="text-base font-normal mb-2 text-[#475568] tracking-wider dark:text-white">
               Overview
             </h3>
-            <p className="text-[#475568] whitespace-pre-line dark:text-white font-dmmono text-sm tracking-wider break-words overflow-wrap-anywhere">
-              {(game as any).game?.description || "-"}
-            </p>
+            {(game as any).game?.description ? (
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none
+                  prose-headings:font-dmmono prose-p:font-worksans prose-li:font-worksans
+                  prose-ul:list-disc prose-ol:list-decimal prose-ul:ml-6 prose-ol:ml-6
+                  dark:prose-headings:text-white dark:prose-p:text-gray-300 dark:prose-li:text-gray-300"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((game as any).game.description) }}
+              />
+            ) : (
+              <p className="text-[#475568] dark:text-white font-dmmono text-sm">-</p>
+            )}
+
+            {/* SEO Metadata Display */}
+            {(game as any).game?.metadata && (
+              <>
+                {(game as any).game.metadata.howToPlay && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-xs font-semibold text-[#475568] dark:text-gray-400 mb-1 tracking-wider">
+                      HOW TO PLAY
+                    </h4>
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none
+                        prose-headings:font-dmmono prose-p:font-worksans prose-li:font-worksans
+                        prose-ul:list-disc prose-ol:list-decimal prose-ul:ml-6 prose-ol:ml-6
+                        dark:prose-headings:text-white dark:prose-p:text-gray-300 dark:prose-li:text-gray-300
+                        text-[#475568] dark:text-white font-worksans text-sm"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((game as any).game.metadata.howToPlay) }}
+                    />
+                  </div>
+                )}
+
+                {(() => {
+                  const tags = ensureArray((game as any).game.metadata?.tags);
+                  return tags.length > 0 ? (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <h4 className="text-xs font-semibold text-[#475568] dark:text-gray-400 mb-2 tracking-wider">
+                        TAGS
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-[#475568] dark:text-white rounded text-xs font-worksans"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+              </>
+            )}
           </div>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
+            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] tracking-wider text-base dark:text-white">
                 Game Category
               </h3>
@@ -152,7 +219,7 @@ export default function ViewGame() {
                 {(game as any).game?.category?.name || "-"}
               </p>
             </div>
-            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
+            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] dark:text-white">
                 Position
               </h3>
@@ -162,7 +229,7 @@ export default function ViewGame() {
                   : "Not assigned"}
               </p>
             </div>
-            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
+            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] dark:text-white">
                 Gameplay URL
               </h3>
@@ -192,7 +259,7 @@ export default function ViewGame() {
             </p>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
+            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
               <div className="bg-[#6A7282] rounded-full px-3 py-3 items-center">
                 <FiClock className="w-8 h-8  text-white dark:text-[#OF1621]" />
               </div>
@@ -205,7 +272,7 @@ export default function ViewGame() {
                 </span>
               </div>
             </div>
-            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
+            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex gap-4">
               <div className="bg-[#6A7282] rounded-full px-3 py-3">
                 <LuGamepad2 className="w-8 h-8 text-white dark:text-[#OF1621]" />
               </div>
@@ -218,7 +285,7 @@ export default function ViewGame() {
                 </span>
               </div>
             </div>
-            <div className="bg-transparent dark:bg-[#121C2D] rounded-2xl p-4 flex-1 flex gap-4">
+            <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1 flex gap-4">
               <div className="bg-[#6A7282] rounded-full px-3 py-3">
                 <TbCalendarClock className="w-8 h-8 text-white dark:text-[#OF1621]" />
               </div>
@@ -232,6 +299,47 @@ export default function ViewGame() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* SEO Content Preview Section */}
+      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white font-dmmono">
+              SEO Content
+            </h2>
+          </div>
+          {permissions.canManageGames && (
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 border-2 border-gray-300 dark:border-gray-600"
+              onClick={() => navigate(`/admin/edit-game/${gameId}`)}
+            >
+              <CiEdit className="w-4 h-4" />
+              Edit Game
+            </Button>
+          )}
+        </div>
+
+        {/* SEO Preview Container */}
+        <div className="bg-white dark:bg-[#0F1221] rounded-lg p-6 sm:p-8">
+          {/* Breadcrumb */}
+          <div className="mb-8">
+            <GameBreadcrumb
+              categoryName={(game as any)?.game?.category?.name}
+              categoryId={(game as any)?.game?.category?.id}
+              gameTitle={(game as any)?.game?.title}
+            />
+          </div>
+
+          {/* Game Info Section */}
+          <GameInfoSection
+            game={(game as any)?.game}
+            likeCount={gameData?.likeCount || 0}
+            hideEditButton={true}
+          />
         </div>
       </div>
 
@@ -256,7 +364,7 @@ export default function ViewGame() {
               } successfully`
             );
             setShowDisableModal(false);
-          } catch (error) {
+          } catch {
             toast.error("Failed to update game status");
           }
         }}
@@ -271,7 +379,7 @@ export default function ViewGame() {
             await deleteGame.mutateAsync(gameId || "");
             toast.success("Game deleted successfully");
             navigate("/admin/game-management");
-          } catch (error) {
+          } catch {
             toast.error("Failed to delete game");
           }
         }}
@@ -279,11 +387,7 @@ export default function ViewGame() {
       />
 
       {/* Edit Sheet */}
-      <EditSheet
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        gameId={gameId || ""}
-      />
+
     </div>
   );
 }
