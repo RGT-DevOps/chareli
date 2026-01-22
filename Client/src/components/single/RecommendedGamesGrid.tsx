@@ -47,11 +47,7 @@ export function RecommendedGamesGrid({ games }: RecommendedGamesGridProps) {
               <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate font-dmmono">
                 {game.title}
               </h3>
-              {game.description && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2 font-worksans">
-                  {game.description}
-                </p>
-              )}
+
             </div>
           </div>
         ))}
