@@ -1,11 +1,23 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import CanonicalTag from '../components/single/CanonicalTag';
+import { getOrCreateSessionId, clearSessionId } from '../utils/sessionUtils';
+import { useAuth } from '../context/AuthContext';
 
 // Analytics tracking component for Cloudflare Zaraz and Facebook Pixel
 const AnalyticsTracker = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
+  // 1. Auth/session lifecycle
+  // Clear session ID when user logs in
+  useEffect(() => {
+    if (user) {
+      clearSessionId();
+    }
+  }, [user]);
+
+  // 2. Backend analytics
   // Track page visits with current auth state
   // Runs on location change so it picks up token after login
   useEffect(() => {
@@ -13,12 +25,8 @@ const AnalyticsTracker = () => {
       try {
         const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
-        // Get or create visitor session ID
-        let sessionId = sessionStorage.getItem('visitor_session_id');
-        if (!sessionId) {
-          sessionId = crypto.randomUUID();
-          sessionStorage.setItem('visitor_session_id', sessionId);
-        }
+        // Only send session ID if user is not authenticated
+        const sessionId = user ? null : getOrCreateSessionId();
 
         const url = `${baseURL}/api/analytics/homepage-visit`;
 
@@ -49,8 +57,9 @@ const AnalyticsTracker = () => {
     };
 
     trackPageVisit();
-  }, [location]);  // Re-run when location changes (includes after login redirect)
+  }, [location,user]);  // Re-run when location changes (includes after login redirect)
 
+  // 3. Client-side analytics + SEO
   useEffect(() => {
     // Only track if analytics is enabled for this domain
     if (!(window as any).shouldLoadAnalytics) {
