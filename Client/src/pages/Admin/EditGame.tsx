@@ -26,6 +26,7 @@ interface UploadedFile {
 interface FormValues {
   title: string;
   developer: string;
+  platform: string;
   categoryId: string;
   position: number;
   config: number;
@@ -141,6 +142,7 @@ export default function EditGame() {
         config: values.config,
         metadata: {
           developer: values.developer || undefined,
+          platform: values.platform || 'desktop',
           howToPlay: values.howToPlay ? DOMPurify.sanitize(values.howToPlay, {
             ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote'],
             ALLOWED_ATTR: ['href', 'class'],
@@ -197,6 +199,7 @@ export default function EditGame() {
   const initialValues: FormValues = {
     title: game.title || '',
     developer: game.metadata?.developer || '',
+    platform: game.metadata?.platform || 'desktop',
     categoryId: game.category?.id || '',
     position: game.position || 0,
     config: game.config || 1,
@@ -337,6 +340,29 @@ export default function EditGame() {
               />
               <ErrorMessage
                 name="developer"
+                component="p"
+                className="text-sm text-red-500"
+              />
+            </div>
+
+            {/* Platform */}
+            <div className="space-y-2">
+              <Label htmlFor="platform">Platform</Label>
+              <Field name="platform">
+                {({ field }: any) => (
+                  <select
+                    {...field}
+                    id="platform"
+                    className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-600 dark:text-white bg-white dark:bg-gray-800 px-3 text-gray-700 focus:border-[#6A7282] focus:outline-none text-sm"
+                  >
+                    <option value="desktop">Desktop</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="tablet">Tablet</option>
+                  </select>
+                )}
+              </Field>
+              <ErrorMessage
+                name="platform"
                 component="p"
                 className="text-sm text-red-500"
               />

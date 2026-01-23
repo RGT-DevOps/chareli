@@ -120,7 +120,7 @@ export const trackGameplay = {
   gameShare: (
     gameId: string,
     gameTitle: string,
-    method: 'web_share' | 'clipboard'
+    method: 'web_share' | 'clipboard' | 'whatsapp' | 'facebook'
   ) => {
     trackEvent("game_share", {
       game_id: gameId,

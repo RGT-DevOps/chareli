@@ -560,13 +560,7 @@ export const getAllGames = async (
       );
     }
 
-    // Get total count for pagination
-    const total = await queryBuilder.getCount();
-
-    // Apply pagination (middleware ensures limitNumber is always set)
-    queryBuilder.skip((pageNumber - 1) * limitNumber).take(limitNumber);
-
-    // Apply ordering based on filter type
+    // Apply ordering BEFORE pagination (critical for correct sorting)
     if (orderByRecent) {
       // For recently_added filter, order only by creation date (newest first)
       queryBuilder.orderBy('game.createdAt', 'DESC');
@@ -579,6 +573,12 @@ export const getAllGames = async (
         .orderBy('game.position', 'ASC')
         .addOrderBy('game.createdAt', 'DESC');
     }
+
+    // Get total count for pagination (after ordering is applied)
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination (middleware ensures limitNumber is always set)
+    queryBuilder.skip((pageNumber - 1) * limitNumber).take(limitNumber);
 
     const games = await queryBuilder.getMany();
 

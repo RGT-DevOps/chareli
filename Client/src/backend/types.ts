@@ -143,6 +143,8 @@ export interface GameData {
     tags?: string[];
     seoKeywords?: string;
     schemaVersion?: string;
+    platform?: string;
+    faqOverride?: string;
   };
   statistics?: {
     totalSessions: number;

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiShare2 } from 'react-icons/fi';
+import { FaWhatsapp, FaFacebookF } from 'react-icons/fa';
 import { LuPenLine } from 'react-icons/lu';
 import type { GameData } from '../../backend/types';
 import { format } from 'date-fns';
 import { trackGameplay } from '../../utils/analytics';
 import DOMPurify from 'dompurify';
 import { usePermissions } from '../../hooks/usePermissions';
+import { DEFAULT_FAQ_TEMPLATE, renderFAQ } from '../../utils/faqTemplate';
 
 interface GameInfoSectionProps {
   game: GameData;
@@ -33,10 +35,13 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
 
   // Handle share button click
   const handleShare = async () => {
+    // Always use gameplay URL with slug, not current location
+    const gameplayUrl = `${window.location.origin}/gameplay/${game.slug}`;
+
     const shareData = {
       title: game.title,
       text: game.description || `Play ${game.title} on ArcadesBox`,
-      url: window.location.href,
+      url: gameplayUrl,
     };
 
     try {
@@ -48,7 +53,7 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
         setTimeout(() => setShareStatus('idle'), 3000);
       } else {
         // Fallback to clipboard
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(gameplayUrl);
         trackGameplay.gameShare(game.id, game.title, 'clipboard');
         setShareStatus('success');
         setTimeout(() => setShareStatus('idle'), 3000);
@@ -65,8 +70,8 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
   // Format release date to "Month Year" format
   const releaseDate = format(new Date(game.createdAt), 'MMMM yyyy');
 
-  // Get developer name from metadata, default to ArcadesBox
-  const developerName = metadata?.developer || 'ArcadesBox';
+  // Get developer name from metadata, default to Unknown
+  const developerName = metadata?.developer || 'Unknown';
 
   // Get total players for vote count
   const voteCount = statistics?.uniquePlayers || 0;
@@ -75,7 +80,7 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
     <div className="space-y-8">
       {/* Game Title */}
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white font-dmmono">
-        {game.title}
+        {game.title}: Play Unblocked & Free Online - Arcades Box
       </h1>
 
       {/* Game Details Link */}
@@ -109,7 +114,10 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
             Platform:
           </span>
           <span className="text-gray-900 dark:text-white font-worksans">
-            Browser (desktop, mobile, tablet)
+            {metadata?.platform
+              ? `Browser (${metadata.platform})`
+              : 'Browser (desktop, mobile, tablet)'
+            }
           </span>
         </div>
       </div>
@@ -128,7 +136,7 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
       </div>
 
       {/* Share and Edit Buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 flex-wrap">
         {/* Share Button */}
         <div className="relative">
           <button
@@ -144,6 +152,37 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
             </div>
           )}
         </div>
+
+        {/* WhatsApp Share */}
+        <button
+          onClick={() => {
+            const gameplayUrl = `${window.location.origin}/gameplay/${game.slug}`;
+            const text = `Check out ${game.title} on ArcadesBox!`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + gameplayUrl)}`;
+            window.open(whatsappUrl, '_blank');
+            trackGameplay.gameShare(game.id, game.title, 'whatsapp');
+          }}
+          className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 text-sm font-worksans"
+          title="Share on WhatsApp"
+        >
+          <FaWhatsapp className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span className="hidden sm:inline">WhatsApp</span>
+        </button>
+
+        {/* Facebook Share */}
+        <button
+          onClick={() => {
+            const gameplayUrl = `${window.location.origin}/gameplay/${game.slug}`;
+            const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(gameplayUrl)}`;
+            window.open(facebookUrl, '_blank', 'width=600,height=400');
+            trackGameplay.gameShare(game.id, game.title, 'facebook');
+          }}
+          className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300 text-sm font-worksans"
+          title="Share on Facebook"
+        >
+          <FaFacebookF className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <span className="hidden sm:inline">Facebook</span>
+        </button>
 
         {/* Admin Edit Button */}
         {!hideEditButton && permissions.hasAdminAccess && (
@@ -177,7 +216,7 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
       {metadata?.howToPlay && (
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white font-dmmono">
-            How to Play
+            How to Play {game.title}
           </h2>
           <div
             className="prose prose-sm dark:prose-invert max-w-none
@@ -188,6 +227,20 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
           />
         </section>
       )}
+
+      {/* FAQ Section */}
+      <section className="space-y-3">
+        <div
+          className="prose prose-sm dark:prose-invert max-w-none
+            prose-headings:font-dmmono prose-p:font-worksans
+            dark:prose-headings:text-white dark:prose-p:text-gray-300"
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(
+              metadata?.faqOverride || renderFAQ(DEFAULT_FAQ_TEMPLATE, game)
+            ),
+          }}
+        />
+      </section>
 
       {/* Tags - Clickable links to categories */}
       {(() => {
