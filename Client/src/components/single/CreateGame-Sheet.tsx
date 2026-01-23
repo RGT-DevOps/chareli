@@ -47,6 +47,7 @@ interface FormValues {
   thumbnailFile?: UploadedFile;
   gameFile?: UploadedFile;
   developer?: string;
+  platform?: string;
   metadata?: {
     howToPlay?: string;
     tags?: string[];
@@ -81,6 +82,7 @@ const initialValues: FormValues = {
   config: 1,
   categoryId: '',
   developer: '',
+  platform: 'desktop',
   metadata: {
     howToPlay: '',
     tags: [],
@@ -188,6 +190,7 @@ export function CreateGameSheet({
       // Send file keys instead of files
       const metadata: any = {
         developer: values.developer || undefined,
+        platform: values.platform || 'desktop',
         howToPlay: values.metadata?.howToPlay ? DOMPurify.sanitize(values.metadata.howToPlay, {
           ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote'],
           ALLOWED_ATTR: ['href', 'class'],
@@ -451,6 +454,34 @@ export function CreateGameSheet({
                 />
                 <ErrorMessage
                   name="developer"
+                  component="div"
+                  className="text-red-500 mt-1 font-worksans text-sm tracking-wider"
+                />
+              </div>
+
+              {/* Platform Dropdown */}
+              <div>
+                <Label
+                  htmlFor="platform"
+                  className="text-base mb-2 block dark:text-white"
+                >
+                  Platform
+                </Label>
+                <Field name="platform">
+                  {({ field }: any) => (
+                    <select
+                      {...field}
+                      id="platform"
+                      className="w-full h-12 rounded-md border border-[#CBD5E0] dark:text-white bg-[#F1F5F9] dark:bg-[#121C2D] px-3 text-gray-700 focus:border-[#6A7282] focus:outline-none font-worksans tracking-wider text-sm"
+                    >
+                      <option value="desktop">Desktop</option>
+                      <option value="mobile">Mobile</option>
+                      <option value="tablet">Tablet</option>
+                    </select>
+                  )}
+                </Field>
+                <ErrorMessage
+                  name="platform"
                   component="div"
                   className="text-red-500 mt-1 font-worksans text-sm tracking-wider"
                 />

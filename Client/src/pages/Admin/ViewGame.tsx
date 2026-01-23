@@ -25,6 +25,10 @@ import { usePermissions } from "../../hooks/usePermissions";
 import { GameBreadcrumb } from "../../components/single/GameBreadcrumb";
 import { GameInfoSection } from "../../components/single/GameInfoSection";
 import DOMPurify from 'dompurify';
+// FAQ Editor imports - commented out, using default template only
+// import { RichTextEditor } from "../../components/ui/RichTextEditor";
+// import { DEFAULT_FAQ_TEMPLATE } from "../../utils/faqTemplate";
+// import { useUpdateGame } from "../../backend/games.service";
 
 export default function ViewGame() {
   const permissions = usePermissions();
@@ -53,6 +57,11 @@ export default function ViewGame() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
+  // FAQ Editor state - commented out, using default template only
+  // const [useDefaultFAQ, setUseDefaultFAQ] = useState(true);
+  // const [customFAQ, setCustomFAQ] = useState('');
+  // const [isSavingFAQ, setIsSavingFAQ] = useState(false);
+  // const updateGame = useUpdateGame();
 
 
   if (isLoading) {
@@ -342,6 +351,126 @@ export default function ViewGame() {
           />
         </div>
       </div>
+
+      {/* FAQ Customization Section - COMMENTED OUT FOR NOW */}
+      {/* User requested to use hardcoded default template only */}
+      {/* To re-enable in future: uncomment this section and the related state/imports */}
+      {/*
+      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white font-dmmono">
+              FAQ Section
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Customize the FAQ content or use the default template
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant={useDefaultFAQ ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setUseDefaultFAQ(true);
+                setCustomFAQ('');
+              }}
+            >
+              Use Default Template
+            </Button>
+            <Button
+              variant={!useDefaultFAQ ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setUseDefaultFAQ(false);
+                setCustomFAQ((game as any)?.game?.metadata?.faqOverride || DEFAULT_FAQ_TEMPLATE);
+              }}
+            >
+              Customize FAQ
+            </Button>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#0F1221] rounded-lg p-6">
+          {useDefaultFAQ ? (
+            <div className="border rounded-lg p-6 bg-gray-50 dark:bg-gray-800">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 font-semibold">
+                Using default FAQ template
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                Placeholders will be replaced automatically:
+              </p>
+              <ul className="text-xs text-gray-500 dark:text-gray-500 list-disc ml-5 space-y-1">
+                <li>[Game Name] → {(game as any)?.game?.title}</li>
+                <li>[Genre] → {(game as any)?.game?.category?.name || 'game'}</li>
+              </ul>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+                To customize the FAQ, click "Customize FAQ" above.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <p className="text-sm text-blue-700 dark:text-blue-300 font-semibold mb-1">
+                  💡 Tip: Use Placeholders
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  Keep <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">[Game Name]</code> and <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">[Genre]</code> in your FAQ - they'll be automatically replaced when displayed!
+                </p>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Edit the FAQ content below. Use rich formatting to structure your FAQ.
+              </p>
+              <RichTextEditor
+                content={customFAQ}
+                onChange={(html) => setCustomFAQ(html)}
+                placeholder="Customize FAQ content with formatting..."
+              />
+              <div className="flex justify-end gap-3 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setUseDefaultFAQ(true);
+                    setCustomFAQ('');
+                  }}
+                  disabled={isSavingFAQ}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      setIsSavingFAQ(true);
+                      await updateGame.mutateAsync({
+                        id: gameId || '',
+                        data: {
+                          metadata: {
+                            ...(game as any)?.game?.metadata,
+                            faqOverride: DOMPurify.sanitize(customFAQ, {
+                              ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'blockquote'],
+                              ALLOWED_ATTR: ['href', 'class'],
+                            }),
+                          },
+                        },
+                      });
+                      toast.success('FAQ updated successfully!');
+                      setUseDefaultFAQ(true);
+                    } catch {
+                      toast.error('Failed to update FAQ');
+                    } finally {
+                      setIsSavingFAQ(false);
+                    }
+                  }}
+                  disabled={isSavingFAQ || !customFAQ.trim()}
+                  className="bg-[#6A7282] hover:bg-[#5A626F] text-white"
+                >
+                  {isSavingFAQ ? 'Saving...' : 'Save FAQ'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      */}
 
       {/* Toggle Game Status Modal */}
       <ToggleGameStatusModal
