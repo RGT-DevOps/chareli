@@ -1,12 +1,6 @@
 # Main site - Allow search engines, disallow AI training bots
 User-agent: *
 Content-signal: search=yes,ai-train=no
-Disallow: /admin
-Disallow: /admin/*
-Disallow: /register-invitation
-Disallow: /register-invitation/*
-Disallow: /reset-password
-Disallow: /reset-password/*
 Allow: /
 
 # Block Amazon bot
