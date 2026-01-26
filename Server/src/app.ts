@@ -108,6 +108,24 @@ app.get('/robots.txt', (req, res) => {
   res.send('User-agent: *\nDisallow: /');
 });
 
+// Sitemap.xml proxy - Serve dynamic sitemap from CDN
+import axios from 'axios';
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const sitemapUrl = 'https://cdn.arcadesbox.org/cdn/sitemap.xml';
+    const response = await axios.get(sitemapUrl, {
+      responseType: 'stream',
+      timeout: 5000, // 5 second timeout
+    });
+
+    res.setHeader('Content-Type', 'application/xml');
+    response.data.pipe(res);
+  } catch (error) {
+    logger.error('Failed to proxy sitemap.xml:', error);
+    res.status(404).send('Sitemap not found');
+  }
+});
+
 // API Routes
 app.use('/api', routes);
 
