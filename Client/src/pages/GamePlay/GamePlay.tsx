@@ -26,6 +26,7 @@ export default function GamePlay() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: game, isLoading, error } = useGameById(gameId || '');
   const { mutate: createAnalytics } = useCreateAnalytics();
+  const { mutate: updateAnalytics } = useUpdateAnalytics();
   const analyticsIdRef = useRef<string | null>(null);
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const gameStartTimeRef = useRef<Date | null>(null);
@@ -303,15 +304,44 @@ export default function GamePlay() {
           const label = milestone < 60 ? `${milestone}s` : `${milestone / 60}m`;
 
           trackGameplay.gameMilestone(game.id, game.title, label, milestone);
+
+          // Update backend analytics with milestone
+           if (analyticsIdRef.current) {
+             updateAnalytics({
+               id: analyticsIdRef.current,
+               milestone: label,
+             });
+           }
         }
       });
     }, 1000);
 
     return () => clearInterval(interval);
+  }, [game, isGameLoading, hasAdminAccess, updateAnalytics]);
+
+  // Heartbeat tracking (every 15s)
+  useEffect(() => {
+    if (!game || isGameLoading || hasAdminAccess) return;
+
+    const interval = setInterval(() => {
+       if (analyticsIdRef.current) {
+          // Use fetch directly to avoid re-renders or hook complexity for simple ping
+          const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+          fetch(`${baseURL}/api/analytics/${analyticsIdRef.current}/heartbeat`, {
+             method: 'POST',
+             keepalive: true,
+             headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}` // If needed, but route is optionalAuthenticate
+             }
+          }).catch(err => console.error("Heartbeat failed", err));
+       }
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, [game, isGameLoading, hasAdminAccess]);
 
   const location = useLocation();
-  const { mutate: updateAnalytics } = useUpdateAnalytics();
+
 
   // Function to update end time
   const updateEndTime = useCallback(
@@ -333,6 +363,7 @@ export default function GamePlay() {
         await updateAnalytics({
           id: analyticsIdRef.current,
           endTime,
+          exitReason: reason,
         });
 
         // Track game end in Google Analytics
@@ -413,7 +444,7 @@ export default function GamePlay() {
 
         const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
         const url = `${baseURL}/api/analytics/${analyticsIdRef.current}/end`;
-        const data = new Blob([JSON.stringify({ endTime })], {
+        const data = new Blob([JSON.stringify({ endTime, exitReason: 'page_unload' })], {
           type: 'application/json',
         });
         navigator.sendBeacon(url, data);
@@ -535,6 +566,14 @@ export default function GamePlay() {
                         new Date().getTime() -
                         gameLoadStartTimeRef.current.getTime();
                       trackGameplay.gameLoaded(game.id, game.title, loadTime);
+
+                      // Update backend with load time
+                      if (analyticsIdRef.current) {
+                         updateAnalytics({
+                            id: analyticsIdRef.current,
+                            loadTime
+                         });
+                      }
                     }
                   }}
                 />
