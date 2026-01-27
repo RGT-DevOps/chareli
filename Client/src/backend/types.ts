@@ -227,6 +227,12 @@ export interface Analytics {
   endTime?: Date;
   duration?: number;
   sessionCount?: number;
+  exitReason?: string;
+  loadTime?: number;
+  milestone?: string;
+  errorMessage?: string;
+  lastSeenAt?: string;
+  endedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

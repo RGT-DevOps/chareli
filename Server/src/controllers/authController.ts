@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { getCountryFromIP, extractClientIP } from '../utils/ipUtils';
 import { detectDeviceType } from '../utils/deviceUtils';
 import logger from '../utils/logger';
+import { AdminExclusionService } from '../services/adminExclusion.service';
 
 // Section: Core Authentication
 // This controller handles core authentication functions like registration, login, and OTP verification
@@ -100,7 +101,7 @@ export const registerPlayer = async (
       relations: ['role']
     });
 
-    if (userWithRole?.role?.name === 'player') {
+    if (AdminExclusionService.shouldTrackUser(userWithRole || undefined)) {
       const signupAnalytics = new Analytics();
       signupAnalytics.userId = user.id;
       signupAnalytics.activityType = 'Signed up';
@@ -209,7 +210,7 @@ export const registerFromInvitation = async (
       relations: ['role']
     });
 
-    if (userWithRole?.role?.name === 'player') {
+    if (AdminExclusionService.shouldTrackUser(userWithRole || undefined)) {
       const signupAnalytics = new Analytics();
       signupAnalytics.userId = user.id;
       signupAnalytics.activityType = 'Signed up from invitation';
@@ -294,7 +295,7 @@ export const login = async (
         relations: ['role']
       });
 
-      if (userWithRole?.role?.name === 'player') {
+      if (AdminExclusionService.shouldTrackUser(userWithRole || undefined)) {
         const loginAnalytics = new Analytics();
         loginAnalytics.userId = user.id;
         loginAnalytics.activityType = 'Logged in';
@@ -332,7 +333,7 @@ export const login = async (
           relations: ['role']
         });
 
-        if (userWithRole?.role?.name === 'player') {
+        if (AdminExclusionService.shouldTrackUser(userWithRole || undefined)) {
           const loginAnalytics = new Analytics();
           loginAnalytics.userId = user.id;
           loginAnalytics.activityType = 'Logged in';
@@ -500,7 +501,7 @@ export const verifyOtp = async (
         relations: ['role']
       });
 
-      if (userWithRole?.role?.name === 'player') {
+      if (AdminExclusionService.shouldTrackUser(userWithRole || undefined)) {
         const loginAnalytics = new Analytics();
         loginAnalytics.userId = user.id;
         loginAnalytics.activityType = 'Logged in';

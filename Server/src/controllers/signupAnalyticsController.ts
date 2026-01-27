@@ -3,6 +3,7 @@ import { AppDataSource } from '../config/database';
 import { SignupAnalytics } from '../entities/SignupAnalytics';
 import { User } from '../entities/User';
 import { getCountryFromIP, extractClientIP, getIPCacheStats } from '../utils/ipUtils';
+import { AdminExclusionService } from '../services/adminExclusion.service';
 
 const signupAnalyticsRepository = AppDataSource.getRepository(SignupAnalytics);
 
@@ -97,15 +98,12 @@ export const trackSignupClick = async (
     const { sessionId, type } = req.body;
 
     // Check if authenticated user is admin
+    // Check if authenticated user is admin
     if (req.user) {
-      const userRepository = AppDataSource.getRepository(User);
-      const userWithRole = await userRepository.findOne({
-        where: { id: req.user.userId },
-        relations: ['role']
-      });
+      const shouldTrack = await AdminExclusionService.shouldTrack(req.user.userId);
 
       // Don't track signup clicks from admin users
-      if (userWithRole?.role?.name !== 'player') {
+      if (!shouldTrack) {
         res.status(200).json({
           success: true,
           message: 'Signup click not tracked (admin user)'
