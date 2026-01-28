@@ -1462,6 +1462,7 @@ export const updateGame = async (
     // Handle position update if provided
     if (position !== undefined && position !== game.position) {
       const newPosition = parseInt(position);
+      const currentPosition = game.position;
 
       // Check if target position is occupied
       const gameAtTargetPosition = await queryRunner.manager.findOne(Game, {
@@ -1469,17 +1470,30 @@ export const updateGame = async (
       });
 
       if (gameAtTargetPosition) {
-        // Swap positions
-        const currentPosition = game.position;
+        // Swap positions: Move the game at target position to the current position
+        logger.info(
+          `Swapping position for game ${gameAtTargetPosition.id} from ${newPosition} to ${currentPosition}`
+        );
+        gameAtTargetPosition.position = currentPosition;
+        await queryRunner.manager.save(gameAtTargetPosition);
 
-        // Update positions
-        // Update position history for updated game
+        // Update position history for the swapped game
         await createOrUpdatePositionHistoryRecord(
-          game.id,
-          newPosition,
+          gameAtTargetPosition.id,
+          currentPosition,
           queryRunner
         );
       }
+
+      // Update the position of the current game
+      game.position = newPosition;
+
+      // Update position history for updated game
+      await createOrUpdatePositionHistoryRecord(
+        game.id,
+        newPosition,
+        queryRunner
+      );
     }
 
     // Update basic game properties
