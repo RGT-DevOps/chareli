@@ -1250,6 +1250,19 @@ export const updateGame = async (
       metadata, // Add metadata to destructured fields
     } = req.body;
 
+    // Check if user is trying to update status and has permission
+    if (status !== undefined) {
+      const userRole = req.user?.role;
+      if (
+        userRole !== RoleType.ADMIN &&
+        userRole !== RoleType.SUPERADMIN
+      ) {
+        return next(
+          ApiError.forbidden('Editors cannot change game status. Please contact an Admin.')
+        );
+      }
+    }
+
     // Decode HTML entities in file keys if provided
     const thumbnailFileKey = rawThumbnailFileKey?.replace(/&#x2F;/g, '/');
     const gameFileKey = rawGameFileKey?.replace(/&#x2F;/g, '/');
@@ -1449,6 +1462,7 @@ export const updateGame = async (
     // Handle position update if provided
     if (position !== undefined && position !== game.position) {
       const newPosition = parseInt(position);
+      const currentPosition = game.position;
 
       // Check if target position is occupied
       const gameAtTargetPosition = await queryRunner.manager.findOne(Game, {
@@ -1456,17 +1470,30 @@ export const updateGame = async (
       });
 
       if (gameAtTargetPosition) {
-        // Swap positions
-        const currentPosition = game.position;
+        // Swap positions: Move the game at target position to the current position
+        logger.info(
+          `Swapping position for game ${gameAtTargetPosition.id} from ${newPosition} to ${currentPosition}`
+        );
+        gameAtTargetPosition.position = currentPosition;
+        await queryRunner.manager.save(gameAtTargetPosition);
 
-        // Update positions
-        // Update position history for updated game
+        // Update position history for the swapped game
         await createOrUpdatePositionHistoryRecord(
-          game.id,
-          newPosition,
+          gameAtTargetPosition.id,
+          currentPosition,
           queryRunner
         );
       }
+
+      // Update the position of the current game
+      game.position = newPosition;
+
+      // Update position history for updated game
+      await createOrUpdatePositionHistoryRecord(
+        game.id,
+        newPosition,
+        queryRunner
+      );
     }
 
     // Update basic game properties
