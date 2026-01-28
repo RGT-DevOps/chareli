@@ -80,10 +80,11 @@ export function parseFAQ(html: string): FAQItem[] {
 /**
  * Generates HTML string from FAQ items
  */
-export function generateFAQHtml(items: FAQItem[], gameTitle: string): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function generateFAQHtml(items: FAQItem[], _gameTitle?: string): string {
   if (items.length === 0) return '';
 
-  let html = `<h3>${gameTitle} FAQ</h3>\n\n`;
+  let html = `<h3>[Game Name] FAQ</h3>\n\n`;
 
   items.forEach(item => {
     html += `<h4>Q: ${item.question}</h4>\n`;

@@ -16,12 +16,9 @@ import UppyUpload from '../../components/single/UppyUpload';
 import { X } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import logger from '../../utils/logger';
+import { FAQEditor } from '../../components/admin/FAQEditor';
 
-interface UploadedFile {
-  name: string;
-  publicUrl: string;
-  key: string;
-}
+// ... other imports
 
 interface FormValues {
   title: string;
@@ -33,8 +30,15 @@ interface FormValues {
   description: string;
   howToPlay: string;
   tags: string[];
+  faqOverride: string; // New field
   thumbnailFile?: UploadedFile;
   gameFile?: UploadedFile;
+}
+
+interface UploadedFile {
+  name: string;
+  publicUrl: string;
+  key: string;
 }
 
 const validationSchema = yupObject({
@@ -148,6 +152,7 @@ export default function EditGame() {
             ALLOWED_ATTR: ['href', 'class'],
           }) : undefined,
           tags: values.tags.length > 0 ? values.tags : undefined,
+          faqOverride: values.faqOverride,
         },
       };
 
@@ -210,6 +215,7 @@ export default function EditGame() {
     description: game.description || '',
     howToPlay: game.metadata?.howToPlay || '',
     tags: ensureArray(game.metadata?.tags),
+    faqOverride: game.metadata?.faqOverride || '',
   };
 
   const categoryOptions = categories?.map((cat) => ({
@@ -458,6 +464,18 @@ export default function EditGame() {
                 component="p"
                 className="text-sm text-red-500"
               />
+            </div>
+
+            {/* FAQ Editor */}
+            <div className="space-y-2">
+                <FAQEditor
+                    initialContent={values.faqOverride}
+                    gameTitle={values.title}
+                    categoryName={
+                        categoryOptions.find(c => c.value === values.categoryId)?.label || ''
+                    }
+                    onChange={(html) => setFieldValue('faqOverride', html)}
+                />
             </div>
 
             {/* Tags */}

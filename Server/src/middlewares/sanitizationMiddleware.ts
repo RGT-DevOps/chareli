@@ -15,6 +15,7 @@ const purify = createDOMPurify(window as unknown as Window);
 const HTML_ALLOWED_FIELDS = [
   'description',
   'howToPlay',
+  'faqOverride',
 ];
 
 /**
@@ -72,10 +73,10 @@ export const sanitizeInput = (req: Request, _res: Response, next: NextFunction) 
 const sanitizePlainString = (value: string): string => {
   // Remove script tags
   value = value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
+
   // Remove HTML tags
   value = value.replace(/<[^>]*>/g, '');
-  
+
   // Replace potentially dangerous characters
   value = value.replace(/[&<>"'`=\/]/g, (match) => {
     const replacements: Record<string, string> = {
@@ -90,7 +91,7 @@ const sanitizePlainString = (value: string): string => {
     };
     return replacements[match];
   });
-  
+
   return value;
 };
 
@@ -116,10 +117,10 @@ const sanitizeHtmlString = (value: string): string => {
  */
 const sanitizeObject = (obj: Record<string, any>, path: string = ''): Record<string, any> => {
   const result: Record<string, any> = {};
-  
+
   Object.keys(obj).forEach(key => {
     const currentPath = path ? `${path}.${key}` : key;
-    
+
     if (typeof obj[key] === 'string') {
       // Check if this field allows HTML
       if (isHtmlAllowedField(currentPath)) {
@@ -148,6 +149,6 @@ const sanitizeObject = (obj: Record<string, any>, path: string = ''): Record<str
       result[key] = obj[key];
     }
   });
-  
+
   return result;
 };

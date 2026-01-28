@@ -1,16 +1,11 @@
 import { IoEyeOutline } from "react-icons/io5";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { CiEdit } from "react-icons/ci";
-import { Plus, Trash2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { LazyImage } from "../../components/ui/LazyImage";
-import gameImg from "@/assets/gamesImg/1.svg";
 import { IoChevronBack } from "react-icons/io5";
 import { FiClock } from "react-icons/fi";
-import { LuGamepad2 } from "react-icons/lu";
-import { TbCalendarClock } from "react-icons/tb";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGameAnalyticsById } from "../../backend/analytics.service";
 import {
   useToggleGameStatus,
   useDeleteGame,
@@ -19,70 +14,32 @@ import {
 import { toast } from "sonner";
 import { DeleteConfirmationModal } from "../../components/modals/DeleteConfirmationModal";
 import { ToggleGameStatusModal } from "../../components/modals/ToggleGameStatusModal";
-import { useState, useEffect } from "react";
-
+import { useState } from "react";
 import { formatTime } from "../../utils/main";
 import { usePermissions } from "../../hooks/usePermissions";
 import { GameBreadcrumb } from "../../components/single/GameBreadcrumb";
 import { GameInfoSection } from "../../components/single/GameInfoSection";
-import DOMPurify from 'dompurify';
-import { RichTextEditor } from "../../components/ui/RichTextEditor";
-import { DEFAULT_FAQ_TEMPLATE, parseFAQ, generateFAQHtml, renderFAQ, type FAQItem } from "../../utils/faqTemplate";
-import { useUpdateGame } from "../../backend/games.service";
-import { Input } from "../../components/ui/input";
+import { LuGamepad2 } from "react-icons/lu";
+import { TbCalendarClock } from "react-icons/tb";
 
 export default function ViewGame() {
   const permissions = usePermissions();
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { data: game, isLoading } = useGameAnalyticsById(gameId || "");
-  const { data: gameData } = useGameById(gameId || ""); // Fetch full game data for likeCount
+  const { data: gameData, isLoading } = useGameById(gameId || '');
   const toggleStatus = useToggleGameStatus();
   const deleteGame = useDeleteGame();
 
-
+  // Safe access to game data
+  const game = (gameData as any)?.game || gameData;
+  const gameImg = game?.thumbnailFile?.s3Key || "/placeholder-game.png";
 
   const handleBack = () => {
     navigate("/admin/game-management");
   };
 
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
-
-  const [faqItems, setFaqItems] = useState<FAQItem[]>([]);
-  const [isSavingFAQ, setIsSavingFAQ] = useState(false);
-  const updateGame = useUpdateGame();
-
-  // Initialize FAQ items when game data is loaded
-  useEffect(() => {
-    // gameData comes from useGameById, which contains the full metadata
-    // Check if gameData is wrapped in .game or is the object itself
-    // Based on games.service.ts, useGameById returns the object directly or wrapped.
-    // Let's safe check both.
-    const gameSource = (gameData as any)?.game || gameData;
-
-    if (gameSource) {
-      // Get raw content (override or default template)
-      const cachedContent = gameSource?.metadata?.faqOverride || DEFAULT_FAQ_TEMPLATE;
-
-      // Interpolate placeholders
-      const renderedContent = renderFAQ(cachedContent, gameSource);
-
-      const parsed = parseFAQ(renderedContent);
-
-      if (parsed.length === 0) {
-        // Fallback
-        const defaultRendered = renderFAQ(DEFAULT_FAQ_TEMPLATE, gameSource);
-        setFaqItems(parseFAQ(defaultRendered));
-      } else {
-        setFaqItems(parsed);
-      }
-    }
-  }, [gameData, (gameData as any)?.game]);
-
-
-
 
   if (isLoading) {
     return (
@@ -91,7 +48,6 @@ export default function ViewGame() {
       </div>
     );
   }
-
 
   return (
     <div className="p-8 flex flex-col gap-6">
@@ -107,8 +63,8 @@ export default function ViewGame() {
         <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-6 flex flex-col items-center w-full md:w-1/3">
           <div className="w-28 h-28 rounded-full overflow-hidden mb-4 bg-gray-100">
             <LazyImage
-              src={(game as any)?.game.thumbnailFile?.url || gameImg}
-              alt={(game as any).game?.description || "Game"}
+              src={game?.thumbnailFile?.s3Key || gameImg}
+              alt={game?.description || "Game"}
               placeholder={gameImg}
               className="w-full h-full object-cover"
               loadingClassName="rounded-full"
@@ -118,24 +74,24 @@ export default function ViewGame() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center sm:justify-center w-full">
             <h2 className="text-sm sm:text-base font-normal font-dmmono text-[#121C2D] tracking-wider dark:text-white text-center truncate">
-              {(game as any).game?.title || "-"}
+              {game?.title || "-"}
             </h2>
             <div className="flex items-center gap-2 flex-shrink-0 mb-2">
               <span
                 className={`inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded font-dmmono text-xs sm:text-sm tracking-wider ${
-                  (game as any).game?.status === "active"
+                  game?.status === "active"
                     ? "bg-[#6A7282]/20 dark:bg-[#6A7282] text-[#121C2D] dark:text-white"
                     : "bg-[#CBD5E0] text-[#121C2D]"
                 }`}
               >
                 <span
                   className={`w-2 h-2 rounded inline-block ${
-                    (game as any).game?.status === "active"
+                    game?.status === "active"
                       ? "bg-[#419E6A]"
                       : "bg-red-500"
                   }`}
                 ></span>
-                {(game as any).game?.status === "active"
+                {game?.status === "active"
                   ? "Active"
                   : "Inactive"}
               </span>
@@ -157,7 +113,7 @@ export default function ViewGame() {
                   className="flex items-center justify-center gap-2 w-full bg-[#6A7282] text-white tracking-wider hover:bg-[#5A626F] cursor-pointer"
                   onClick={() => setShowDisableModal(true)}
                 >
-                  {(game as any).game?.status === "active" ? "Disable" : "Enable"}{" "}
+                  {game?.status === "active" ? "Disable" : "Enable"}{" "}
                   <IoEyeOutline />
                 </Button>
               </>
@@ -181,29 +137,29 @@ export default function ViewGame() {
         </div>
         {/* Right: Details */}
         <div className="flex-1 flex flex-col gap-6">
-          <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-6">
+          {/* <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-6">
             <h3 className="text-base font-normal mb-2 text-[#475568] tracking-wider dark:text-white">
               Overview
             </h3>
-            {(game as any).game?.description ? (
+            {game?.description ? (
               <div
                 className="prose prose-sm dark:prose-invert max-w-none
                   prose-headings:font-dmmono prose-p:font-worksans prose-li:font-worksans
                   prose-ul:list-disc prose-ol:list-decimal prose-ul:ml-6 prose-ol:ml-6
                   dark:prose-headings:text-white dark:prose-p:text-gray-300 dark:prose-li:text-gray-300"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((game as any).game.description) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(game.description) }}
               />
             ) : (
               <p className="text-[#475568] dark:text-white font-dmmono text-sm">-</p>
             )}
-          </div>
+          </div> */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
               <h3 className="font-normal mb-1 text-[#475568] tracking-wider text-base dark:text-white">
                 Game Category
               </h3>
               <p className=" text-[#475568] dark:text-white  font-dmmono text-sm tracking-wider">
-                {(game as any).game?.category?.name || "-"}
+                {game?.category?.name || "-"}
               </p>
             </div>
             <div className="bg-[#F1F5F9] dark:bg-[#121C2D] rounded-2xl p-4 flex-1">
@@ -211,8 +167,8 @@ export default function ViewGame() {
                 Position
               </h3>
               <p className="text-[#475568] dark:text-white font-dmmono text-sm tracking-wider">
-                {(game as any).game?.position
-                  ? `#${(game as any).game.position}`
+                {game?.position
+                  ? `#${game.position}`
                   : "Not assigned"}
               </p>
             </div>
@@ -221,7 +177,7 @@ export default function ViewGame() {
                 Gameplay URL
               </h3>
               {(() => {
-                const slug = (game as any).game?.slug;
+                const slug = game?.slug;
                 // Construct the public gameplay URL
                 const gameplayUrl = slug
                   ? `${window.location.origin}/gameplay/${slug}`
@@ -315,154 +271,18 @@ export default function ViewGame() {
           {/* Breadcrumb */}
           <div className="mb-8">
             <GameBreadcrumb
-              categoryName={(game as any)?.game?.category?.name}
-              categoryId={(game as any)?.game?.category?.id}
-              gameTitle={(game as any)?.game?.title}
+              categoryName={game?.category?.name}
+              categoryId={game?.category?.id}
+              gameTitle={game?.title}
             />
           </div>
 
           {/* Game Info Section */}
           <GameInfoSection
-            game={(game as any)?.game}
+            game={game}
             likeCount={gameData?.likeCount || 0}
             hideEditButton={true}
           />
-        </div>
-      </div>
-
-      {/* FAQ Customization Section - COMMENTED OUT FOR NOW */}
-      {/* User requested to use hardcoded default template only */}
-      {/* To re-enable in future: uncomment this section and the related state/imports */}
-      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white font-dmmono">
-              FAQ Section
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Manage Frequently Asked Questions
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-             {permissions.isSuperAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                   setFaqItems(prev => [
-                    ...prev,
-                    { question: 'New Question', answer: '<p>New Answer</p>' }
-                  ]);
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Question
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#0F1221] rounded-lg p-6">
-            <div className="space-y-6">
-              {faqItems.map((item, index) => (
-                <div key={index} className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                  <div className="flex justify-between items-start gap-4 mb-4">
-                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Question
-                        </label>
-                        <Input
-                          value={item.question}
-                          onChange={(e) => {
-                            const newItems = [...faqItems];
-                            newItems[index].question = e.target.value;
-                            setFaqItems(newItems);
-                          }}
-                          disabled={!permissions.isSuperAdmin}
-                          className="font-semibold"
-                          placeholder="Enter question text"
-                        />
-                     </div>
-                     {permissions.isSuperAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                             const newItems = faqItems.filter((_, i) => i !== index);
-                             setFaqItems(newItems);
-                          }}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </Button>
-                     )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Answer
-                    </label>
-                    <RichTextEditor
-                      content={item.answer}
-                      onChange={(html) => {
-                         const newItems = [...faqItems];
-                         newItems[index].answer = html;
-                         setFaqItems(newItems);
-                      }}
-                      placeholder="Enter answer text..."
-                      disabled={!permissions.canWrite} // SuperAdmin, Admin, Editor can write
-                    />
-                  </div>
-                </div>
-              ))}
-
-              {faqItems.length === 0 && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No FAQ items found.
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t dark:border-gray-700">
-                <Button
-                  onClick={async () => {
-                    try {
-                      setIsSavingFAQ(true);
-                      // Ensure we are saving valid HTML
-                      const html = generateFAQHtml(faqItems, (game as any)?.game?.title || 'Game');
-
-                      if (!html) {
-                        return;
-                      }
-
-                      const gameSource = (gameData as any)?.game || gameData;
-                      const updateData = {
-                        id: gameId || '',
-                        data: {
-                          metadata: {
-                            ...gameSource?.metadata,
-                            faqOverride: html,
-                          },
-                        },
-                      };
-
-                      await updateGame.mutateAsync(updateData);
-                      toast.success("FAQ updated successfully");
-
-                      // Optimistically update local state if needed, though invalidation should handle it
-                    } catch (error) {
-                      console.error("Failed to save FAQ:", error);
-                      toast.error("Failed to update FAQ");
-                    } finally {
-                      setIsSavingFAQ(false);
-                    }
-                  }}
-                  disabled={isSavingFAQ || !permissions.canWrite}
-                  className="bg-[#6A7282] hover:bg-[#5A626F] text-white"
-                >
-                  {isSavingFAQ ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </div>
         </div>
       </div>
 
@@ -470,18 +290,18 @@ export default function ViewGame() {
       <ToggleGameStatusModal
         open={showDisableModal}
         onOpenChange={setShowDisableModal}
-        gameStatus={(game as any)?.game?.status || "disabled"}
-        gameTitle={(game as any)?.game?.title || "this game"}
+        gameStatus={game?.status || "disabled"}
+        gameTitle={game?.title || "this game"}
         isToggling={toggleStatus.isPending}
         onConfirm={async () => {
           try {
             await toggleStatus.mutateAsync({
               gameId: gameId || "",
-              currentStatus: (game as any)?.game?.status || "disabled",
+              currentStatus: game?.status || "disabled",
             });
             toast.success(
               `Game ${
-                (game as any)?.game?.status === "active"
+                game?.status === "active"
                   ? "disabled"
                   : "enabled"
               } successfully`
