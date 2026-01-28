@@ -260,7 +260,7 @@ export function GameInfoSection({ game, likeCount, hideEditButton = false }: Gam
                 const override = metadata?.faqOverride;
                 // Use override ONLY if it exists AND parses to valid items
                 if (override && parseFAQ(override).length > 0) {
-                  return override;
+                  return renderFAQ(override, game);
                 }
                 // Otherwise use default
                 return renderFAQ(DEFAULT_FAQ_TEMPLATE, game);

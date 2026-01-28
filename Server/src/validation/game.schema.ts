@@ -26,6 +26,9 @@ export const createGameSchema = yup.object({
     tags: yup.array().of(yup.string().trim()).nullable(),
     seoKeywords: yup.string().trim().nullable(),
     schemaVersion: yup.string().trim().nullable(),
+    faqOverride: yup.string().nullable(), // Allow HTML content
+    platform: yup.array().of(yup.string().trim()).nullable(), // Support multi-platform
+    releaseDate: yup.string().nullable(),
   }).nullable(),
 });
 
@@ -57,6 +60,9 @@ export const updateGameSchema = yup
       tags: yup.array().of(yup.string().trim()).nullable(),
       seoKeywords: yup.string().trim().nullable(),
       schemaVersion: yup.string().trim().nullable(),
+      faqOverride: yup.string().nullable(), // Allow HTML content
+      platform: yup.array().of(yup.string().trim()).nullable(), // Support multi-platform
+      releaseDate: yup.string().nullable(),
     }).nullable(),
   })
   .test(

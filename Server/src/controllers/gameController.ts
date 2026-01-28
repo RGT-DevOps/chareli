@@ -717,6 +717,8 @@ export const getGameById = async (
       relations: ['category', 'thumbnailFile', 'gameFile', 'createdBy'],
     });
 
+
+
     if (!game) {
       return next(
         ApiError.notFound(`Game with ${isUUID ? 'id' : 'slug'} ${id} not found`)
@@ -1458,27 +1460,7 @@ export const updateGame = async (
         const currentPosition = game.position;
 
         // Update positions
-        game.position = newPosition;
-        gameAtTargetPosition.position = currentPosition;
-
-        await queryRunner.manager.save(gameAtTargetPosition);
-
-        // Create or update position history for both games
-        await createOrUpdatePositionHistoryRecord(
-          game.id,
-          newPosition,
-          queryRunner
-        );
-        await createOrUpdatePositionHistoryRecord(
-          gameAtTargetPosition.id,
-          currentPosition,
-          queryRunner
-        );
-      } else {
-        // Position is free, just move there
-        game.position = newPosition;
-
-        // Create or update position history
+        // Update position history for updated game
         await createOrUpdatePositionHistoryRecord(
           game.id,
           newPosition,
@@ -1499,24 +1481,28 @@ export const updateGame = async (
 
     // Update metadata if provided
     if (metadata !== undefined) {
+      // Parse metadata if it's a string (common with multipart/form-data)
+      const parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+
       // Ensure tags is always an array (not an object)
-      if (metadata.tags) {
-        if (Array.isArray(metadata.tags)) {
+      if (parsedMetadata.tags) {
+        if (Array.isArray(parsedMetadata.tags)) {
           // Already an array, ensure it's a proper array (not object with numeric keys)
-          metadata.tags = [...metadata.tags];
-        } else if (typeof metadata.tags === 'object' && metadata.tags !== null) {
+          parsedMetadata.tags = [...parsedMetadata.tags];
+        } else if (typeof parsedMetadata.tags === 'object' && parsedMetadata.tags !== null) {
           // Convert object with numeric keys back to array
-          metadata.tags = Object.values(metadata.tags).filter((v): v is string => typeof v === 'string');
+          parsedMetadata.tags = Object.values(parsedMetadata.tags).filter((v): v is string => typeof v === 'string');
         } else {
           // Invalid format, set to empty array
-          metadata.tags = [];
+          parsedMetadata.tags = [];
         }
       }
 
       // Merge with existing metadata to preserve other fields
+      // This will correctly merge faqOverride from the new metadata
       game.metadata = {
         ...game.metadata,
-        ...metadata,
+        ...parsedMetadata,
       };
     }
 

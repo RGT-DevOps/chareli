@@ -112,7 +112,7 @@ app.get('/robots.txt', (req, res) => {
 import axios from 'axios';
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const sitemapUrl = 'https://cdn.arcadesbox.org/cdn/sitemap.xml';
+    const sitemapUrl = `${config.jsonCdn.baseUrl}/sitemap.xml`;
     const response = await axios.get(sitemapUrl, {
       responseType: 'stream',
       timeout: 5000, // 5 second timeout
