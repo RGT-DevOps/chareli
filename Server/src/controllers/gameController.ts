@@ -29,12 +29,15 @@ import { multipartUploadHelpers } from '../utils/multipartUpload';
 import { calculateLikeCount } from '../utils/gameUtils';
 // import { processImage } from '../services/file.service';
 
+import { GameProposal, GameProposalStatus, GameProposalType } from '../entities/GameProposal';
+
 const gameRepository = AppDataSource.getRepository(Game);
 const gamePositionHistoryRepository =
   AppDataSource.getRepository(GamePositionHistory);
 const categoryRepository = AppDataSource.getRepository(Category);
 const fileRepository = AppDataSource.getRepository(File);
 const gameLikeRepository = AppDataSource.getRepository(GameLike);
+const gameProposalRepository = AppDataSource.getRepository(GameProposal);
 
 // Helper function to get the maximum position
 const getMaxPosition = async (): Promise<number> => {
@@ -1039,6 +1042,55 @@ export const createGame = async (
     });
 
     await queryRunner.manager.save(thumbnailFileRecord);
+
+    // [EDITOR FLOW] Intercept and create proposal instead of Game
+    if (req.user?.role === RoleType.EDITOR) {
+      logger.info('Editor user detected, creating Game Proposal...');
+
+      // Handle Game File Persistence (Move key to permanent storage to ensure it persists until approval)
+      let permanentGameFileKey = gameFileKey;
+      if (gameFileKey) {
+        // Move to a 'proposals' folder or similar to keep it safe
+        permanentGameFileKey = await moveFileToPermanentStorage(
+          gameFileKey,
+          'proposals/game-files'
+        );
+      }
+
+      const proposal = gameProposalRepository.create({
+        type: GameProposalType.CREATE,
+        editorId: req.user.userId,
+        status: GameProposalStatus.PENDING,
+        proposedData: {
+          title,
+          description,
+          categoryId: finalCategoryId,
+          status: GameStatus.DISABLED, // Default for new proposals
+          config,
+          position, // Pass requested position, Admin/System will reconcile on approve
+          thumbnailFileId: thumbnailFileRecord.id,
+          gameFileKey: permanentGameFileKey,
+          metadata: metadata || undefined,
+        }
+      });
+
+      await queryRunner.manager.save(proposal);
+      await queryRunner.commitTransaction();
+
+      // We still queue the thumbnail image processing since the file record exists
+       await queueService.addImageProcessingJob({
+        fileId: thumbnailFileRecord.id,
+        s3Key: permanentThumbnailKey,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Game creation submitted for review',
+        data: proposal
+      });
+      return;
+    }
+
     // Assign position for the new game
     logger.info('Assigning position for new game...');
     const assignedPosition = await assignPositionForNewGame(
@@ -1363,6 +1415,71 @@ export const updateGame = async (
         fileId: thumbnailFileRecord.id,
         s3Key: thumbnailUploadResult.key,
       });
+    }
+
+    // [EDITOR FLOW] Intercept and create proposal instead of updating Game
+    if (req.user?.role === RoleType.EDITOR) {
+       logger.info('Editor user detected, creating Update Proposal...');
+
+       // Handle Game File Persistence if provided
+       let permanentGameFileKey = undefined;
+       if (gameFileKey) {
+          permanentGameFileKey = await moveFileToPermanentStorage(
+            gameFileKey,
+            'proposals/game-files'
+          );
+       } else if (files?.gameFile && files.gameFile[0]) {
+          // If using multer upload for game file (old way), we're in a bit of a bind since we don't have a key to move.
+          // We'd need to upload it. But let's assume Editors use the new flow (Chunk/Presigned) primarily?
+          // Or just handle it:
+          const gameFile = files.gameFile[0];
+          const uploadResult = await storageService.uploadFile(
+             gameFile.buffer,
+             gameFile.originalname,
+             gameFile.mimetype,
+             'proposals/game-files'
+          );
+          permanentGameFileKey = uploadResult.key;
+       }
+
+       const proposedData: any = {};
+       if (title) proposedData.title = title;
+       if (description) proposedData.description = description;
+       if (categoryId) proposedData.categoryId = categoryId;
+       // Status change blocked for editors earlier, but if it wasn't, we'd capture it.
+       if (config) proposedData.config = config;
+       if (position !== undefined) proposedData.position = parseInt(position);
+       if (metadata) proposedData.metadata = metadata;
+
+       // Capture File Changes
+       // Note: game.thumbnailFileId was updated above if a new file was processed.
+       // We should include the NEW thumbnailFileId if it changed.
+       // How do we know? We can check if `thumbnailFileKey` or `files.thumbnailFile` was present.
+       if (thumbnailFileKey || (files?.thumbnailFile && files.thumbnailFile[0])) {
+           proposedData.thumbnailFileId = game.thumbnailFileId;
+       }
+
+       if (permanentGameFileKey) {
+           proposedData.gameFileKey = permanentGameFileKey;
+       }
+
+       const proposal = gameProposalRepository.create({
+         type: GameProposalType.UPDATE,
+         gameId: game.id,
+         editorId: req.user.userId,
+         status: GameProposalStatus.PENDING,
+         proposedData
+       });
+
+       await queryRunner.manager.save(proposal);
+       await queryRunner.commitTransaction();
+
+       res.status(200).json({
+         success: true,
+         message: 'Game update submitted for review',
+         data: proposal
+       });
+       return;
     }
 
     // Handle game file upload - New presigned URL approach
