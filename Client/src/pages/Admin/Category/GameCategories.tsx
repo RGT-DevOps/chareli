@@ -21,7 +21,9 @@ export default function GameCategories() {
     null
   );
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const { data: categories, isLoading: loadingCategories } = useCategories();
+  const { data: categories, isLoading: loadingCategories } = useCategories({
+    sortBy: 'averageSessions',
+  });
   const { mutateAsync: deleteCategory, isPending: issDeletingCategory } =
     useDeleteCategory();
   // const { data: games, isLoading: loadingGames } = useGames();
@@ -38,6 +40,13 @@ export default function GameCategories() {
     } catch (error: any) {
       console.log(error);
     }
+  };
+
+  const getRankMedal = (index: number) => {
+    if (index === 0) return '🥇'; // Gold
+    if (index === 1) return '🥈'; // Silver
+    if (index === 2) return '🥉'; // Bronze
+    return `#${index + 1}`;
   };
 
   return (
@@ -68,14 +77,18 @@ export default function GameCategories() {
             </p>
           </div>
         ) : (
-          categories.map((cat) => (
+          categories.map((cat, index) => (
             <div
               key={cat.name}
               className="bg-[#F1F5F9] rounded-2xl p-6 shadow flex flex-col gap-2 relative min-h-[120px] dark:bg-[#121C2D] cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => navigate(`/admin/categories/${cat.id}`)}
+              title={`Rank #${index + 1} - Avg Sessions: ${cat.metrics?.averageSessions?.toFixed(1) || 0}`}
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
+                  <span className="text-2xl" title="Category Rank">
+                    {getRankMedal(index)}
+                  </span>
                   <h2 className="text-xl tracking-wide font-medium font-dmmono text-[#232B3B] dark:text-white">
                     {cat.name}
                   </h2>
@@ -119,19 +132,30 @@ export default function GameCategories() {
               </p>
 
               <div className="flex flex-col gap-2 mt-2">
-                <span className="text-[#6A7282] font-bold text-sm shadow-none tracking-wider dark:text-gray-300">
-                  {cat.gameCount || 0} games
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#6A7282] font-bold text-sm shadow-none tracking-wider dark:text-gray-300">
+                    {cat.gameCount || (cat.metrics?.gameCount) || 0} games
+                  </span>
+                  <span className="text-[#6A7282] font-bold text-sm shadow-none tracking-wider dark:text-gray-300">
+                    Avg: {cat.metrics?.averageSessions?.toFixed(1) || 0} sessions
+                  </span>
+                </div>
 
                 {/* Top 3 Games Section */}
                 {cat.topGames && cat.topGames.length > 0 && (
                   <div className="mt-1 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Top 3 Games (Sessions)</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
+                      Top 3 Games (Sessions)
+                    </p>
                     <div className="space-y-1">
                       {cat.topGames.map((game: any, index: number) => (
-                        <div key={game.id} className="flex items-center justify-between text-xs">
+                        <div
+                          key={game.id}
+                          className="flex items-center justify-between text-xs"
+                        >
                           <span className="truncate max-w-[150px] text-gray-700 dark:text-gray-300">
-                            {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'} {game.title}
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}{' '}
+                            {game.title}
                           </span>
                           <span className="text-gray-500 font-mono">
                             {game.sessionCount}
