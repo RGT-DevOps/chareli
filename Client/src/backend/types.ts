@@ -20,6 +20,11 @@ export interface Category {
     thumbnailUrl?: string;
     sessionCount: number;
   }[];
+  metrics?: {
+    gameCount: number;
+    sessionCount: number;
+    averageSessions: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

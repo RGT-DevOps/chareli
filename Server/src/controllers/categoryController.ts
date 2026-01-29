@@ -7,6 +7,7 @@ import { File } from '../entities/Files';
 import { storageService } from '../services/storage.service';
 import { cacheService } from '../services/cache.service';
 import { cacheInvalidationService } from '../services/cache-invalidation.service';
+import { AdminExclusionService } from '../services/adminExclusion.service';
 import logger from '../utils/logger';
 
 // Extend File type to include url
@@ -95,6 +96,130 @@ export const getAllCategories = async (
       });
     }
 
+    const { sortBy } = req.query;
+
+    if (sortBy === 'averageSessions') {
+      // For average sessions sorting, we need to calculate metrics for ALL categories first
+      const allCategories = await queryBuilder.getMany();
+
+      // Get aggregated stats for all categories efficiently
+      // Use AdminExclusionService to filter out non-tracked roles
+      const nonTrackedRoles = AdminExclusionService.getNonTrackedRoles();
+
+      const statsQuery = `
+        SELECT
+          g."categoryId",
+          COUNT(DISTINCT g.id) as game_count,
+          COUNT(DISTINCT a.id) as session_count
+        FROM games g
+        LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL AND a.duration >= 30
+        LEFT JOIN users u ON a."user_id" = u.id
+        LEFT JOIN roles r ON u."roleId" = r.id
+        WHERE (r.name IS NULL OR NOT (r.name = ANY($1)) OR a."user_id" IS NULL)
+        GROUP BY g."categoryId"
+      `;
+
+      const stats = await AppDataSource.query(statsQuery, [nonTrackedRoles]);
+
+      const statsMap = new Map<string, { gameCount: number; sessionCount: number }>(
+        stats.map((s: any) => [
+          s.categoryId,
+          {
+            gameCount: parseInt(s.game_count) || 0,
+            sessionCount: parseInt(s.session_count) || 0,
+          },
+        ])
+      );
+
+      // Attach metrics and sort
+      const categoriesWithMetrics = allCategories.map((cat) => {
+        const stat = statsMap.get(cat.id) || {
+          gameCount: 0,
+          sessionCount: 0,
+        };
+        const avgSessions =
+          stat.gameCount > 0 ? stat.sessionCount / stat.gameCount : 0;
+        return {
+          ...cat,
+          metrics: {
+            ...stat,
+            averageSessions: avgSessions,
+          },
+        };
+      });
+
+      // Sort by average sessions descending
+      categoriesWithMetrics.sort((a, b) => {
+        return b.metrics.averageSessions - a.metrics.averageSessions;
+      });
+
+      // Apply pagination manually
+      const total = categoriesWithMetrics.length;
+      const startIndex = (pageNumber - 1) * limitNumber;
+      const pagedCategories = categoriesWithMetrics.slice(
+        startIndex,
+        startIndex + limitNumber
+      );
+
+      // Now populate the detailed "top games" for the current page only
+      const finalData = await Promise.all(
+        pagedCategories.map(async (catWithMetrics) => {
+        const nonTrackedRoles = AdminExclusionService.getNonTrackedRoles();
+          // Reuse existing logic to get top games, but we already have basic metrics
+          const topGamesQuery = `
+            SELECT
+              g.id,
+              g.title,
+              f."s3Key" as "thumbnailKey",
+              COUNT(DISTINCT a.id) as total_sessions
+            FROM games g
+            LEFT JOIN files f ON g."thumbnailFileId" = f.id
+            LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL AND a.duration >= 30
+            LEFT JOIN users u ON a."user_id" = u.id
+            LEFT JOIN roles r ON u."roleId" = r.id
+            WHERE g."categoryId" = $1
+            AND (r.name IS NULL OR NOT (r.name = ANY($2)) OR a."user_id" IS NULL)
+            GROUP BY g.id, g.title, f."s3Key"
+            ORDER BY total_sessions DESC
+            LIMIT 3
+          `;
+
+          const topGamesResult = await AppDataSource.query(topGamesQuery, [
+            catWithMetrics.id,
+            nonTrackedRoles
+          ]);
+
+          const topGames = topGamesResult.map((game: any) => ({
+            id: game.id,
+            title: game.title,
+            thumbnailUrl: game.thumbnailKey
+              ? storageService.getPublicUrl(game.thumbnailKey)
+              : null,
+            sessionCount: parseInt(game.total_sessions) || 0,
+          }));
+
+          return {
+            ...catWithMetrics,
+            gameCount: catWithMetrics.metrics.gameCount, // Ensure backward compatibility if used
+            topGames,
+            // metrics is already attached
+          };
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        count: finalData.length,
+        total,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(total / limitNumber),
+        data: finalData,
+      });
+      return;
+    }
+
+    // Default behavior (Normal sorting)
     // Get total count for pagination
     const total = await queryBuilder.getCount();
 
@@ -115,7 +240,7 @@ export const getAllCategories = async (
         });
 
         // Get top 3 games by sessions (filtered by valid analytics)
-        // Similar logic to getCategoryById but limited to top 3
+        const nonTrackedRoles = AdminExclusionService.getNonTrackedRoles();
         const topGamesQuery = `
           SELECT
             g.id,
@@ -128,7 +253,7 @@ export const getAllCategories = async (
           LEFT JOIN users u ON a."user_id" = u.id
           LEFT JOIN roles r ON u."roleId" = r.id
           WHERE g."categoryId" = $1
-          AND (r.name = 'player' OR a."user_id" IS NULL)
+          AND (r.name IS NULL OR NOT (r.name = ANY($2)) OR a."user_id" IS NULL)
           GROUP BY g.id, g.title, f."s3Key"
           ORDER BY total_sessions DESC
           LIMIT 3
@@ -136,6 +261,7 @@ export const getAllCategories = async (
 
         const topGamesResult = await AppDataSource.query(topGamesQuery, [
           category.id,
+          nonTrackedRoles
         ]);
 
         const topGames = topGamesResult.map((game: any) => ({
@@ -147,10 +273,30 @@ export const getAllCategories = async (
           sessionCount: parseInt(game.total_sessions) || 0,
         }));
 
+        // Also calculate average sessions for default view for consistency if needed,
+        // but to save perf we can skip or do a lighter version.
+        // For now, let's just return what was there plus initialized metrics structure
+        const statsQuery = `
+           SELECT COUNT(DISTINCT a.id) as session_count
+           FROM games g
+           LEFT JOIN internal.analytics a ON g.id = a."game_id" AND a."endTime" IS NOT NULL AND a.duration >= 30
+           WHERE g."categoryId" = $1
+        `;
+        // Optimization: This N+1 query might be slighly slow if many categories, but existing code already does N+1 for top games.
+        // Let's just calculate it to be consistent with the type.
+        const statsResult = await AppDataSource.query(statsQuery, [category.id]);
+        const totalSessions = parseInt(statsResult[0]?.session_count) || 0;
+        const averageSessions = gameCount > 0 ? totalSessions / gameCount : 0;
+
         return {
           ...category,
           gameCount,
           topGames,
+          metrics: {
+             gameCount,
+             sessionCount: totalSessions,
+             averageSessions
+          }
         };
       })
     );
@@ -177,8 +323,7 @@ export const getAllCategories = async (
       logger.debug(`Cached categories list page ${pageNumber}`);
     }
 
-    res.status(200).json(responseData);
-  } catch (error) {
+    res.status(200).json(responseData);  } catch (error) {
     next(error);
   }
 };
@@ -234,6 +379,7 @@ export const getCategoryById = async (
     }
 
     // Get analytics data for all games in this category
+    const nonTrackedRoles = AdminExclusionService.getNonTrackedRoles();
     const analyticsQuery = `
       SELECT
         g.id as game_id,
@@ -246,12 +392,15 @@ export const getCategoryById = async (
       LEFT JOIN users u ON a."user_id" = u.id
       LEFT JOIN roles r ON u."roleId" = r.id
       WHERE g."categoryId" = $1
-      AND (r.name = 'player' OR a."user_id" IS NULL)
+      AND (r.name IS NULL OR NOT (r.name = ANY($2)) OR a."user_id" IS NULL)
       GROUP BY g.id, g.title
       ORDER BY total_sessions DESC, total_time_played DESC
     `;
 
-    const analyticsResults = await AppDataSource.query(analyticsQuery, [id]);
+    const analyticsResults = await AppDataSource.query(analyticsQuery, [
+      id,
+      nonTrackedRoles,
+    ]);
 
     // Create a map for quick lookup of analytics data
     const analyticsMap = new Map();
