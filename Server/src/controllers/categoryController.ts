@@ -72,8 +72,11 @@ export const getAllCategories = async (
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
 
+    const { sortBy } = req.query;
+
     // Try cache first (categories change infrequently)
-    if (cacheService.isEnabled()) {
+    // KPI: Skip cache if sorting is requested to ensure fresh ranking
+    if (cacheService.isEnabled() && !sortBy) {
       const cached = await cacheService.getCategoriesList(
         pageNumber,
         limitNumber,
@@ -95,8 +98,6 @@ export const getAllCategories = async (
         search: `%${search}%`,
       });
     }
-
-    const { sortBy } = req.query;
 
     if (sortBy === 'averageSessions') {
       // For average sessions sorting, we need to calculate metrics for ALL categories first
