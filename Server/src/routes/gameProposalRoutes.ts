@@ -3,7 +3,11 @@ import {
   getProposals,
   getMyProposals,
   approveProposal,
-  declineProposal
+  declineProposal,
+  deleteProposal,
+  getProposalById,
+  updateProposal,
+  dismissFeedback
 } from '../controllers/gameProposalController';
 import {
   authenticate,
@@ -22,5 +26,12 @@ router.post('/:id/decline', isAdmin, declineProposal);
 
 // Editor Routes
 router.get('/my', isEditor, getMyProposals);
+router.post('/:id/dismiss', isEditor, dismissFeedback);
+
+// Shared/Common Routes
+router.get('/:id', getProposalById);
+router.put('/:id', updateProposal);
+router.delete('/:id', deleteProposal);
 
 export default router;
+

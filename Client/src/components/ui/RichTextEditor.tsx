@@ -36,6 +36,7 @@ export function RichTextEditor({
         bulletList: false, // Disable default to use custom
         orderedList: false, // Disable default to use custom
         listItem: false, // Disable default to use custom
+        codeBlock: false, // Often causes issues if not needed or duplicated
       }),
       BulletList.configure({
         HTMLAttributes: {
