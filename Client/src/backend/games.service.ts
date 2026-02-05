@@ -93,6 +93,7 @@ export const useGames = (params?: {
 
       // Note: backendService uses axios interceptor that already unwraps response.data
       // So 'response' here IS the actual data, not the axios response wrapper
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const responseData = await backendService.get(BackendRoute.GAMES, { params }) as any;
 
 
@@ -232,6 +233,8 @@ export const useCreateGame = () => {
       });
       // Invalidate category queries to update category pages when new game is added
       queryClient.invalidateQueries({ queryKey: [BackendRoute.CATEGORIES] });
+      // Invalidate my proposals in case this was an editor proposal
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.MY_PROPOSALS] });
     },
   });
 };
@@ -267,6 +270,8 @@ export const useUpdateGame = () => {
       });
       // Invalidate category queries to update category pages when game category changes
       queryClient.invalidateQueries({ queryKey: [BackendRoute.CATEGORIES] });
+      // Invalidate my proposals in case this was an editor proposal
+      queryClient.invalidateQueries({ queryKey: [BackendRoute.MY_PROPOSALS] });
     },
   });
 };

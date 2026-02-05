@@ -34,6 +34,7 @@ export const BackendRoute = {
   APPROVE_PROPOSAL: '/api/game-proposals/:id/approve',
   DECLINE_PROPOSAL: '/api/game-proposals/:id/decline',
   DISMISS_PROPOSAL: '/api/game-proposals/:id/dismiss',
+  REVISE_PROPOSAL: '/api/game-proposals/:id/revise',
 
   // Game Position History Routes
   GAME_POSITION_HISTORY: '/api/game-position-history',
