@@ -30,8 +30,16 @@ export const getProposals = async (req: Request, res: Response, next: NextFuncti
 
     const proposals = await proposalRepository.find({
       where,
-      relations: ['editor', 'game', 'reviewer'],
+      relations: ['editor', 'game', 'reviewer', 'game.thumbnailFile'],
       order: { createdAt: 'DESC' }
+    });
+
+    // Transform URLs for potential nested game thumbnail
+    proposals.forEach(proposal => {
+        if (proposal.game?.thumbnailFile) {
+             const s3Key = proposal.game.thumbnailFile.s3Key;
+             proposal.game.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
+        }
     });
 
     res.status(200).json({ success: true, data: proposals });
@@ -48,8 +56,16 @@ export const getMyProposals = async (req: Request, res: Response, next: NextFunc
     const userId = req.user?.userId;
     const proposals = await proposalRepository.find({
       where: { editorId: userId },
-      relations: ['game'],
+      relations: ['game', 'game.thumbnailFile'],
       order: { createdAt: 'DESC' }
+    });
+
+    // Transform URLs for potential nested game thumbnail
+    proposals.forEach(proposal => {
+        if (proposal.game?.thumbnailFile) {
+             const s3Key = proposal.game.thumbnailFile.s3Key;
+             proposal.game.thumbnailFile.s3Key = storageService.getPublicUrl(s3Key);
+        }
     });
 
     res.status(200).json({ success: true, data: proposals });
@@ -176,6 +192,165 @@ export const declineProposal = async (req: Request, res: Response, next: NextFun
     await proposalRepository.save(proposal);
 
     res.status(200).json({ success: true, message: 'Proposal declined' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete a proposal
+ * Editor: Can delete own PENDING/DECLINED proposals
+ * Admin: Can delete any proposal
+ */
+export const deleteProposal = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+
+    // Find proposal
+    const proposal = await proposalRepository.findOne({ where: { id } });
+
+    if (!proposal) {
+      return next(ApiError.notFound('Proposal not found'));
+    }
+
+    // Check permissions
+    const isOwner = proposal.editorId === userId;
+    const isAdminUser = userRole === 'admin' || userRole === 'superadmin';
+
+    if (!isOwner && !isAdminUser) {
+      return next(ApiError.forbidden('You do not have permission to delete this proposal'));
+    }
+
+    // Check status constraints for cancellation/deletion
+    if (proposal.status === GameProposalStatus.APPROVED && !isAdminUser) {
+      return next(ApiError.badRequest('Cannot delete an approved proposal'));
+    }
+
+    await proposalRepository.remove(proposal);
+
+    res.status(200).json({ success: true, message: 'Proposal deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get proposal by ID
+ */
+export const getProposalById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const proposal = await proposalRepository.findOne({
+      where: { id },
+      relations: ['game', 'game.category', 'game.thumbnailFile', 'game.gameFile']
+    });
+
+    if (!proposal) {
+      return next(ApiError.notFound('Proposal not found'));
+    }
+
+    // Check permissions (Owner or Admin)
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+    const isOwner = proposal.editorId === userId;
+    const isAdminUser = userRole === 'admin' || userRole === 'superadmin' || userRole === 'viewer'; // Viewers need read access
+
+    if (!isOwner && !isAdminUser) {
+      return next(ApiError.forbidden('You do not have permission to view this proposal'));
+    }
+
+    // Transform URLs for nested game files (Current Game Data)
+    if (proposal.game) {
+        if (proposal.game.thumbnailFile) {
+             proposal.game.thumbnailFile.s3Key = storageService.getPublicUrl(proposal.game.thumbnailFile.s3Key);
+             // Ensure 'url' property is also populated if frontend uses it
+             (proposal.game.thumbnailFile as any).url = proposal.game.thumbnailFile.s3Key;
+        }
+        if (proposal.game.gameFile) {
+             proposal.game.gameFile.s3Key = storageService.getPublicUrl(proposal.game.gameFile.s3Key);
+             (proposal.game.gameFile as any).url = proposal.game.gameFile.s3Key;
+        }
+    }
+
+    res.status(200).json({ success: true, data: proposal });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update a proposal (Editor only, for PENDING proposals)
+ */
+export const updateProposal = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { proposedData } = req.body;
+    const userId = req.user?.userId;
+
+    const proposal = await proposalRepository.findOne({ where: { id } });
+
+    if (!proposal) {
+      return next(ApiError.notFound('Proposal not found'));
+    }
+
+    if (proposal.editorId !== userId) {
+      return next(ApiError.forbidden('You can only update your own proposals'));
+    }
+
+    if (proposal.status !== GameProposalStatus.PENDING) {
+      return next(ApiError.badRequest('Cannot update a proposal that is not pending'));
+    }
+
+    // Update data
+    proposal.proposedData = {
+      ...proposal.proposedData,
+      ...proposedData
+    };
+
+    // If file keys are provided, we accept them directly as valid URLs
+    // (assuming frontend has handled upload/presigning)
+
+    await proposalRepository.save(proposal);
+
+    res.status(200).json({ success: true, data: proposal, message: 'Proposal updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Dismiss feedback on a declined proposal (Editor only)
+ * This marks the feedback as acknowledged so it no longer appears in the counter
+ */
+export const dismissFeedback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    const proposal = await proposalRepository.findOne({ where: { id } });
+
+    if (!proposal) {
+      return next(ApiError.notFound('Proposal not found'));
+    }
+
+    if (proposal.editorId !== userId) {
+      return next(ApiError.forbidden('You can only dismiss feedback on your own proposals'));
+    }
+
+    if (proposal.status !== GameProposalStatus.DECLINED) {
+      return next(ApiError.badRequest('Can only dismiss feedback on declined proposals'));
+    }
+
+    if (proposal.feedbackDismissedAt) {
+      return next(ApiError.badRequest('Feedback has already been dismissed'));
+    }
+
+    proposal.feedbackDismissedAt = new Date();
+    await proposalRepository.save(proposal);
+
+    res.status(200).json({ success: true, data: proposal, message: 'Feedback dismissed successfully' });
   } catch (error) {
     next(error);
   }

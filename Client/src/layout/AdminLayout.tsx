@@ -3,7 +3,9 @@ import { Outlet } from 'react-router-dom';
 import AdminNavbar from '../components/single/AdminNavbar';
 import { NavLink } from 'react-router-dom';
 import { usePermissions } from '../hooks/usePermissions';
-import { Database, ImageIcon, Home, Gamepad2, Shapes, UserRound, Users2, Sliders, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useProposals, useMyProposals } from '../backend/proposal.service';
+import { GameProposalStatus } from '../backend/types';
+import { Database, ImageIcon, Home, Gamepad2, Shapes, UserRound, Users2, Sliders, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 const allMenuItems = [
   {
@@ -18,6 +20,24 @@ const allMenuItems = [
     path: '/admin/game-management',
     requiresConfig: false,
   },
+  {
+    title: 'My Proposals',
+    icon: <FileText size={20} />,
+    path: '/admin/my-proposals',
+    requiresConfig: false,
+  },
+  {
+    title: 'Review Queue',
+    icon: <FileText size={20} />,
+    path: '/admin/proposals',
+    requiresConfig: false,
+  },
+  // {
+  //   title: 'Edit Proposals',
+  //   icon: <FileText size={20} />,
+  //   path: '/admin/edit-proposals',
+  //   requiresConfig: false,
+  // }, // To be implemented for Admin Flow
   {
     title: 'Game Category',
     icon: <Shapes size={20} />,
@@ -68,6 +88,20 @@ const AdminLayout: React.FC = () => {
   const [navbarHeight, setNavbarHeight] = useState(73);
   const navbarRef = useRef<HTMLDivElement>(null);
 
+  // Fetch proposal counts for badges - conditionally based on role
+  // Only admins can access the all-proposals endpoint
+  const isAdminOrSuper = permissions.isAdmin || permissions.isSuperAdmin;
+  const { data: allProposals } = useProposals(undefined, isAdminOrSuper);
+  // Only editors need their personal proposals for the counter
+  const { data: myProposals } = useMyProposals(permissions.isEditor);
+
+  // Calculate counts
+  const pendingReviewCount = allProposals?.filter(p => p.status === GameProposalStatus.PENDING).length || 0;
+  // Only count declined proposals that haven't had feedback dismissed
+  const myActionableCount = myProposals?.filter(p =>
+    p.status === GameProposalStatus.DECLINED && !p.feedbackDismissedAt
+  ).length || 0;
+
   // Filter menu items based on permissions
   const menuItems = allMenuItems.filter((item) => {
     // 1. Config Check
@@ -83,6 +117,12 @@ const AdminLayout: React.FC = () => {
 
       case 'Game Management':
         return permissions.canManageGames; // Editors, Admins, SuperAdmins
+
+      case 'My Proposals':
+        return permissions.isEditor;
+
+      case 'Review Queue':
+        return permissions.isAdmin || permissions.isSuperAdmin;
 
       case 'Game Category':
         // Hide Categories from Editors (since they can't manage them or shouldn't see them)
@@ -117,6 +157,18 @@ const AdminLayout: React.FC = () => {
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  // Helper to get badge count for a menu item
+  const getBadgeCount = (title: string): number => {
+    switch (title) {
+      case 'Review Queue':
+        return pendingReviewCount;
+      case 'My Proposals':
+        return myActionableCount;
+      default:
+        return 0;
+    }
   };
 
   // Measure navbar height dynamically
@@ -189,33 +241,48 @@ const AdminLayout: React.FC = () => {
             <div className="flex flex-col h-full relative">
               <nav className="flex-1">
                 <ul className="space-y-5 px-2 py-4">
-                  {menuItems.map((item, index) => (
-                    <li key={index}>
-                      <NavLink
-                        to={item.path}
-                        end={item.path === '/admin'}
-                        className={({ isActive }) =>
-                          `flex items-center p-2 rounded-lg transition-colors ${
-                            isActive
-                              ? 'bg-[#6A7282] text-white'
-                              : 'hover:text-[#6A7282] hover:bg-[#E2E8F0] dark:text-white dark:hover:text-[#6A7282] text-[#121C2D]'
-                          } ${isSidebarCollapsed ? 'justify-center' : ''}`
-                        }
-                        onClick={() => {
-                          if (isMobile) {
-                            setIsSidebarCollapsed(true);
+                  {menuItems.map((item, index) => {
+                    const badgeCount = getBadgeCount(item.title);
+                    return (
+                      <li key={index}>
+                        <NavLink
+                          to={item.path}
+                          end={item.path === '/admin'}
+                          className={({ isActive }) =>
+                            `flex items-center p-2 rounded-lg transition-colors ${
+                              isActive
+                                ? 'bg-[#6A7282] text-white'
+                                : 'hover:text-[#6A7282] hover:bg-[#E2E8F0] dark:text-white dark:hover:text-[#6A7282] text-[#121C2D]'
+                            } ${isSidebarCollapsed ? 'justify-center' : ''}`
                           }
-                        }}
-                      >
-                        <span className={isSidebarCollapsed ? '' : 'mr-3'}>
-                          {item.icon}
-                        </span>
-                        {!isSidebarCollapsed && (
-                          <span className="text-lg">{item.title}</span>
-                        )}
-                      </NavLink>
-                    </li>
-                  ))}
+                          onClick={() => {
+                            if (isMobile) {
+                              setIsSidebarCollapsed(true);
+                            }
+                          }}
+                        >
+                          <span className={`relative ${isSidebarCollapsed ? '' : 'mr-3'}`}>
+                            {item.icon}
+                            {/* Badge for collapsed state */}
+                            {isSidebarCollapsed && badgeCount > 0 && (
+                              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                {badgeCount > 9 ? '9+' : badgeCount}
+                              </span>
+                            )}
+                          </span>
+                          {!isSidebarCollapsed && (
+                            <span className="text-lg flex-1">{item.title}</span>
+                          )}
+                          {/* Badge for expanded state */}
+                          {!isSidebarCollapsed && badgeCount > 0 && (
+                            <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                              {badgeCount}
+                            </span>
+                          )}
+                        </NavLink>
+                      </li>
+                    );
+                  })}
                 </ul>
               </nav>
               {/* Collapse toggle button */}
@@ -265,3 +332,4 @@ const AdminLayout: React.FC = () => {
 };
 
 export default AdminLayout;
+

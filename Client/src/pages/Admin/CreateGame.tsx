@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '../../hooks/usePermissions';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { object as yupObject, string as yupString, number as yupNumber } from 'yup';
 import { Button } from '../../components/ui/button';
@@ -162,6 +163,7 @@ export default function CreateGame() {
   const createGame = useCreateGame();
   const { data: categories } = useCategories();
   const queryClient = useQueryClient();
+  const permissions = usePermissions();
 
   const handleSubmit = async (
     values: FormValues,
@@ -211,7 +213,9 @@ export default function CreateGame() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast.success(
-        'Game created successfully! ZIP processing will continue in the background.',
+        permissions?.isEditor
+          ? 'Game submitted for review! Check My Proposals for status.'
+          : 'Game created successfully! ZIP processing will continue in the background.',
         { duration: 4000 }
       );
 
@@ -221,8 +225,17 @@ export default function CreateGame() {
       setProgress(0);
       setCurrentStep('');
 
-      // Navigate back to listing
-      navigate('/admin/game-management');
+      setUploadedFiles({ thumbnail: null, game: null });
+      setShowProgress(false);
+      setProgress(0);
+      setCurrentStep('');
+
+      // Navigate back to listing or proposals based on role
+      if (permissions?.isEditor) {
+        navigate('/admin/my-proposals');
+      } else {
+        navigate('/admin/game-management');
+      }
 
     } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error('Error creating game:', error);
@@ -694,7 +707,9 @@ export default function CreateGame() {
                  }
                  className="bg-[#6A7282] text-white hover:bg-[#5A626F] dark:text-white dark:hover:bg-[#5A626F] cursor-pointer"
                >
-                 {isSubmitting ? 'Creating...' : 'Create Game'}
+                 {isSubmitting
+                   ? (permissions?.isEditor ? 'Submitting...' : 'Creating...')
+                   : (permissions?.isEditor ? 'Submit for Review' : 'Create Game')}
                </Button>
             </div>
           </Form>

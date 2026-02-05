@@ -33,6 +33,7 @@ export interface FileMetadata {
   id: string;
   name: string;
   url: string;
+  s3Key: string;
   type: string;
   size: number;
   createdAt: string;
@@ -256,3 +257,36 @@ export interface GameProcessingStatusResponse {
     };
   };
 }
+
+export const GameProposalStatus = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  DECLINED: 'declined',
+} as const;
+
+export type GameProposalStatus = (typeof GameProposalStatus)[keyof typeof GameProposalStatus];
+
+export const GameProposalType = {
+  CREATE: 'create',
+  UPDATE: 'update',
+} as const;
+
+export type GameProposalType = (typeof GameProposalType)[keyof typeof GameProposalType];
+
+export interface GameProposal {
+  id: string;
+  type: GameProposalType;
+  gameId?: string;
+  game?: Game;
+  editorId: string;
+  editor?: User;
+  status: GameProposalStatus;
+  proposedData: any;
+  adminFeedback?: string;
+  reviewedBy?: string;
+  reviewer?: User;
+  createdAt: string;
+  updatedAt: string;
+  feedbackDismissedAt?: string | null;
+}
+

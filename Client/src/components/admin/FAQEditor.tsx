@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { RichTextEditor } from '../ui/RichTextEditor';
@@ -33,8 +33,18 @@ export function FAQEditor({
   // Track which item is currently being edited (expanded). -1 means none.
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
 
+  // Ref to track if the update comes from internal edit to prevent circular overrides
+  const isInternalUpdate = useRef(false);
+
   // Initialize/Sync content
   useEffect(() => {
+    // If we just updated the parent, don't re-parse and overwrite our local state
+    // This prevents cursor jumps and data loss from normalization
+    if (isInternalUpdate.current) {
+        isInternalUpdate.current = false;
+        return;
+    }
+
     // Determine raw content: Use initialContent, or default if it's missing OR empty string
     // This fixes the issue where "stripped" plain text (which is non-empty but parses to 0 items)
     // was preventing defaults from loading.
@@ -68,6 +78,7 @@ export function FAQEditor({
   }, [initialContent, gameTitle, categoryName]);
 
   const handleUpdate = (newItems: FAQItem[]) => {
+    isInternalUpdate.current = true;
     setItems(newItems);
     const html = generateFAQHtml(newItems);
     onChange(html);

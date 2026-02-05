@@ -75,4 +75,7 @@ export class GameProposal {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  feedbackDismissedAt: Date | null;
 }

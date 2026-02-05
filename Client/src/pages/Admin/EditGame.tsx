@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { object as yupObject, string as yupString, number as yupNumber } from 'yup';
@@ -7,16 +7,18 @@ import { Label } from '../../components/ui/label';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { SearchableSelect } from '../../components/ui/searchable-select';
+import { useProposalById, useUpdateProposal, useDismissFeedback } from '../../backend/proposal.service';
 import { useGameById, useUpdateGame } from '../../backend/games.service';
 import { useCategories } from '../../backend/category.service';
 import { toast } from 'sonner';
 import { RichTextEditor } from '../../components/ui/RichTextEditor';
 import { GameBreadcrumb } from '../../components/single/GameBreadcrumb';
 import UppyUpload from '../../components/single/UppyUpload';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
-import logger from '../../utils/logger';
 import { FAQEditor } from '../../components/admin/FAQEditor';
+import { EditorGameSidebar } from '../../components/admin/EditorGameSidebar';
+import { usePermissions } from '../../hooks/usePermissions';
 
 // ... other imports
 
@@ -51,14 +53,57 @@ const validationSchema = yupObject({
   howToPlay: yupString(),
 });
 
+// Sub-component for the Dismiss Feedback button to isolate the hook usage
+function DismissFeedbackButton({ proposalId }: { proposalId: string }) {
+  const dismissFeedback = useDismissFeedback();
+
+  const handleDismiss = () => {
+    dismissFeedback.mutate(proposalId, {
+      onSuccess: () => {
+        toast.success('Feedback dismissed. This proposal will no longer appear in your attention counter.');
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || 'Failed to dismiss feedback');
+      }
+    });
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={handleDismiss}
+      disabled={dismissFeedback.isPending}
+      className="text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+    >
+      {dismissFeedback.isPending ? 'Dismissing...' : 'Dismiss Feedback'}
+    </Button>
+  );
+}
+
 export default function EditGame() {
-  const { gameId } = useParams();
+  const { gameId, proposalId } = useParams();
   const navigate = useNavigate();
   const formikRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [newTag, setNewTag] = useState('');
-  const { data: game, isLoading } = useGameById(gameId || '');
+
+  // Conditionally fetch game or proposal
+  const { data: game, isLoading: isLoadingGame } = useGameById(gameId || '');
+
+  const { data: proposal, isLoading: isLoadingProposal } = useProposalById(proposalId || '');
+
   const { data: categories } = useCategories();
   const updateGame = useUpdateGame();
+  const updateProposal = useUpdateProposal();
+  const permissions = usePermissions();
+
+  const isLoading = gameId ? isLoadingGame : (proposalId ? isLoadingProposal : false);
+
+  const effectiveData = gameId ? game : proposal?.proposedData;
+
+  // Clean up unused variables if not needed, or keep for future logic
+  const currentCategory = gameId ? game?.category : categories?.find(c => c.id === proposal?.proposedData?.categoryId);
 
   const [uploadedFiles, setUploadedFiles] = useState<{
     thumbnail: UploadedFile | null;
@@ -73,64 +118,44 @@ export default function EditGame() {
     game: false,
   });
 
-  // Upload handlers
-  const handleThumbnailUploaded = useCallback((file: UploadedFile) => {
-    logger.debug('Thumbnail uploaded');
-    setUploadedFiles((prev) => ({ ...prev, thumbnail: file }));
-    setIsUploading((prev) => ({ ...prev, thumbnail: false }));
-    if (formikRef.current) {
-      formikRef.current.setFieldValue('thumbnailFile', file);
-    }
-  }, []);
 
-  const handleGameUploaded = useCallback((file: UploadedFile) => {
-    logger.debug('Game file uploaded');
-    setUploadedFiles((prev) => ({ ...prev, game: file }));
-    setIsUploading((prev) => ({ ...prev, game: false }));
-    if (formikRef.current) {
-      formikRef.current.setFieldValue('gameFile', file);
-    }
-  }, []);
+  const handleThumbnailUploadStart = () => {
+    setIsUploading(prev => ({ ...prev, thumbnail: true }));
+  };
 
-  const handleThumbnailReplaced = useCallback(() => {
-    logger.debug('Thumbnail replaced');
-    setUploadedFiles((prev) => ({ ...prev, thumbnail: null }));
-    setIsUploading((prev) => ({ ...prev, thumbnail: false }));
-    if (formikRef.current) {
-      formikRef.current.setFieldValue('thumbnailFile', undefined);
-    }
-  }, []);
+  const handleThumbnailUploaded = (file: UploadedFile) => {
+    setUploadedFiles(prev => ({ ...prev, thumbnail: file }));
+    setIsUploading(prev => ({ ...prev, thumbnail: false }));
+  };
 
-  const handleGameReplaced = useCallback(() => {
-    logger.debug('Game file replaced');
-    setUploadedFiles((prev) => ({ ...prev, game: null }));
-    setIsUploading((prev) => ({ ...prev, game: false }));
-    if (formikRef.current) {
-      formikRef.current.setFieldValue('gameFile', undefined);
-    }
-  }, []);
+  const handleThumbnailUploadError = () => {
+    setIsUploading(prev => ({ ...prev, thumbnail: false }));
+    toast.error('Failed to upload thumbnail');
+  };
 
-  const handleThumbnailUploadStart = useCallback(() => {
-    logger.debug('Thumbnail upload started');
-    setIsUploading((prev) => ({ ...prev, thumbnail: true }));
-  }, []);
 
-  const handleGameUploadStart = useCallback(() => {
-    logger.debug('Game upload started');
-    setIsUploading((prev) => ({ ...prev, game: true }));
-  }, []);
 
-  const handleThumbnailUploadError = useCallback((error: string) => {
-    console.error('❌ Thumbnail upload error:', error);
-    setIsUploading((prev) => ({ ...prev, thumbnail: false }));
-    toast.error(`Thumbnail upload failed: ${error}`);
-  }, []);
+  const handleThumbnailReplaced = () => {
+    setUploadedFiles(prev => ({ ...prev, thumbnail: null }));
+  };
 
-  const handleGameUploadError = useCallback((error: string) => {
-    console.error('❌ Game upload error:', error);
-    setIsUploading((prev) => ({ ...prev, game: false }));
-    toast.error(`Game upload failed: ${error}`);
-  }, []);
+  const handleGameUploadStart = () => {
+    setIsUploading(prev => ({ ...prev, game: true }));
+  };
+
+  const handleGameUploaded = (file: UploadedFile) => {
+    setUploadedFiles(prev => ({ ...prev, game: file }));
+    setIsUploading(prev => ({ ...prev, game: false }));
+  };
+
+  const handleGameUploadError = () => {
+    setIsUploading(prev => ({ ...prev, game: false }));
+    toast.error('Failed to upload game file');
+  };
+
+  const handleGameReplaced = () => {
+    setUploadedFiles(prev => ({ ...prev, game: null }));
+  };
 
   const handleSubmit = async (values: FormValues, { setSubmitting }: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     try {
@@ -158,15 +183,36 @@ export default function EditGame() {
 
       // Add file keys if new files were uploaded
       if (values.thumbnailFile) {
-        gameData.thumbnailKey = values.thumbnailFile.key;
+        if (proposalId) {
+             gameData.thumbnailFileKey = values.thumbnailFile.key;
+             // Save full file object for frontend preview
+             gameData.thumbnailFile = values.thumbnailFile;
+        } else {
+             gameData.thumbnailFileKey = values.thumbnailFile.key;
+        }
       }
       if (values.gameFile) {
-        gameData.gameKey = values.gameFile.key;
+        gameData.gameFileKey = values.gameFile.key;
+        if (proposalId) {
+             gameData.gameFile = values.gameFile;
+        }
       }
 
-      await updateGame.mutateAsync({ id: gameId || '', data: gameData });
-      toast.success('Game updated successfully!');
-      navigate(`/admin/view-game/${gameId}`);
+      if (proposalId) {
+          // Update Proposal
+          await updateProposal.mutateAsync({ id: proposalId, data: gameData });
+           toast.success('Proposal updated successfully!');
+           navigate('/admin/my-proposals');
+      } else {
+          // Update Game
+          await updateGame.mutateAsync({ id: gameId || '', data: gameData });
+          toast.success('Game updated successfully!');
+          if (permissions?.isEditor) {
+            navigate('/admin/my-proposals');
+          } else {
+            navigate(`/admin/view-game/${gameId}`);
+          }
+      }
     } catch {
       toast.error('Failed to update game');
     } finally {
@@ -182,19 +228,19 @@ export default function EditGame() {
     );
   }
 
-  if (!game) {
+
+  if (!effectiveData) {
     return (
       <div className="p-6">
-        <p className="text-red-500">Game not found</p>
+        <p className="text-red-500">{proposalId ? `Proposal not found (ID: ${proposalId})` : 'Game not found'}</p>
       </div>
     );
   }
 
   // Helper function to ensure tags is always an array
-  const ensureArray = (value: any): string[] => {
+  const ensureArray = (value: unknown): string[] => {
     if (!value) return [];
     if (Array.isArray(value)) return value;
-    // If it's an object with numeric keys (converted from array), convert back to array
     if (typeof value === 'object') {
       return Object.values(value).filter((v): v is string => typeof v === 'string');
     }
@@ -202,20 +248,20 @@ export default function EditGame() {
   };
 
   const initialValues: FormValues = {
-    title: game.title || '',
-    developer: game.metadata?.developer || '',
-    platform: Array.isArray(game.metadata?.platform)
-      ? game.metadata.platform
-      : game.metadata?.platform
-        ? [game.metadata.platform]
+    title: effectiveData.title || '',
+    developer: effectiveData.metadata?.developer || '',
+    platform: Array.isArray(effectiveData.metadata?.platform)
+      ? effectiveData.metadata.platform
+      : effectiveData.metadata?.platform
+        ? [effectiveData.metadata.platform]
         : ['desktop'],
-    categoryId: game.category?.id || '',
-    position: game.position || 0,
-    config: game.config || 1,
-    description: game.description || '',
-    howToPlay: game.metadata?.howToPlay || '',
-    tags: ensureArray(game.metadata?.tags),
-    faqOverride: game.metadata?.faqOverride || '',
+    categoryId: (gameId ? game.category?.id : effectiveData.categoryId) || '',
+    position: effectiveData.position || 0,
+    config: effectiveData.config || 1,
+    description: effectiveData.description || '',
+    howToPlay: effectiveData.metadata?.howToPlay || '',
+    tags: ensureArray(effectiveData.metadata?.tags),
+    faqOverride: effectiveData.metadata?.faqOverride || '',
   };
 
   const categoryOptions = categories?.map((cat) => ({
@@ -223,339 +269,433 @@ export default function EditGame() {
     label: cat.name,
   })) || [];
 
+  // Determine if Read Only
+  const isReadOnly = !!(proposalId && proposal && proposal.status !== 'pending');
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
         <GameBreadcrumb
-          categoryName={game.category?.name}
-          categoryId={game.category?.id}
-          gameTitle={game.title}
-          overrideLink={`/admin/view-game/${gameId}`}
-          overrideText="Game Detail"
+          categoryName={currentCategory?.name || (gameId ? game?.category?.name : '')}
+          categoryId={currentCategory?.id || (gameId ? game?.category?.id : '')}
+          gameTitle={effectiveData?.title || (gameId ? game?.title : '')}
+          overrideLink={proposalId ? `/admin/my-proposals` : `/admin/view-game/${gameId}`}
+          overrideText={proposalId ? "My Proposals" : "Game Detail"}
         />
-        <h1 className="text-2xl font-bold mt-4 text-gray-900 dark:text-white">
-          Edit Game
-        </h1>
+        <div className="flex items-center gap-3 mt-4">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {proposalId ? 'Edit Proposal' : 'Edit Game'}: {effectiveData?.title}
+            </h1>
+            {isReadOnly && (
+                <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
+                    {proposal.status.toUpperCase()}
+                </Badge>
+            )}
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Update all game information and metadata
+          {proposalId ? 'Update your game proposal details' : 'Update all game information and metadata'}
         </p>
       </div>
 
-      {/* Form */}
-      <Formik
-        innerRef={formikRef}
-        initialValues={initialValues}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-        enableReinitialize
-      >
-        {({ values, setFieldValue, isSubmitting }) => (
-          <Form className="space-y-6">
-            {/* Thumbnail Upload */}
-            <div className="space-y-2">
-              <Label>Thumbnail Image</Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {game.thumbnailUrl ? 'Current thumbnail will be replaced if you upload a new one' : 'Upload a new thumbnail'}
-              </p>
-              <div className="flex flex-col gap-4">
-                {game.thumbnailUrl && !uploadedFiles.thumbnail && (
-                  <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                    <p className="text-sm font-medium mb-2">Current Thumbnail:</p>
-                    <img
-                      src={game.thumbnailUrl}
-                      alt="Current thumbnail"
-                      className="max-w-xs rounded border"
+      {/* Read Only Alert */}
+      {isReadOnly && (
+        <div className="mb-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1">
+             <h3 className="font-semibold text-blue-900 dark:text-blue-400">Read Only View</h3>
+             <p className="text-blue-800 dark:text-blue-300 text-sm">
+                This proposal has been {proposal.status}. You cannot make further edits.
+                {proposal.status === 'declined' && " Please submit a new proposal to address the feedback."}
+             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Feedback Prompt */}
+      {proposal?.adminFeedback && (proposal?.status === 'declined' || proposal?.status === 'pending') && (
+        <div className="mb-8 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900 rounded-lg p-4">
+          <div className="flex gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1 flex-1">
+               <h3 className="font-semibold text-amber-900 dark:text-amber-400">Feedback from Admin</h3>
+               <p className="text-amber-800 dark:text-amber-300 text-sm whitespace-pre-wrap">{proposal.adminFeedback}</p>
+            </div>
+          </div>
+          {/* Dismiss Feedback Button for Declined Proposals */}
+          {proposal?.status === 'declined' && !proposal?.feedbackDismissedAt && (
+            <div className="mt-4 pt-3 border-t border-amber-200 dark:border-amber-800">
+              <DismissFeedbackButton proposalId={proposal.id} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Layout Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Form Area */}
+        <div className="lg:col-span-2">
+          {/* Form */}
+          <Formik
+            innerRef={formikRef}
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+            enableReinitialize
+          >
+            {({ values, setFieldValue, isSubmitting }) => (
+              <Form className={`space-y-6 ${isReadOnly ? 'opacity-80 pointer-events-none' : ''}`}>
+                {/* ... Form Content ... */}
+                {/* Thumbnail Upload */}
+                <div className="space-y-2">
+                  <Label>Thumbnail Image</Label>
+                  {/* Hide upload controls if read only, just show current */}
+                  {!isReadOnly && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {(effectiveData.thumbnailUrl || effectiveData.thumbnailFile?.url || effectiveData.thumbnailFile?.publicUrl) ? 'Current thumbnail will be replaced if you upload a new one' : 'Upload a new thumbnail'}
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-4">
+                    {(effectiveData.thumbnailUrl || effectiveData.thumbnailFile?.url || effectiveData.thumbnailFile?.publicUrl) && !uploadedFiles.thumbnail && (
+                      <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                        <p className="text-sm font-medium mb-2">Current Thumbnail:</p>
+                        <img
+                          src={effectiveData.thumbnailUrl || effectiveData.thumbnailFile?.url || effectiveData.thumbnailFile?.publicUrl}
+                          alt="Current thumbnail"
+                          className="max-w-xs rounded border"
+                        />
+                      </div>
+                    )}
+                    {!isReadOnly && (
+                        <UppyUpload
+                        onFileUploaded={handleThumbnailUploaded}
+                        onFileReplaced={handleThumbnailReplaced}
+                        onUploadStart={handleThumbnailUploadStart}
+                        onUploadError={handleThumbnailUploadError}
+                        fileType="thumbnail"
+                        accept={['image/*']}
+                        maxFileSize={5 * 1024 * 1024}
+                        />
+                    )}
+                  </div>
+                </div>
+
+                {/* Game File Upload */}
+                <div className="space-y-2">
+                  <Label>Game File</Label>
+                   {!isReadOnly && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(effectiveData.gameUrl || effectiveData.gameFile?.url || effectiveData.gameFile?.publicUrl) ? 'Current game file will be replaced if you upload a new one' : 'Upload a new game file'}
+                      </p>
+                   )}
+                  <div className="flex flex-col gap-4">
+                    {(effectiveData.gameUrl || effectiveData.gameFile?.url || effectiveData.gameFile?.publicUrl) && !uploadedFiles.game && (
+                      <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                        <p className="text-sm font-medium">Current Game File:</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {effectiveData.gameUrl || effectiveData.gameFile?.url || effectiveData.gameFile?.publicUrl}
+                        </p>
+                      </div>
+                    )}
+                    {!isReadOnly && (
+                        <UppyUpload
+                        onFileUploaded={handleGameUploaded}
+                        onFileReplaced={handleGameReplaced}
+                        onUploadStart={handleGameUploadStart}
+                        onUploadError={handleGameUploadError}
+                        fileType="game"
+                        maxFileSize={100 * 1024 * 1024}
+                        />
+                    )}
+                  </div>
+                </div>
+
+                {/* Position/Order */}
+                <div className="space-y-2">
+                  <Label htmlFor="position">Position/Order Number</Label>
+                  <Field
+                    as={Input}
+                    id="position"
+                    name="position"
+                    type="number"
+                    disabled={isReadOnly}
+                    placeholder="Enter position number (e.g., 1, 2, 3...)"
+                    className="bg-white dark:bg-gray-800"
+                  />
+                  {!isReadOnly && (
+                      <ErrorMessage
+                        name="position"
+                        component="p"
+                        className="text-sm text-red-500"
+                      />
+                  )}
+                </div>
+
+                {/* Title */}
+                <div className="space-y-2">
+                  <Label htmlFor="title">Game Title *</Label>
+                  <Field
+                    as={Input}
+                    id="title"
+                    name="title"
+                    disabled={isReadOnly}
+                    placeholder="Enter game title"
+                    className="bg-white dark:bg-gray-800"
+                  />
+                  {!isReadOnly && (
+                      <ErrorMessage
+                        name="title"
+                        component="p"
+                        className="text-sm text-red-500"
+                      />
+                  )}
+                </div>
+
+                {/* Developer */}
+                <div className="space-y-2">
+                  <Label htmlFor="developer">Developer</Label>
+                  <Field
+                    as={Input}
+                    id="developer"
+                    name="developer"
+                    disabled={isReadOnly}
+                    placeholder="Enter developer name (e.g., ArcadesBox)"
+                    className="bg-white dark:bg-gray-800"
+                  />
+                  <ErrorMessage
+                    name="developer"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* Platform */}
+                <div className="space-y-2">
+                  <Label>Platform</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: 'Desktop', label: 'Desktop' },
+                      { value: 'Mobile', label: 'Mobile' },
+                      { value: 'Tablet', label: 'Tablet' },
+                    ]}
+                    value={values.platform}
+                    onValueChange={(value) => setFieldValue('platform', value)}
+                    placeholder="Select platforms..."
+                    isMulti={true}
+                    disabled={isReadOnly}
+                  />
+                  <ErrorMessage
+                    name="platform"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* Release Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="releaseDate">Release Date</Label>
+                  <Field
+                    as={Input}
+                    id="releaseDate"
+                    name="releaseDate"
+                    type="date"
+                    disabled={isReadOnly}
+                    placeholder="Select release date"
+                    className="bg-white dark:bg-gray-800"
+                  />
+                  <ErrorMessage
+                    name="releaseDate"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* Game Category */}
+                <div className="space-y-2">
+                  <Label htmlFor="categoryId">Game Category</Label>
+                  <SearchableSelect
+                    options={categoryOptions}
+                    value={values.categoryId}
+                    onValueChange={(value) => setFieldValue('categoryId', value)}
+                    placeholder="Select a category"
+                    disabled={isReadOnly}
+                  />
+                  <ErrorMessage
+                    name="categoryId"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* Free Game Time / Config */}
+                <div className="space-y-2">
+                  <Label htmlFor="config">Free Game Time (minutes) *</Label>
+                  <Field
+                    as={Input}
+                    id="config"
+                    name="config"
+                    type="number"
+                    disabled={isReadOnly}
+                    placeholder="Enter free game time in minutes"
+                    className="bg-white dark:bg-gray-800"
+                  />
+                  <ErrorMessage
+                    name="config"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* Game Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Game Description</Label>
+                  {!isReadOnly && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Rich text editor - supports formatting, lists, and links
+                      </p>
+                  )}
+                  <RichTextEditor
+                    content={values.description}
+                    onChange={(html) => setFieldValue('description', html)}
+                    placeholder="Enter game description with formatting..."
+                    disabled={isReadOnly}
+                  />
+                  <ErrorMessage
+                    name="description"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* How to Play */}
+                <div className="space-y-2">
+                  <Label htmlFor="howToPlay">How to Play</Label>
+                  {!isReadOnly && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Rich text editor - supports formatting, lists, and links
+                      </p>
+                  )}
+                  <RichTextEditor
+                    content={values.howToPlay}
+                    onChange={(html) => setFieldValue('howToPlay', html)}
+                    placeholder="Enter instructions on how to play..."
+                    disabled={isReadOnly}
+                  />
+                  <ErrorMessage
+                    name="howToPlay"
+                    component="p"
+                    className="text-sm text-red-500"
+                  />
+                </div>
+
+                {/* FAQ Editor */}
+                <div className="space-y-2">
+                    <FAQEditor
+                        initialContent={values.faqOverride}
+                        gameTitle={values.title}
+                        categoryName={
+                            categoryOptions.find(c => c.value === values.categoryId)?.label || ''
+                        }
+                        onChange={(html) => setFieldValue('faqOverride', html)}
+                        isReadOnly={isReadOnly}
                     />
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-2">
+                  <Label>Tags</Label>
+                  {!isReadOnly && (
+                      <div className="flex gap-2">
+                        <Input
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newTag.trim() && !values.tags.includes(newTag.trim())) {
+                                setFieldValue('tags', [...values.tags, newTag.trim()]);
+                                setNewTag('');
+                              }
+                            }
+                          }}
+                          placeholder="Add a tag and press Enter"
+                          className="bg-white dark:bg-gray-800"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (newTag.trim() && !values.tags.includes(newTag.trim())) {
+                              setFieldValue('tags', [...values.tags, newTag.trim()]);
+                              setNewTag('');
+                            }
+                          }}
+                          variant="outline"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {values.tags.map((tag, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-1 px-3 py-1"
+                      >
+                        {tag}
+                        {!isReadOnly && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFieldValue(
+                                  'tags',
+                                  values.tags.filter((_, i) => i !== index)
+                                );
+                              }}
+                              className="ml-1 hover:text-red-500"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                        )}
+                      </Badge>
+                    ))}
                   </div>
-                )}
-                <UppyUpload
-                  onFileUploaded={handleThumbnailUploaded}
-                  onFileReplaced={handleThumbnailReplaced}
-                  onUploadStart={handleThumbnailUploadStart}
-                  onUploadError={handleThumbnailUploadError}
-                  fileType="thumbnail"
-                  accept={['image/*']}
-                  maxFileSize={5 * 1024 * 1024}
-                />
-              </div>
-            </div>
+                </div>
 
-            {/* Game File Upload */}
-            <div className="space-y-2">
-              <Label>Game File</Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {game.gameUrl ? 'Current game file will be replaced if you upload a new one' : 'Upload a new game file'}
-              </p>
-              <div className="flex flex-col gap-4">
-                {game.gameUrl && !uploadedFiles.game && (
-                  <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                    <p className="text-sm font-medium">Current Game File:</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{game.gameUrl}</p>
-                  </div>
-                )}
-                <UppyUpload
-                  onFileUploaded={handleGameUploaded}
-                  onFileReplaced={handleGameReplaced}
-                  onUploadStart={handleGameUploadStart}
-                  onUploadError={handleGameUploadError}
-                  fileType="game"
-                  maxFileSize={100 * 1024 * 1024}
-                />
-              </div>
-            </div>
-
-            {/* Position/Order */}
-            <div className="space-y-2">
-              <Label htmlFor="position">Position/Order Number</Label>
-              <Field
-                as={Input}
-                id="position"
-                name="position"
-                type="number"
-                placeholder="Enter position number (e.g., 1, 2, 3...)"
-                className="bg-white dark:bg-gray-800"
-              />
-              <ErrorMessage
-                name="position"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Game Title *</Label>
-              <Field
-                as={Input}
-                id="title"
-                name="title"
-                placeholder="Enter game title"
-                className="bg-white dark:bg-gray-800"
-              />
-              <ErrorMessage
-                name="title"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Developer */}
-            <div className="space-y-2">
-              <Label htmlFor="developer">Developer</Label>
-              <Field
-                as={Input}
-                id="developer"
-                name="developer"
-                placeholder="Enter developer name (e.g., ArcadesBox)"
-                className="bg-white dark:bg-gray-800"
-              />
-              <ErrorMessage
-                name="developer"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Platform */}
-            <div className="space-y-2">
-              <Label>Platform</Label>
-              <SearchableSelect
-                options={[
-                  { value: 'Desktop', label: 'Desktop' },
-                  { value: 'Mobile', label: 'Mobile' },
-                  { value: 'Tablet', label: 'Tablet' },
-                ]}
-                value={values.platform}
-                onValueChange={(value) => setFieldValue('platform', value)}
-                placeholder="Select platforms..."
-                isMulti={true}
-              />
-              <ErrorMessage
-                name="platform"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Release Date */}
-            <div className="space-y-2">
-              <Label htmlFor="releaseDate">Release Date</Label>
-              <Field
-                as={Input}
-                id="releaseDate"
-                name="releaseDate"
-                type="date"
-                placeholder="Select release date"
-                className="bg-white dark:bg-gray-800"
-              />
-              <ErrorMessage
-                name="releaseDate"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Game Category */}
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">Game Category</Label>
-              <SearchableSelect
-                options={categoryOptions}
-                value={values.categoryId}
-                onValueChange={(value) => setFieldValue('categoryId', value)}
-                placeholder="Select a category"
-              />
-              <ErrorMessage
-                name="categoryId"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Free Game Time / Config */}
-            <div className="space-y-2">
-              <Label htmlFor="config">Free Game Time (minutes) *</Label>
-              <Field
-                as={Input}
-                id="config"
-                name="config"
-                type="number"
-                placeholder="Enter free game time in minutes"
-                className="bg-white dark:bg-gray-800"
-              />
-              <ErrorMessage
-                name="config"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* Game Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Game Description</Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Rich text editor - supports formatting, lists, and links
-              </p>
-              <RichTextEditor
-                content={values.description}
-                onChange={(html) => setFieldValue('description', html)}
-                placeholder="Enter game description with formatting..."
-              />
-              <ErrorMessage
-                name="description"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* How to Play */}
-            <div className="space-y-2">
-              <Label htmlFor="howToPlay">How to Play</Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Rich text editor - supports formatting, lists, and links
-              </p>
-              <RichTextEditor
-                content={values.howToPlay}
-                onChange={(html) => setFieldValue('howToPlay', html)}
-                placeholder="Enter instructions on how to play..."
-              />
-              <ErrorMessage
-                name="howToPlay"
-                component="p"
-                className="text-sm text-red-500"
-              />
-            </div>
-
-            {/* FAQ Editor */}
-            <div className="space-y-2">
-                <FAQEditor
-                    initialContent={values.faqOverride}
-                    gameTitle={values.title}
-                    categoryName={
-                        categoryOptions.find(c => c.value === values.categoryId)?.label || ''
-                    }
-                    onChange={(html) => setFieldValue('faqOverride', html)}
-                />
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      if (newTag.trim() && !values.tags.includes(newTag.trim())) {
-                        setFieldValue('tags', [...values.tags, newTag.trim()]);
-                        setNewTag('');
-                      }
-                    }
-                  }}
-                  placeholder="Add a tag and press Enter"
-                  className="bg-white dark:bg-gray-800"
-                />
-                <Button
-                  type="button"
-                  onClick={() => {
-                    if (newTag.trim() && !values.tags.includes(newTag.trim())) {
-                      setFieldValue('tags', [...values.tags, newTag.trim()]);
-                      setNewTag('');
-                    }
-                  }}
-                  variant="outline"
-                >
-                  Add
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {values.tags.map((tag, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="flex items-center gap-1 px-3 py-1"
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700 pointer-events-auto">
+                 {/* Re-enable pointer events for buttons so user can leave */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate(proposalId ? '/admin/my-proposals' : `/admin/view-game/${gameId}`)}
                   >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFieldValue(
-                          'tags',
-                          values.tags.filter((_, i) => i !== index)
-                        );
-                      }}
-                      className="ml-1 hover:text-red-500"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
+                    {isReadOnly ? 'Back to List' : 'Cancel'}
+                  </Button>
+                  {!isReadOnly && (
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting || isUploading.thumbnail || isUploading.game}
+                        className="bg-[#6A7282] hover:bg-[#5A626F] text-white"
+                      >
+                        {isSubmitting
+                          ? (permissions?.isEditor ? 'Submitting...' : 'Saving...')
+                          : (permissions?.isEditor ? 'Submit for Review' : 'Save Changes')}
+                      </Button>
+                  )}
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/admin/view-game/${gameId}`)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || isUploading.thumbnail || isUploading.game}
-                className="bg-[#6A7282] hover:bg-[#5A626F] text-white"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </Form>
+        {/* Sidebar */}
+        {(permissions?.isEditor || proposalId) && (
+          <div className="order-first lg:order-last lg:col-span-1">
+             <EditorGameSidebar gameId={gameId} proposalId={proposalId} />
+          </div>
         )}
-      </Formik>
+      </div>
     </div>
   );
 }

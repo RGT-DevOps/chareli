@@ -42,6 +42,9 @@ const CategoryDetail = lazy(
   () => import('../pages/Admin/Category/CategoryDetail')
 );
 const UserManagementView = lazy(() => import('../pages/Admin/UserMgtView'));
+const MyProposals = lazy(() => import('../pages/Admin/Proposals/MyProposals'));
+const AdminProposals = lazy(() => import('../pages/Admin/Proposals/AdminProposals'));
+const ProposalReview = lazy(() => import('../pages/Admin/Proposals/ProposalReview'));
 const TeamManagement = lazy(() => import('../pages/Admin/Team/TeamManagement'));
 const Settings = lazy(() => import('../pages/Admin/Settings'));
 const ViewProfile = lazy(() => import('../pages/Admin/ViewProfile'));
@@ -107,10 +110,14 @@ export const routes = [
               { path: 'management', element: <SuspenseWrapper><UserManagement /></SuspenseWrapper> },
               { path: 'management/:userId', element: <SuspenseWrapper><UserManagementView /></SuspenseWrapper> },
               { path: 'team', element: <SuspenseWrapper><TeamManagement /></SuspenseWrapper> },
+              { path: 'my-proposals', element: <SuspenseWrapper><MyProposals /></SuspenseWrapper> },
+              { path: 'proposals', element: <SuspenseWrapper><AdminProposals /></SuspenseWrapper> },
+              { path: 'proposals/:id/review', element: <SuspenseWrapper><ProposalReview /></SuspenseWrapper> },
               { path: 'analytics', element: <SuspenseWrapper><Analytics /></SuspenseWrapper> },
               { path: 'view-game/:gameId', element: <SuspenseWrapper><ViewGame /></SuspenseWrapper> },
               { path: 'create-game', element: <SuspenseWrapper><CreateGame /></SuspenseWrapper> },
               { path: 'edit-game/:gameId', element: <SuspenseWrapper><EditGame /></SuspenseWrapper> },
+              { path: 'edit-proposal/:proposalId', element: <SuspenseWrapper><EditGame /></SuspenseWrapper> },
               { path: 'view-profile', element: <SuspenseWrapper><ViewProfile /></SuspenseWrapper> },
               { path: 'cache', element: <SuspenseWrapper><CacheDashboard /></SuspenseWrapper> },
               { path: 'image-reprocessing', element: <SuspenseWrapper><ImageReprocessing /></SuspenseWrapper> },
