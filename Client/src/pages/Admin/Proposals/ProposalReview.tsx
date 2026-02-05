@@ -1,6 +1,6 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
-import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, AlertCircle, History } from 'lucide-react';
 import { useProposalById, useApproveProposal, useDeclineProposal } from '../../../backend/proposal.service';
 import { useCategories } from '../../../backend/category.service';
 import { DEFAULT_FAQ_TEMPLATE, parseFAQ, generateFAQHtml } from '../../../utils/faqTemplate';
@@ -305,6 +305,15 @@ export default function ProposalReview() {
                    <p className="text-slate-500 dark:text-slate-400">
                        Submitted by <span className="font-semibold text-slate-700 dark:text-slate-300">{proposal.editor?.firstName} {proposal.editor?.lastName}</span> on {new Date(proposal.createdAt).toLocaleDateString()}
                    </p>
+                   {proposal.previousProposalId && (
+                        <div className="mt-2 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                            <History className="w-4 h-4" />
+                            <span>Revises previous proposal:</span>
+                            <Link to={`/admin/proposals/${proposal.previousProposalId}/review`} className="underline hover:text-blue-800 dark:hover:text-blue-300">
+                                View Previous
+                            </Link>
+                        </div>
+                   )}
                 </div>
 
                 {/* Actions - Only visible if Pending */}
@@ -356,6 +365,19 @@ export default function ProposalReview() {
         </div>
 
         <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-8">
+
+            {/* Admin Feedback Display */}
+            {proposal.adminFeedback && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900 rounded-lg p-4">
+                    <div className="flex gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <h3 className="font-semibold text-amber-900 dark:text-amber-400">Review Feedback</h3>
+                           <p className="text-amber-800 dark:text-amber-300 text-sm whitespace-pre-wrap">{proposal.adminFeedback}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* General Info */}
             <section>

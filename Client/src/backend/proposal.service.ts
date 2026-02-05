@@ -110,3 +110,17 @@ export const useDismissFeedback = () => {
   });
 };
 
+export const useReviseProposal = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      backendService.post(BackendRoute.REVISE_PROPOSAL.replace(':id', id), {}),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [BackendRoute.MY_PROPOSALS] }),
+        queryClient.invalidateQueries({ queryKey: [BackendRoute.GAME_PROPOSAL_BY_ID] })
+      ]);
+    },
+  });
+};
+

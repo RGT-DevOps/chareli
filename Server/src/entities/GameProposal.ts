@@ -15,6 +15,7 @@ export enum GameProposalStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   DECLINED = 'declined',
+  SUPERSEDED = 'superseded',
 }
 
 export enum GameProposalType {
@@ -56,6 +57,14 @@ export class GameProposal {
   })
   @Index()
   status: GameProposalStatus;
+
+  // Link to previous proposal for revision history
+  @Column({ nullable: true })
+  previousProposalId: string | null;
+
+  @ManyToOne(() => GameProposal, { nullable: true })
+  @JoinColumn({ name: 'previousProposalId' })
+  previousProposal: GameProposal;
 
   @Column({ type: 'jsonb' })
   proposedData: any;
