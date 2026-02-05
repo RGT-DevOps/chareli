@@ -1,5 +1,5 @@
-
-import { AlertCircle, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, Clock, ArrowRight, History } from 'lucide-react';
 import { useMyProposals } from '../../backend/proposal.service';
 import { GameProposalStatus } from '../../backend/types';
 import { Badge } from '../ui/badge';
@@ -18,6 +18,9 @@ export const EditorGameSidebar = ({ gameId, proposalId }: EditorGameSidebarProps
     (proposalId && p.id === proposalId) ||
     (gameId && p.gameId === gameId)
   );
+
+  const successor = proposals?.find(p => p.previousProposalId === proposal?.id);
+  const predecessor = proposals?.find(p => p.id === proposal?.previousProposalId);
 
   console.log(`proposal in EditorGameSidebar.tsx: ${proposal}`);
 
@@ -41,6 +44,8 @@ export const EditorGameSidebar = ({ gameId, proposalId }: EditorGameSidebarProps
                 <Badge className="bg-green-500">Approved</Badge>
               ) : proposal.status === GameProposalStatus.DECLINED ? (
                 <Badge className="bg-red-500">Changes Requested</Badge>
+              ) : proposal.status === GameProposalStatus.SUPERSEDED ? (
+                <Badge variant="secondary">Superseded</Badge>
               ) : (
                 <Badge className="bg-yellow-500 text-black">Pending Review</Badge>
               )}
@@ -55,6 +60,42 @@ export const EditorGameSidebar = ({ gameId, proposalId }: EditorGameSidebarProps
                 {format(new Date(proposal.updatedAt), 'MMM d, yyyy h:mm a')}
               </p>
             </div>
+
+            {/* Revision History Links */}
+            {(successor || predecessor) && (
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-1">
+                  <History className="w-4 h-4" />
+                  <span>Revision History</span>
+                </div>
+
+                {predecessor && (
+                  <Link
+                    to={`/admin/edit-proposal/${predecessor.id}`}
+                    className="block p-2 rounded bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Revises</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Previous Version</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </div>
+                  </Link>
+                )}
+
+                {successor && (
+                  <Link
+                    to={`/admin/edit-proposal/${successor.id}`}
+                    className="block p-2 rounded bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Superseded by</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Newer Version</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </div>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-4">

@@ -7,7 +7,8 @@ import {
   deleteProposal,
   getProposalById,
   updateProposal,
-  dismissFeedback
+  dismissFeedback,
+  reviseProposal
 } from '../controllers/gameProposalController';
 import {
   authenticate,
@@ -27,6 +28,7 @@ router.post('/:id/decline', isAdmin, declineProposal);
 // Editor Routes
 router.get('/my', isEditor, getMyProposals);
 router.post('/:id/dismiss', isEditor, dismissFeedback);
+router.post('/:id/revise', isEditor, reviseProposal);
 
 // Shared/Common Routes
 router.get('/:id', getProposalById);

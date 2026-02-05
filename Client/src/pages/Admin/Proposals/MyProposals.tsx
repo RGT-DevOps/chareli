@@ -14,6 +14,7 @@ import {
   useMyProposals,
   useDeleteProposal,
 } from '../../../backend/proposal.service';
+import { useWebSocket } from '../../../hooks/useWebSocket';
 import { GameProposalStatus, type GameProposal } from '../../../backend/types';
 import { format } from 'date-fns';
 import { Edit, Eye, Trash2, Gamepad2, AlertCircle } from 'lucide-react';
@@ -21,13 +22,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { DeleteConfirmationModal } from '../../../components/modals/DeleteConfirmationModal';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 
 export default function MyProposals() {
   const navigate = useNavigate();
+  useWebSocket(); // Enable real-time updates
   const { data: proposals, isLoading } = useMyProposals();
   const { mutateAsync: deleteProposal, isPending: isDeleting } =
     useDeleteProposal();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const pendingProposals = proposals?.filter(p => p.status === GameProposalStatus.PENDING) || [];
+  const historyProposals = proposals?.filter(p => p.status !== GameProposalStatus.PENDING && p.status !== GameProposalStatus.SUPERSEDED) || [];
 
   const getStatusBadge = (status: GameProposalStatus) => {
     switch (status) {
@@ -52,33 +58,17 @@ export default function MyProposals() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 border-4 border-[#6A7282] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 sm:p-8 bg-[#F1F5F9] dark:bg-[#121C2D] min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl sm:text-3xl font-worksans text-[#232B3B] dark:text-white font-medium">
-          My Proposals
-        </h1>
-      </div>
-
-      <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
-        {!proposals?.length ? (
+  const ProposalTable = ({ data }: { data: GameProposal[] }) => (
+    <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+        {!data.length ? (
           <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 dark:text-slate-400">
             <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-full mb-4">
               <Gamepad2 className="w-8 h-8 opacity-50" />
             </div>
-            <h3 className="text-lg font-medium mb-1">No proposals yet</h3>
+            <h3 className="text-lg font-medium mb-1">No proposals found</h3>
             <p className="max-w-xs mx-auto mb-6 opacity-80">
-              When you submit game changes or new games, they will appear here for review.
+              When you submit game changes or new games, they will appear here.
             </p>
-
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -93,7 +83,7 @@ export default function MyProposals() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {proposals.map((proposal: GameProposal) => (
+                {data.map((proposal: GameProposal) => (
                   <TableRow key={proposal.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -114,7 +104,7 @@ export default function MyProposals() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400">
-                              <Gamepad2 className="w-6 h-6" />
+                                <Gamepad2 className="w-6 h-6" />
                             </div>
                           )}
                         </div>
@@ -172,7 +162,48 @@ export default function MyProposals() {
             </Table>
           </div>
         )}
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-[#6A7282] border-t-transparent rounded-full animate-spin"></div>
       </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-8 bg-[#F1F5F9] dark:bg-[#121C2D] min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-worksans text-[#232B3B] dark:text-white font-medium">
+          My Proposals
+        </h1>
+      </div>
+
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="mb-4 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700">
+          <TabsTrigger value="pending" className="data-[state=active]:bg-[#6A7282] data-[state=active]:text-white">
+            Pending
+            {pendingProposals.length > 0 && (
+                <span className="ml-2 bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full dark:bg-slate-700 dark:text-slate-300">
+                    {pendingProposals.length}
+                </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-[#6A7282] data-[state=active]:text-white">
+            History
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pending">
+            <ProposalTable data={pendingProposals} />
+        </TabsContent>
+
+        <TabsContent value="history">
+            <ProposalTable data={historyProposals} />
+        </TabsContent>
+      </Tabs>
 
       <DeleteConfirmationModal
         open={!!deleteId}

@@ -11,6 +11,7 @@ import { moveFileToPermanentStorage } from '../utils/fileUtils';
 import { generateUniqueSlug } from '../utils/slugify';
 import { DeepPartial } from 'typeorm';
 import logger from '../utils/logger';
+import { websocketService } from '../services/websocket.service';
 
 const proposalRepository = AppDataSource.getRepository(GameProposal);
 const gameRepository = AppDataSource.getRepository(Game);
@@ -154,6 +155,8 @@ export const approveProposal = async (req: Request, res: Response, next: NextFun
     await queryRunner.manager.save(proposal);
     await queryRunner.commitTransaction();
 
+    websocketService.emitProposalUpdate('approve', proposal);
+
     res.status(200).json({ success: true, message: 'Proposal approved', gameId: game.id });
   } catch (error) {
     await queryRunner.rollbackTransaction();
@@ -191,6 +194,8 @@ export const declineProposal = async (req: Request, res: Response, next: NextFun
 
     await proposalRepository.save(proposal);
 
+    websocketService.emitProposalUpdate('decline', proposal);
+
     res.status(200).json({ success: true, message: 'Proposal declined' });
   } catch (error) {
     next(error);
@@ -224,11 +229,14 @@ export const deleteProposal = async (req: Request, res: Response, next: NextFunc
     }
 
     // Check status constraints for cancellation/deletion
-    if (proposal.status === GameProposalStatus.APPROVED && !isAdminUser) {
-      return next(ApiError.badRequest('Cannot delete an approved proposal'));
-    }
+    // Allowed: Editors can delete any of their proposals (it's just an audit record for them)
+    // if (proposal.status === GameProposalStatus.APPROVED && !isAdminUser) {
+    //   return next(ApiError.badRequest('Cannot delete an approved proposal'));
+    // }
 
     await proposalRepository.remove(proposal);
+
+    websocketService.emitProposalUpdate('delete', proposal);
 
     res.status(200).json({ success: true, message: 'Proposal deleted successfully' });
   } catch (error) {
@@ -314,11 +322,14 @@ export const updateProposal = async (req: Request, res: Response, next: NextFunc
 
     await proposalRepository.save(proposal);
 
+    websocketService.emitProposalUpdate('update', proposal);
+
     res.status(200).json({ success: true, data: proposal, message: 'Proposal updated successfully' });
   } catch (error) {
     next(error);
   }
 };
+
 
 /**
  * Dismiss feedback on a declined proposal (Editor only)
@@ -350,8 +361,71 @@ export const dismissFeedback = async (req: Request, res: Response, next: NextFun
     proposal.feedbackDismissedAt = new Date();
     await proposalRepository.save(proposal);
 
+    websocketService.emitProposalUpdate('dismiss_feedback', proposal);
+
     res.status(200).json({ success: true, data: proposal, message: 'Feedback dismissed successfully' });
   } catch (error) {
     next(error);
   }
 };
+
+/**
+ * Revise and Resubmit a declined proposal
+ * Creates a new clone of the proposal and marks the old one as SUPERSEDED
+ */
+export const reviseProposal = async (req: Request, res: Response, next: NextFunction) => {
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    const oldProposal = await proposalRepository.findOne({ where: { id } });
+
+    if (!oldProposal) {
+      return next(ApiError.notFound('Proposal not found'));
+    }
+
+    if (oldProposal.editorId !== userId) {
+      return next(ApiError.forbidden('You can only revise your own proposals'));
+    }
+
+    if (oldProposal.status !== GameProposalStatus.DECLINED) {
+      return next(ApiError.badRequest('Can only revise declined proposals'));
+    }
+
+    // Create new proposal based on old one
+    const newProposal = proposalRepository.create({
+      type: oldProposal.type,
+      gameId: oldProposal.gameId,
+      editorId: userId,
+      status: GameProposalStatus.PENDING,
+      proposedData: oldProposal.proposedData,
+      previousProposalId: oldProposal.id
+    });
+
+    await queryRunner.manager.save(newProposal);
+
+    // Update old proposal status
+    oldProposal.status = GameProposalStatus.SUPERSEDED;
+    await queryRunner.manager.save(oldProposal);
+
+    await queryRunner.commitTransaction();
+
+    websocketService.emitProposalUpdate('revise', newProposal);
+
+    res.status(201).json({
+      success: true,
+      message: 'Proposal revised and resubmitted successfully',
+      data: newProposal
+    });
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    next(error);
+  } finally {
+    await queryRunner.release();
+  }
+};
+

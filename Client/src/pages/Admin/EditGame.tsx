@@ -7,14 +7,14 @@ import { Label } from '../../components/ui/label';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { SearchableSelect } from '../../components/ui/searchable-select';
-import { useProposalById, useUpdateProposal, useDismissFeedback } from '../../backend/proposal.service';
+import { useProposalById, useUpdateProposal, useDismissFeedback, useReviseProposal } from '../../backend/proposal.service';
 import { useGameById, useUpdateGame } from '../../backend/games.service';
 import { useCategories } from '../../backend/category.service';
 import { toast } from 'sonner';
 import { RichTextEditor } from '../../components/ui/RichTextEditor';
 import { GameBreadcrumb } from '../../components/single/GameBreadcrumb';
 import UppyUpload from '../../components/single/UppyUpload';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, RefreshCcw } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { FAQEditor } from '../../components/admin/FAQEditor';
 import { EditorGameSidebar } from '../../components/admin/EditorGameSidebar';
@@ -97,6 +97,20 @@ export default function EditGame() {
   const updateGame = useUpdateGame();
   const updateProposal = useUpdateProposal();
   const permissions = usePermissions();
+  const reviseProposal = useReviseProposal();
+
+  const handleRevise = async () => {
+    if (!proposalId) return;
+    try {
+      const result = await reviseProposal.mutateAsync(proposalId);
+      toast.success('Proposal revised! You are now editing the new version.');
+      if (result?.data?.id) {
+          navigate(`/admin/edit-proposal/${result.data.id}`);
+      }
+    } catch {
+      toast.error('Failed to revise proposal');
+    }
+  };
 
   const isLoading = gameId ? isLoadingGame : (proposalId ? isLoadingProposal : false);
 
@@ -308,6 +322,16 @@ export default function EditGame() {
                 This proposal has been {proposal.status}. You cannot make further edits.
                 {proposal.status === 'declined' && " Please submit a new proposal to address the feedback."}
              </p>
+             {proposal.status === 'declined' && (
+                 <Button
+                    size="sm"
+                    onClick={handleRevise}
+                    disabled={reviseProposal.isPending}
+                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                 >
+                    {reviseProposal.isPending ? 'Creating Revision...' : <><RefreshCcw className="w-4 h-4" /> Revise & Resubmit</>}
+                 </Button>
+             )}
           </div>
         </div>
       )}

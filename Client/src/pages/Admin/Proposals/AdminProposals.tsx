@@ -11,6 +11,7 @@ import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { LazyImage } from '../../../components/ui/LazyImage';
 import { useProposals } from '../../../backend/proposal.service';
+import { useWebSocket } from '../../../hooks/useWebSocket';
 import { GameProposalStatus, type GameProposal } from '../../../backend/types';
 import { format } from 'date-fns';
 import { ArrowRight, Gamepad2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
@@ -19,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui
 
 export default function AdminProposals() {
   const navigate = useNavigate();
+  useWebSocket(); // Enable real-time updates
   // Fetch all proposals
   // Ideally, valid backend filter should be used, but for now we fetch all and filter in frontend or use separate hooks if volume is high.
   // The service supports status param, but we might want to fetch all to split them into tabs.
@@ -30,7 +32,7 @@ export default function AdminProposals() {
   const { data: allProposals, isLoading } = useProposals(); // Fetch all
 
   const pendingProposals = allProposals?.filter(p => p.status === GameProposalStatus.PENDING) || [];
-  const historyProposals = allProposals?.filter(p => p.status !== GameProposalStatus.PENDING) || [];
+  const historyProposals = allProposals?.filter(p => p.status !== GameProposalStatus.PENDING && p.status !== GameProposalStatus.SUPERSEDED) || [];
 
   const getStatusBadge = (status: GameProposalStatus) => {
     switch (status) {

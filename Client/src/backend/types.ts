@@ -262,6 +262,7 @@ export const GameProposalStatus = {
   PENDING: 'pending',
   APPROVED: 'approved',
   DECLINED: 'declined',
+  SUPERSEDED: 'superseded',
 } as const;
 
 export type GameProposalStatus = (typeof GameProposalStatus)[keyof typeof GameProposalStatus];
@@ -281,6 +282,8 @@ export interface GameProposal {
   editorId: string;
   editor?: User;
   status: GameProposalStatus;
+  previousProposalId?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proposedData: any;
   adminFeedback?: string;
   reviewedBy?: string;
